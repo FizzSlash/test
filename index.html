@@ -1,201 +1,4 @@
-function showCampaignDetails(campaign, campaignElement, isNew = false) {
-            const overlay = document.createElement('div');
-            overlay.className = 'modal-overlay';
-            
-            const modal = document.createElement('div');
-            modal.className = 'modal-content';
-            
-            const closeButton = document.createElement('span');
-            closeButton.className = 'modal-close';
-            closeButton.innerHTML = '&times;';
-            closeButton.onclick = () => document.body.removeChild(overlay);
-            
-            // Create form for campaign details
-            const form = document.createElement('div');
-            form.className = 'campaign-details-form';
-            
-            // Campaign Name
-            const nameGroup = document.createElement('div');
-            nameGroup.className = 'form-group';
-            const nameLabel = document.createElement('label');
-            nameLabel.textContent = 'Campaign Name:';
-            const nameInput = document.createElement('input');
-            nameInput.type = 'text';
-            nameInput.value = campaign.campaignName || '';
-            nameGroup.appendChild(nameLabel);
-            nameGroup.appendChild(nameInput);
-            
-            // Offer
-            const offerGroup = document.createElement('div');
-            offerGroup.className = 'form-group';
-            const offerLabel = document.createElement('label');
-            offerLabel.textContent = 'Offer:';
-            const offerInput = document.createElement('input');
-            offerInput.type = 'text';
-            offerInput.value = campaign.offer || '';
-            offerGroup.appendChild(offerLabel);
-            offerGroup.appendChild(offerInput);
-            
-            // Campaign Idea (campaignInfo)
-            const ideaGroup = document.createElement('div');
-            ideaGroup.className = 'form-group';
-            const ideaLabel = document.createElement('label');
-            ideaLabel.textContent = 'Campaign Idea:';
-            const ideaTextarea = document.createElement('textarea');
-            ideaTextarea.value = campaign.campaignInfo || '';
-            ideaGroup.appendChild(ideaLabel);
-            ideaGroup.appendChild(ideaTextarea);
-            
-            // A/B Test
-            const abGroup = document.createElement('div');
-            abGroup.className = 'form-group';
-            const abLabel = document.createElement('label');
-            abLabel.textContent = 'A/B Test:';
-            const abInput = document.createElement('input');
-            abInput.type = 'text';
-            abInput.value = campaign.abTest || '';
-            abGroup.appendChild(abLabel);
-            abGroup.appendChild(abInput);
-            
-            // Relevant Links
-            const linksGroup = document.createElement('div');
-            linksGroup.className = 'form-group';
-            const linksLabel = document.createElement('label');
-            linksLabel.textContent = 'Relevant Links:';
-            const linksTextarea = document.createElement('textarea');
-            linksTextarea.value = campaign.relevantLinks || '';
-            linksGroup.appendChild(linksLabel);
-            linksGroup.appendChild(linksTextarea);
-            
-            // Website Link
-            const linkGroup = document.createElement('div');
-            linkGroup.className = 'form-group';
-            const linkLabel = document.createElement('label');
-            linkLabel.textContent = 'Website Link:';
-            const linkInput = document.createElement('input');
-            linkInput.type = 'text';
-            linkInput.value = campaign.website || '';
-            linkGroup.appendChild(linkLabel);
-            linkGroup.appendChild(linkInput);
-            
-            // Save button
-            const saveButton = document.createElement('button');
-            saveButton.className = 'submit-btn';
-            saveButton.textContent = isNew ? 'Create Campaign' : 'Save Changes';
-            saveButton.onclick = function() {
-                // Update campaign data
-                campaign.campaignName = nameInput.value;
-                campaign.offer = offerInput.value;
-                campaign.campaignInfo = ideaTextarea.value;
-                campaign.abTest = abInput.value;
-                campaign.relevantLinks = linksTextarea.value;
-                campaign.website = linkInput.value;
-                
-                if (isNew) {
-                    // Create new campaign
-                    const [year, month, day] = campaign.date.split('-').map(Number);
-                    const dayEl = document.querySelector(`.calendar-day[data-date="${year}-${month}-${day}"]`);
-                    
-                    if (dayEl) {
-                        // Create element
-                        const newCamp = document.createElement('div');
-                        newCamp.className = 'campaign';
-                        newCamp.id = 'campaign-' + Date.now();
-                        
-                        // Check if it's an SMS campaign
-                        if (campaign.campaignType === 'sms') {
-                            newCamp.classList.add('sms');
-                        }
-                        
-                        const title = document.createElement('div');
-                        title.className = 'campaign-title';
-                        title.contentEditable = true;
-                        title.textContent = campaign.campaignName;
-                        
-                        const offer = document.createElement('div');
-                        offer.className = 'campaign-offer';
-                        offer.contentEditable = true;
-                        offer.textContent = campaign.offer || 'Add offer';
-                        
-                        // Add delete button
-                        const deleteBtn = document.createElement('span');
-                        deleteBtn.className = 'delete-button';
-                        deleteBtn.innerHTML = '&times;';
-                        deleteBtn.title = 'Delete campaign';
-                        deleteBtn.addEventListener('click', function(e) {
-                            e.stopPropagation();
-                            if (confirm('Delete this campaign?')) {
-                                newCamp.remove();
-                            }
-                        });
-                        
-                        // Set data and events
-                        newCamp.setAttribute('data-campaign', JSON.stringify(campaign));
-                        newCamp.setAttribute('draggable', 'true');
-                        
-                        newCamp.addEventListener('click', e => {
-                            if (e.target.contentEditable !== 'true') {
-                                showCampaignDetails(JSON.parse(newCamp.getAttribute('data-campaign')), newCamp);
-                            }
-                        });
-                        
-                        newCamp.addEventListener('dragstart', e => {
-                            e.dataTransfer.setData('text/plain', newCamp.getAttribute('data-campaign'));
-                            e.dataTransfer.setData('sourceId', newCamp.id);
-                            setTimeout(() => newCamp.style.opacity = '0.4', 0);
-                        });
-                        
-                        newCamp.addEventListener('dragend', () => newCamp.style.opacity = '1');
-                        
-                        // Append elements
-                        newCamp.appendChild(title);
-                        newCamp.appendChild(offer);
-                        newCamp.appendChild(deleteBtn);
-                        dayEl.appendChild(newCamp);
-                        
-                        showStatusMessage('Campaign created', 'success');
-                    } else {
-                        showStatusMessage('Date not in view', 'error');
-                    }
-                } else {
-                    // Update existing campaign
-                    campaignElement.setAttribute('data-campaign', JSON.stringify(campaign));
-                    
-                    // Update visible content
-                    const titleEl = campaignElement.querySelector('.campaign-title');
-                    if (titleEl) titleEl.textContent = campaign.campaignName;
-                    
-                    const offerEl = campaignElement.querySelector('.campaign-offer');
-                    if (offerEl) offerEl.textContent = campaign.offer;
-                    
-                    // Update styling based on type
-                    if (campaign.campaignType === 'sms') {
-                        campaignElement.classList.add('sms');
-                    } else {
-                        campaignElement.classList.remove('sms');
-                    }
-                }
-                
-                document.body.removeChild(overlay);
-            };
-            
-            // Add all elements to form
-            form.appendChild(nameGroup);
-            form.appendChild(offerGroup);
-            form.appendChild(ideaGroup);
-            form.appendChild(abGroup);
-            form.appendChild(linksGroup);
-            form.appendChild(linkGroup);
-            form.appendChild(saveButton);
-            
-            // Add elements to modal
-            modal.appendChild(closeButton);
-            modal.appendChild(form);
-            
-            // Add modal to overlay and overlay to body
-            overlay.appendChild(modal);
-            document.body.appendChild(overlay);
-        }<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -207,7 +10,6 @@ function showCampaignDetails(campaign, campaignElement, isNew = false) {
             --bg-color: rgba(20, 19, 28, 0.7);
             --card-bg: rgba(36, 35, 49, 0.7);
             --accent-yellow: #FFDC00;
-            --accent-purple: #8854D0;
             --text-color: #FFFFFF;
             --input-bg: rgba(48, 47, 66, 0.8);
             --border-color: rgba(58, 57, 82, 0.5);
@@ -451,7 +253,7 @@ function showCampaignDetails(campaign, campaignElement, isNew = false) {
         
         .campaign.sms {
             background-color: rgba(136, 84, 208, 0.2);
-            border-left: 3px solid var(--accent-purple);
+            border-left: 3px solid rgba(136, 84, 208, 0.8);
         }
         
         .campaign.sms:hover {
@@ -481,19 +283,6 @@ function showCampaignDetails(campaign, campaignElement, isNew = false) {
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-        }
-        
-        .delete-button {
-            position: absolute;
-            top: 2px;
-            right: 2px;
-            font-size: 10px;
-            cursor: pointer;
-            opacity: 0.7;
-        }
-        
-        .delete-button:hover {
-            opacity: 1;
         }
         
         .loading-overlay {
@@ -563,6 +352,8 @@ function showCampaignDetails(campaign, campaignElement, isNew = false) {
             max-width: 500px;
             position: relative;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            max-height: 90vh;
+            overflow-y: auto;
         }
         
         .modal-close {
@@ -580,6 +371,26 @@ function showCampaignDetails(campaign, campaignElement, isNew = false) {
         
         #add-camp {
             background-color: rgba(46, 204, 113, 0.5);
+        }
+        
+        .delete-button {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+            width: 16px;
+            height: 16px;
+            line-height: 14px;
+            text-align: center;
+            border-radius: 50%;
+            background-color: rgba(0, 0, 0, 0.3);
+        }
+        
+        .delete-button:hover {
+            background-color: rgba(231, 76, 60, 0.7);
+            color: white;
         }
         
         @media (max-width: 768px) {
@@ -610,6 +421,12 @@ function showCampaignDetails(campaign, campaignElement, isNew = false) {
                 display: inline-block;
                 font-weight: 500;
                 margin-bottom: 10px;
+            }
+            
+            .modal-content {
+                width: 95%;
+                max-height: 80vh;
+                padding: 15px;
             }
         }
     </style>
@@ -727,10 +544,8 @@ function showCampaignDetails(campaign, campaignElement, isNew = false) {
                 populateCalendar(currentMonth, currentYear);
             });
             
-            // Export to Airtable button
-            document.getElementById('export-btn').addEventListener('click', function() {
-                exportToAirtable();
-            });
+            // Export to Airtable
+            document.getElementById('export-btn').addEventListener('click', exportToAirtable);
         });
         
         function renderCalendar(month, year) {
@@ -937,6 +752,68 @@ function showCampaignDetails(campaign, campaignElement, isNew = false) {
             }
         }
         
+        // Export to Airtable function
+        async function exportToAirtable() {
+            document.getElementById('loading-overlay').style.display = 'flex';
+            
+            try {
+                // Collect all campaigns from the calendar
+                const campaignElements = document.querySelectorAll('.campaign');
+                const campaigns = [];
+                
+                campaignElements.forEach(campaignEl => {
+                    // Get campaign data from the data attribute
+                    let campaignData;
+                    try {
+                        campaignData = JSON.parse(campaignEl.getAttribute('data-campaign'));
+                        
+                        // Get the date from the parent calendar day
+                        const calendarDay = campaignEl.closest('.calendar-day');
+                        if (calendarDay) {
+                            const dateStr = calendarDay.getAttribute('data-date');
+                            if (dateStr && dateStr !== campaignData.date) {
+                                campaignData.date = dateStr;
+                            }
+                        }
+                        
+                        campaigns.push(campaignData);
+                    } catch (e) {
+                        console.error('Error parsing campaign data:', e);
+                    }
+                });
+                
+                if (campaigns.length === 0) {
+                    showStatusMessage('No campaigns to export', 'error');
+                    document.getElementById('loading-overlay').style.display = 'none';
+                    return;
+                }
+                
+                // Send to Airtable webhook
+                const webhookUrl = 'https://hook.us2.make.com/iybaaa3op04dakasknke6nygxe5oezjn';
+                
+                const response = await fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(campaigns)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showStatusMessage(result.message || 'Export successful!', 'success');
+                } else {
+                    showStatusMessage(result.message || 'Export failed', 'error');
+                }
+            } catch (error) {
+                console.error('Error exporting to Airtable:', error);
+                showStatusMessage('Error connecting to Airtable webhook', 'error');
+            } finally {
+                document.getElementById('loading-overlay').style.display = 'none';
+            }
+        }
+        
         // Make campaign items draggable
         function enableDraggable() {
             const campaignItems = document.querySelectorAll('.campaign');
@@ -1015,14 +892,14 @@ function showCampaignDetails(campaign, campaignElement, isNew = false) {
                     }
                     
                     // Check if it's an SMS campaign
-                    const isSMS = (campaign.campaignType === 'sms');
+                    const isSMS = (campaign.campaignType === 'sms' || campaign.campaignName.toLowerCase().includes('sms'));
                     if (isSMS) {
                         campaignDiv.classList.add('sms');
                     }
                     
                     const titleDiv = document.createElement('div');
                     titleDiv.className = 'campaign-title';
-                    titleDiv.textContent = campaign.campaignName || 'Campaign';
+                    titleDiv.textContent = campaign.title || campaign.campaignName || 'Campaign';
                     campaignDiv.appendChild(titleDiv);
                     
                     if (campaign.offer) {
@@ -1037,6 +914,11 @@ function showCampaignDetails(campaign, campaignElement, isNew = false) {
                     
                     // Add click event to show campaign details
                     campaignDiv.addEventListener('click', function(e) {
+                        // Don't open details if clicking on editable content
+                        if (e.target.contentEditable === 'true') {
+                            return;
+                        }
+                        
                         // Get updated campaign data
                         const campaignData = JSON.parse(campaignDiv.getAttribute('data-campaign'));
                         
@@ -1062,6 +944,3 @@ function showCampaignDetails(campaign, campaignElement, isNew = false) {
                     campaignDiv.addEventListener('dragend', function() {
                         campaignDiv.style.opacity = '1';
                     });
-                });
-            });
-        }
