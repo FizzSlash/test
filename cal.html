@@ -37,10 +37,12 @@
       const [campaigns, setCampaigns] = useState([]);
       const [selectedCampaign, setSelectedCampaign] = useState(null);
       const [feedback, setFeedback] = useState('');
-      const [loading, setLoading] = useState(false); // Start with loading false
+      const [loading, setLoading] = useState(false);
+      const [error, setError] = useState(null);
       const [currentMonth, setCurrentMonth] = useState(new Date());
       const [selectedDate, setSelectedDate] = useState(null);
       const [updateStatus, setUpdateStatus] = useState(null);
+      const [debug, setDebug] = useState('No data fetched yet');
 
       // Your webhook URLs
       const fetchCampaignsUrl = 'https://hook.us2.make.com/dlcqdia9qozi8lca39jytiu27xrf1t1l';
@@ -53,27 +55,61 @@
       const fetchCampaigns = async () => {
         try {
           setLoading(true);
+          setDebug('Fetching campaigns...');
+          
           const response = await fetch(fetchCampaignsUrl);
           
-          if (!response.ok) throw new Error('Failed to fetch campaigns');
-          const data = await response.json();
+          if (!response.ok) {
+            setDebug(`Response not OK: ${response.status}`);
+            throw new Error(`Failed to fetch campaigns: ${response.status}`);
+          }
+          
+          const text = await response.text();
+          setDebug(`Raw response: ${text.substring(0, 200)}...`);
+          
+          let data;
+          try {
+            data = JSON.parse(text);
+            setDebug(`Parsed data: ${JSON.stringify(data).substring(0, 200)}...`);
+          } catch (parseError) {
+            setDebug(`JSON parse error: ${parseError.message}`);
+            throw parseError;
+          }
+          
+          // Ensure data is an array
+          const dataArray = Array.isArray(data) ? data : [data];
+          setDebug(`Data array length: ${dataArray.length}`);
           
           // Format campaigns for calendar display
-          const formattedCampaigns = data.map(record => ({
-            id: record.id,
-            title: record.fields.Tasks || 'Untitled Campaign',
-            type: determineCampaignType(record.fields.Tasks), // Determine if SMS or Email
-            start: new Date(record.fields['Send Date']),
-            end: new Date(record.fields['Send Date']),
-            description: record.fields.Notes || '',
-            status: record.fields.Stage || 'pending',
-            clientId: record.fields.CLIENT || '',
-            feedback: record.fields.Notes || ''
-          }));
+          const formattedCampaigns = dataArray.map(record => {
+            setDebug(`Processing record: ${JSON.stringify(record).substring(0, 100)}...`);
+            
+            // Handle possible different field structures
+            const fields = record.fields || record;
+            const id = record.id || record.recordId || "unknown";
+            
+            const campaign = {
+              id: id,
+              title: fields.Tasks || fields.tasks || fields.Name || fields.name || 'Untitled Campaign',
+              type: determineCampaignType(fields.Tasks || fields.tasks || fields.Name || fields.name || ''),
+              start: new Date(fields['Send Date'] || fields.send_date || fields.date || '2025-01-01'),
+              end: new Date(fields['Send Date'] || fields.send_date || fields.date || '2025-01-01'),
+              description: fields.Notes || fields.notes || fields.Description || fields.description || '',
+              status: fields.Stage || fields.stage || fields.Status || fields.status || 'pending',
+              clientId: fields.CLIENT || fields.Client || fields.client || fields.customer || '',
+              feedback: fields.Notes || fields.notes || fields.Feedback || fields.feedback || ''
+            };
+            
+            setDebug(`Created campaign: ${JSON.stringify(campaign).substring(0, 100)}...`);
+            return campaign;
+          });
           
+          setDebug(`Formatted ${formattedCampaigns.length} campaigns`);
           setCampaigns(formattedCampaigns);
         } catch (error) {
           console.error('Error fetching campaigns:', error);
+          setDebug(`Error: ${error.message}`);
+          setError(error.message);
           // If fetching fails, set an empty array
           setCampaigns([]);
         } finally {
@@ -218,11 +254,37 @@
               <h1 className="text-2xl font-bold text-center">CONTENT CALENDAR</h1>
             </div>
             
+            {error && (
+              <div className="p-4 bg-red-800 text-white">
+                <p className="font-bold">Error:</p>
+                <p>{error}</p>
+              </div>
+            )}
+            
             {loading && (
               <div className="flex justify-center items-center py-4 bg-gray-900 text-white">
                 <p>Loading campaigns...</p>
               </div>
             )}
+            
+            {/* Display debug info (remove in production) */}
+            <div className="p-4 bg-gray-800 text-white text-sm border-b border-gray-700">
+              <p className="font-bold">Debug:</p>
+              <p className="mb-2">{debug}</p>
+              <p>Total Campaigns: {campaigns.length}</p>
+              {campaigns.length > 0 && (
+                <div className="mt-2">
+                  <p>First Campaign:</p>
+                  <pre className="text-xs overflow-auto max-h-40 bg-gray-900 p-2">{JSON.stringify(campaigns[0], null, 2)}</pre>
+                </div>
+              )}
+              <button 
+                onClick={fetchCampaigns}
+                className="mt-2 px-3 py-1 bg-blue-600 rounded hover:bg-blue-500"
+              >
+                Refresh Data
+              </button>
+            </div>
             
             <div className="p-6 bg-gray-900">
               <div className="flex justify-between items-center mb-4 text-white">
