@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customer Journey Automation Mapping</title>
+  <!-- Include React and ReactDOM -->
+  <script src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
+  <!-- Include Babel for JSX -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- Include Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Include React DnD -->
+  <script src="https://unpkg.com/react-dnd@16.0.1/dist/umd/ReactDnD.min.js"></script>
+  <script src="https://unpkg.com/react-dnd-html5-backend@16.0.1/dist/umd/ReactDnDHTML5Backend.min.js"></script>
+  <!-- Include React Flow -->
+  <script src="https://unpkg.com/react-flow-renderer@10.3.16/dist/umd/index.js"></script>
+  <style>
+    body {
+      background-color: rgba(20, 19, 28, 0.7);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    }
+    
+    /* Container styling with transparent white stroke */
+    .journey-container {
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
+      background-color: rgba(20, 19, 28, 0.3);
+      backdrop-filter: blur(10px);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    
+    /* Node styling */
+    .automation-node {
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      background-color: rgba(36, 35, 49, 0.7);
+      border-radius: 6px;
+      padding: 10px;
+      color: white;
+      width: 180px;
+      transition: all 0.2s ease;
+      backdrop-filter: blur(5px);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    }
+    
+    .automation-node:hover {
+      border-color: rgba(255, 255, 255, 0.6);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+    
+    .automation-node.email {
+      border-left: 4px solid rgba(136, 84, 208, 0.8);
+    }
+    
+    .automation-node.trigger {
+      border-left: 4px solid rgba(56, 189, 248, 0.8);
+    }
+    
+    .automation-node.action {
+      border-left: 4px solid rgba(234, 179, 8, 0.8);
+    }
+    
+    .automation-node.filter {
+      border-left: 4px solid rgba(239, 68, 68, 0.8);
+    }
+    
+    /* Canvas styling */
+    .canvas-area {
+      background-color: rgba(17, 24, 39, 0.2);
+      background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+      background-size: 20px 20px;
+      width: 100%;
+      min-height: 600px;
+      overflow: hidden;
+    }
+    
+    /* Connection styling */
+    .connection-line {
+      stroke: rgba(255, 255, 255, 0.5);
+      stroke-width: 2;
+    }
+    
+    .react-flow__edge-path {
+      stroke: rgba(255, 255, 255, 0.5);
+      stroke-width: 2;
+    }
+    
+    .react-flow__handle {
+      width: 8px;
+      height: 8px;
+      background-color: white;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+    
+    /* Header styling for consistency */
+    .header-container {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      background-color: rgba(0, 0, 0, 0.2);
+    }
+    
+    /* Toolbox styling */
+    .toolbox {
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      background-color: rgba(0, 0, 0, 0.2);
+    }
+    
+    .tool-item {
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background-color: rgba(36, 35, 49, 0.5);
+      border-radius: 4px;
+      color: white;
+      cursor: grab;
+      transition: all 0.2s ease;
+    }
+    
+    .tool-item:hover {
+      border-color: rgba(255, 255, 255, 0.3);
+      background-color: rgba(36, 35, 49, 0.7);
+    }
+    
+    /* Controls styling */
+    .control-button {
+      background-color: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .control-button:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.4);
+    }
+    
+    /* Minimap styling */
+    .react-flow__minimap {
+      background-color: rgba(36, 35, 49, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+    }
+    
+    /* Save notification */
+    .save-notification {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: rgba(16, 185, 129, 0.2);
+      border: 1px solid rgba(16, 185, 129, 0.5);
+      color: #d1fae5;
+      padding: 12px 20px;
+      border-radius: 4px;
+      backdrop-filter: blur(5px);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+      transition: all 0.3s ease;
+      transform: translateY(0);
+      opacity: 1;
+    }
+    
+    .save-notification.hidden {
+      transform: translateY(20px);
+      opacity: 0;
+    }
+    
+    /* Node details panel */
+    .node-details {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 300px;
+      background-color: rgba(36, 35, 49, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 16px;
+      color: white;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      z-index: 50;
+      transition: all 0.3s ease;
+    }
+    
+    .node-details.hidden {
+      transform: translateX(320px);
+      opacity: 0;
+    }
+    
+    .detail-field {
+      background-color: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+      padding: 8px;
+      width: 100%;
+      color: white;
+    }
+    
+    .detail-field:focus {
+      outline: none;
+      border-color: rgba(255, 255, 255, 0.4);
+    }
+  </style>
+</head>
+<body class="bg-transparent">
+  <div id="root" class="min-h-screen py-8"></div>
+
+  <script type="text/babel">
+    // Import React hooks and dependencies
+    const { useState, useEffect, useRef, useCallback } = React;
+    const { DndProvider, useDrag, useDrop } = ReactDnD;
+    const { HTML5Backend } = ReactDnDHTML5Backend;
+    const { ReactFlow, Background, Controls, MiniMap, useNodesState, useEdgesState, addEdge } = ReactFlowRenderer;
+    
+    // Custom node component
+    const AutomationNode = ({ data }) => {
+      return (
+        <div className={`automation-node ${data.type}`}>
+          <div className="font-semibold">{data.label}</div>
+          <div className="text-xs text-gray-300 mt-1">{data.description}</div>
+        </div>
+      );
+    };
+    
+    // Draggable tool item component
+    const ToolItem = ({ type, label, description }) => {
+      const [{ isDragging }, drag] = useDrag({
+        type: 'automation-node',
+        item: { type, label, description },
+        collect: (monitor) => ({
+          isDragging: monitor.isDragging(),
+        }),
+      });
+      
+      return (
+        <div 
+          ref={drag} 
+          className="tool-item p-2 mb-2"
+          style={{ opacity: isDragging ? 0.5 : 1 }}
+        >
+          <div className="text-sm font-medium">{label}</div>
+          <div className="text-xs text-gray-300">{type}</div>
+        </div>
+      );
+    };
+    
+    const CustomerJourney = () => {
+      // Node types for React Flow
+      const nodeTypes = {
+        automationNode: AutomationNode,
+      };
+      
+      // State for nodes and edges
+      const [nodes, setNodes, onNodesChange] = useNodesState([]);
+      const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+      const [saveNotification, setSaveNotification] = useState(false);
+      const [selectedNode, setSelectedNode] = useState(null);
+      const [journeyName, setJourneyName] = useState('New Customer Journey');
+      const [showDetails, setShowDetails] = useState(false);
+      
+      // Refs
+      const reactFlowWrapper = useRef(null);
+      const reactFlowInstance = useRef(null);
+      
+      // Load saved journeys on mount
+      useEffect(() => {
+        const savedJourney = localStorage.getItem('customerJourney');
+        if (savedJourney) {
+          try {
+            const { nodes: savedNodes, edges: savedEdges, name } = JSON.parse(savedJourney);
+            if (savedNodes && savedEdges) {
+              setNodes(savedNodes);
+              setEdges(savedEdges);
+            }
+            if (name) {
+              setJourneyName(name);
+            }
+          } catch (e) {
+            console.error('Failed to load saved journey:', e);
+          }
+        }
+      }, []);
+      
+      // Handle connection events
+      const onConnect = useCallback((params) => {
+        setEdges((eds) => addEdge({
+          ...params,
+          animated: true,
+          style: { stroke: 'rgba(255, 255, 255, 0.5)', strokeWidth: 2 }
+        }, eds));
+      }, [setEdges]);
+      
+      // Handle drop events
+      const onDrop = useCallback((event) => {
+        event.preventDefault();
+        
+        if (!reactFlowInstance.current) return;
+        
+        const reactFlowBounds = reactFlowWrapper.current.getBoundingClientRect();
+        const item = JSON.parse(event.dataTransfer.getData('application/reactflow'));
+        
+        // Get position from drop coordinates
+        const position = reactFlowInstance.current.project({
+          x: event.clientX - reactFlowBounds.left,
+          y: event.clientY - reactFlowBounds.top,
+        });
+        
+        // Create a new node
+        const newNode = {
+          id: `node_${Date.now()}`,
+          type: 'automationNode',
+          position,
+          data: { 
+            label: item.label,
+            type: item.type,
+            description: item.description || `${item.type} step` 
+          },
+        };
+        
+        setNodes((nds) => nds.concat(newNode));
+      }, [setNodes]);
+      
+      // Handle drag over events
+      const onDragOver = useCallback((event) => {
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'move';
+      }, []);
+      
+      // Handle node click events
+      const onNodeClick = useCallback((event, node) => {
+        setSelectedNode(node);
+        setShowDetails(true);
+      }, []);
+      
+      // Handle drag start for tool items
+      const onDragStart = (event, nodeData) => {
+        event.dataTransfer.setData('application/reactflow', JSON.stringify(nodeData));
+        event.dataTransfer.effectAllowed = 'move';
+      };
+      
+      // Handle saving the journey
+      const saveJourney = () => {
+        if (reactFlowInstance.current) {
+          const journeyData = {
+            nodes,
+            edges,
+            name: journeyName
+          };
+          
+          localStorage.setItem('customerJourney', JSON.stringify(journeyData));
+          
+          // Show notification
+          setSaveNotification(true);
+          setTimeout(() => setSaveNotification(false), 3000);
+        }
+      };
+      
+      // Handle exporting the journey as JSON
+      const exportJourney = () => {
+        if (reactFlowInstance.current) {
+          const journeyData = {
+            nodes,
+            edges,
+            name: journeyName
+          };
+          
+          const jsonString = JSON.stringify(journeyData, null, 2);
+          const blob = new Blob([jsonString], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `${journeyName.replace(/\s+/g, '-').toLowerCase()}.json`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+      };
+      
+      // Handle importing a journey
+      const importJourney = (event) => {
+        const file = event.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            try {
+              const journeyData = JSON.parse(e.target.result);
+              if (journeyData.nodes && journeyData.edges) {
+                setNodes(journeyData.nodes);
+                setEdges(journeyData.edges);
+                if (journeyData.name) {
+                  setJourneyName(journeyData.name);
+                }
+                
+                // Show notification
+                setSaveNotification(true);
+                setTimeout(() => setSaveNotification(false), 3000);
+              }
+            } catch (error) {
+              console.error('Failed to import journey:', error);
+            }
+          };
+          reader.readAsText(file);
+        }
+      };
+      
+      // Handle clearing the canvas
+      const clearCanvas = () => {
+        if (window.confirm('Are you sure you want to clear the canvas? This action cannot be undone.')) {
+          setNodes([]);
+          setEdges([]);
+          setSelectedNode(null);
+          setShowDetails(false);
+        }
+      };
+      
+      // Handle node updates
+      const updateSelectedNode = (field, value) => {
+        if (!selectedNode) return;
+        
+        setNodes((nds) => 
+          nds.map((node) => {
+            if (node.id === selectedNode.id) {
+              return {
+                ...node,
+                data: {
+                  ...node.data,
+                  [field]: value
+                }
+              };
+            }
+            return node;
+          })
+        );
+      };
+      
+      // Automation types for the toolbox
+      const automationTypes = [
+        { type: 'trigger', label: 'Trigger', description: 'Starts the automation' },
+        { type: 'email', label: 'Send Email', description: 'Sends an email to contact' },
+        { type: 'action', label: 'Action', description: 'Performs an action' },
+        { type: 'filter', label: 'Filter', description: 'Conditional logic' },
+        { type: 'email', label: 'Email Sequence', description: 'Sends multiple emails' },
+        { type: 'action', label: 'Update CRM', description: 'Updates customer record' },
+        { type: 'action', label: 'Send SMS', description: 'Sends text message' },
+        { type: 'filter', label: 'Delay', description: 'Wait for time period' },
+      ];
+      
+      return (
+        <DndProvider backend={HTML5Backend}>
+          <div className="container mx-auto p-4">
+            <div className="journey-container">
+              <div className="p-6 bg-transparent text-white header-container">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center">
+                    <h1 className="text-2xl font-bold">CUSTOMER JOURNEY</h1>
+                    <input
+                      type="text"
+                      value={journeyName}
+                      onChange={(e) => setJourneyName(e.target.value)}
+                      className="ml-4 bg-transparent border-b border-white px-2 py-1"
+                    />
+                  </div>
+                  <div className="flex space-x-2">
+                    <button className="control-button" onClick={saveJourney}>
+                      Save
+                    </button>
+                    <button className="control-button" onClick={exportJourney}>
+                      Export
+                    </button>
+                    <label className="control-button cursor-pointer">
+                      Import
+                      <input
+                        type="file"
+                        accept=".json"
+                        className="hidden"
+                        onChange={importJourney}
+                      />
+                    </label>
+                    <button className="control-button" onClick={clearCanvas}>
+                      Clear
+                    </button>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex">
+                {/* Toolbox sidebar */}
+                <div className="w-48 p-4 bg-gray-900 bg-opacity-30 border-r border-white border-opacity-10">
+                  <h2 className="text-white font-bold mb-3">Automation Steps</h2>
+                  <div className="space-y-2">
+                    {automationTypes.map((type, index) => (
+                      <div
+                        key={index}
+                        draggable
+                        onDragStart={(e) => onDragStart(e, type)}
+                        className={`tool-item p-2 cursor-grab ${type.type}`}
+                      >
+                        <div className="text-sm font-medium text-white">{type.label}</div>
+                        <div className="text-xs text-gray-300">{type.description}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Main canvas */}
+                <div className="flex-grow">
+                  <div className="canvas-area" ref={reactFlowWrapper}>
+                    <ReactFlow
+                      nodes={nodes}
+                      edges={edges}
+                      onNodesChange={onNodesChange}
+                      onEdgesChange={onEdgesChange}
+                      onConnect={onConnect}
+                      onInit={(instance) => { reactFlowInstance.current = instance; }}
+                      onDrop={onDrop}
+                      onDragOver={onDragOver}
+                      onNodeClick={onNodeClick}
+                      nodeTypes={nodeTypes}
+                      fitView
+                    >
+                      <Background color="rgba(255, 255, 255, 0.05)" gap={20} />
+                      <Controls className="bg-opacity-30 bg-gray-900 border border-white border-opacity-10 rounded" />
+                      <MiniMap style={{ height: 120 }} nodeColor={(n) => {
+                        switch (n.data.type) {
+                          case 'trigger': return 'rgba(56, 189, 248, 0.8)';
+                          case 'email': return 'rgba(136, 84, 208, 0.8)';
+                          case 'action': return 'rgba(234, 179, 8, 0.8)';
+                          case 'filter': return 'rgba(239, 68, 68, 0.8)';
+                          default: return 'rgba(255, 255, 255, 0.8)';
+                        }
+                      }} />
+                    </ReactFlow>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Node details panel */}
+            <div className={`node-details ${showDetails ? '' : 'hidden'}`}>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold">Node Details</h3>
+                <button 
+                  className="text-white opacity-70 hover:opacity-100"
+                  onClick={() => setShowDetails(false)}
+                >
+                  ×
+                </button>
+              </div>
+              
+              {selectedNode && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm mb-1">Label</label>
+                    <input
+                      type="text"
+                      value={selectedNode.data.label}
+                      onChange={(e) => updateSelectedNode('label', e.target.value)}
+                      className="detail-field"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm mb-1">Description</label>
+                    <input
+                      type="text"
+                      value={selectedNode.data.description}
+                      onChange={(e) => updateSelectedNode('description', e.target.value)}
+                      className="detail-field"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm mb-1">Type</label>
+                    <select
+                      value={selectedNode.data.type}
+                      onChange={(e) => updateSelectedNode('type', e.target.value)}
+                      className="detail-field"
+                    >
+                      <option value="trigger">Trigger</option>
+                      <option value="email">Email</option>
+                      <option value="action">Action</option>
+                      <option value="filter">Filter</option>
+                    </select>
+                  </div>
+                  
+                  <div className="mt-6">
+                    <button
+                      className="w-full py-2 bg-transparent border border-white text-white rounded hover:bg-white hover:bg-opacity-10"
+                      onClick={() => {
+                        setNodes((nds) => nds.filter((node) => node.id !== selectedNode.id));
+                        setShowDetails(false);
+                        setSelectedNode(null);
+                      }}
+                    >
+                      Delete Node
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {/* Save notification */}
+            <div className={`save-notification ${saveNotification ? '' : 'hidden'}`}>
+              Journey saved successfully!
+            </div>
+          </div>
+        </DndProvider>
+      );
+    };
+    
+    // Render the app
+    ReactDOM.render(
+      <CustomerJourney />,
+      document.getElementById('root')
+    );
+  </script>
+</body>
+</html>
