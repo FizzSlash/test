@@ -105,7 +105,6 @@
       const [currentMonth, setCurrentMonth] = useState(new Date());
       const [selectedDate, setSelectedDate] = useState(null);
       const [updateStatus, setUpdateStatus] = useState(null);
-      const [activeTab, setActiveTab] = useState('details'); // 'details' or 'approval'
       const [showModal, setShowModal] = useState(false);
 
       // Your webhook URLs
@@ -239,7 +238,6 @@
         setSelectedCampaign(campaign);
         setFeedback(campaign.feedback || '');
         setUpdateStatus(null);
-        setActiveTab('details');
         setShowModal(true);
       };
 
@@ -367,6 +365,7 @@
         if (statusLower.includes('revision') || statusLower.includes('needs')) return 'bg-yellow-600';
         if (statusLower.includes('design') || statusLower.includes('qa')) return 'bg-blue-600';
         if (statusLower.includes('ready')) return 'bg-purple-600';
+        if (statusLower.includes('client approval')) return 'bg-indigo-600';
         return 'bg-gray-600';
       };
 
@@ -424,14 +423,9 @@
                 
                 {/* Calendar days */}
                 {days.map((day, index) => {
-                  // Get campaigns for this day
+                  // Get campaigns for this day - show ALL campaigns
                   const dayCampaigns = day.date ? 
                     (campaignsByDate[day.date.toDateString()] || []) : [];
-                  
-                  // Filter campaigns by status - only show those with "Client Approval" status
-                  const clientApprovalCampaigns = dayCampaigns.filter(campaign => 
-                    isClientApprovalStatus(campaign.status)
-                  );
                   
                   return (
                     <div 
@@ -451,7 +445,7 @@
                             {day.date.getDate()}
                           </div>
                           <div className="mt-1">
-                            {clientApprovalCampaigns.map(campaign => (
+                            {dayCampaigns.map(campaign => (
                               <div 
                                 key={campaign.id}
                                 className={`mb-1 py-1 px-2 text-xs text-white rounded cursor-pointer ${getCampaignTypeClass(campaign.type)}`}
@@ -460,9 +454,9 @@
                                   handleSelectCampaign(campaign);
                                 }}
                               >
-                                <div className="flex justify-between items-center">
-                                  <span className="truncate">{campaign.title}</span>
-                                  <span className={`ml-1 px-1 py-0.5 text-xs rounded ${getStatusColor(campaign.status)}`}>
+                                <div className="flex flex-col">
+                                  <span className="font-semibold truncate">{campaign.title}</span>
+                                  <span className={`mt-1 text-xs px-1 py-0.5 rounded inline-block w-fit ${getStatusColor(campaign.status)}`}>
                                     {campaign.status || 'Pending'}
                                   </span>
                                 </div>
@@ -481,7 +475,7 @@
           {showModal && selectedCampaign && (
             <div className="modal-overlay" onClick={() => setShowModal(false)}>
               <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                <div className="flex">
+                <div className="flex flex-col md:flex-row">
                   {/* Main content area */}
                   <div className="p-4 flex-grow">
                     <div className="flex justify-between items-center mb-4">
@@ -536,8 +530,8 @@
                     )}
                   </div>
                   
-                  {/* Sidebar for approval */}
-                  <div className="w-1/3 p-4 border-l border-gray-700 bg-gray-800 bg-opacity-30">
+                  {/* Sidebar for approval - only enabled for Client Approval status */}
+                  <div className="w-full md:w-1/3 p-4 border-t md:border-t-0 md:border-l border-gray-700 bg-gray-800 bg-opacity-30">
                     <h3 className="text-lg font-semibold mb-4 text-white">Client Review</h3>
                     
                     {updateStatus?.loading ? (
@@ -562,23 +556,32 @@
                             value={feedback}
                             onChange={(e) => setFeedback(e.target.value)}
                             placeholder="Enter your feedback or revision requests here..."
+                            disabled={!isClientApprovalStatus(selectedCampaign.status)}
                           />
                         </div>
                         
-                        <div className="space-y-3">
-                          <button
-                            onClick={() => handleApproval(true)}
-                            className="w-full py-3 bg-green-700 text-white rounded hover:bg-green-600"
-                          >
-                            Approve Campaign
-                          </button>
-                          <button
-                            onClick={() => handleApproval(false)}
-                            className="w-full py-3 bg-yellow-700 text-white rounded hover:bg-yellow-600"
-                          >
-                            Request Revisions
-                          </button>
-                        </div>
+                        {isClientApprovalStatus(selectedCampaign.status) ? (
+                          <div className="space-y-3">
+                            <button
+                              onClick={() => handleApproval(true)}
+                              className="w-full py-3 bg-green-700 text-white rounded hover:bg-green-600"
+                            >
+                              Approve Campaign
+                            </button>
+                            <button
+                              onClick={() => handleApproval(false)}
+                              className="w-full py-3 bg-yellow-700 text-white rounded hover:bg-yellow-600"
+                            >
+                              Request Revisions
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="bg-gray-800 border border-gray-600 text-gray-300 p-3 rounded">
+                            <p>This campaign is not ready for client approval.</p>
+                            <p className="mt-2 text-sm">Current status: <span className="font-semibold">{selectedCampaign.status || 'Pending'}</span></p>
+                            <p className="mt-2 text-sm">Only campaigns with "Client Approval" status can be approved or revised.</p>
+                          </div>
+                        )}
                       </>
                     )}
                   </div>
