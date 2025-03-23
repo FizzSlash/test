@@ -1186,33 +1186,72 @@
                     return;
                 }
                 
-                // Send data to the Export webhook
-                const response = await fetch('https://hook.us2.make.com/iybaaa3op04dakasknke6nygxe5oezjn', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(campaigns)
-                });
+                // Log the data being sent
+                console.log('Sending data to webhook:', campaigns);
                 
-                // Get response text
-                const responseText = await response.text();
+                // Prepare the data to send
+                const dataToSend = JSON.stringify(campaigns);
+                console.log('JSON data being sent:', dataToSend);
                 
-                if (response.ok) {
-                    // Show success message from webhook or default
-                    const successMessage = responseText || 'Successfully exported to Airtable';
-                    showStatusMessage(successMessage, 'success');
+                // Send data to the Export webhook with detailed logging
+                try {
+                    console.log('Attempting to fetch webhook at:', 'https://hook.us2.make.com/iybaaa3op04dakasknke6nygxe5oezjn');
                     
-                    // For testing - simulate a webhook success response if none is returned
-                    if (!responseText) {
-                        console.log('No response from webhook, simulating success');
+                    const response = await fetch('https://hook.us2.make.com/iybaaa3op04dakasknke6nygxe5oezjn', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: dataToSend
+                    });
+                    
+                    console.log('Webhook response status:', response.status);
+                    console.log('Webhook response status text:', response.statusText);
+                    
+                    // Try to read the response text
+                    const responseText = await response.text();
+                    console.log('Webhook response text:', responseText);
+                    
+                    if (response.ok) {
+                        // Show success message from webhook or default
+                        const successMessage = responseText || 'Successfully exported to Airtable';
+                        showStatusMessage(successMessage, 'success');
+                    } else {
+                        showStatusMessage('Failed to export to Airtable: ' + (responseText || response.statusText), 'error');
                     }
-                } else {
-                    showStatusMessage('Failed to export to Airtable: ' + (responseText || response.statusText), 'error');
+                } catch (fetchError) {
+                    console.error('Fetch error details:', fetchError);
+                    
+                    // Try an alternative method using XMLHttpRequest as a backup
+                    console.log('Trying alternative XMLHttpRequest method...');
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('POST', 'https://hook.us2.make.com/iybaaa3op04dakasknke6nygxe5oezjn', true);
+                    xhr.setRequestHeader('Content-Type', 'application/json');
+                    
+                    xhr.onload = function() {
+                        console.log('XHR status:', xhr.status);
+                        console.log('XHR response:', xhr.responseText);
+                        
+                        if (xhr.status >= 200 && xhr.status < 300) {
+                            showStatusMessage('Successfully exported to Airtable (XHR method)', 'success');
+                        } else {
+                            showStatusMessage('Failed to export using alternative method: ' + xhr.statusText, 'error');
+                        }
+                        document.getElementById('loading-overlay').style.display = 'none';
+                    };
+                    
+                    xhr.onerror = function() {
+                        console.error('XHR error occurred');
+                        showStatusMessage('Network error occurred during export', 'error');
+                        document.getElementById('loading-overlay').style.display = 'none';
+                    };
+                    
+                    xhr.send(dataToSend);
+                    return; // Exit here since XHR is async and will handle its own completion
                 }
             } catch (error) {
-                console.error('Error exporting to Airtable:', error);
-                showStatusMessage('Error exporting to Airtable', 'error');
+                console.error('General error during export:', error);
+                showStatusMessage('Error exporting to Airtable: ' + error.message, 'error');
             } finally {
                 document.getElementById('loading-overlay').style.display = 'none';
             }
