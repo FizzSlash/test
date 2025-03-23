@@ -29,16 +29,6 @@
       overflow: hidden;
     }
     
-    /* Sidebar styling with matching transparent white stroke */
-    .sidebar-container {
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
-      background-color: rgba(20, 19, 28, 0.3);
-      backdrop-filter: blur(10px);
-      border-radius: 8px;
-      overflow: hidden;
-    }
-    
     .campaign-email {
       background-color: rgba(136, 84, 208, 0.2);
       border-left: 3px solid rgba(136, 84, 208, 0.8);
@@ -50,7 +40,7 @@
     
     .campaign-sms {
       background-color: rgba(255, 220, 0, 0.2);
-      border-left: 3px solid var(--accent-yellow);
+      border-left: 3px solid rgba(255, 220, 0, 0.8);
     }
     
     .campaign-sms:hover {
@@ -72,21 +62,6 @@
     .tab-inactive:hover {
       background-color: rgba(31, 41, 55, 0.8);
       color: white;
-    }
-    
-    /* Badge styling */
-    .approval-badge {
-      background-color: #EAB308;
-      color: black;
-      font-weight: 600;
-      border-radius: 9999px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 1.5rem;
-      height: 1.5rem;
-      font-size: 0.75rem;
-      margin-left: 0.5rem;
     }
     
     .modal-overlay {
@@ -172,13 +147,14 @@
       const [campaigns, setCampaigns] = useState([]);
       const [selectedCampaign, setSelectedCampaign] = useState(null);
       const [feedback, setFeedback] = useState('');
+      const [clientRevisions, setClientRevisions] = useState('');
       const [loading, setLoading] = useState(false);
       const [error, setError] = useState(null);
       const [currentMonth, setCurrentMonth] = useState(new Date());
       const [selectedDate, setSelectedDate] = useState(null);
-      const [activeTab, setActiveTab] = useState('calendar');
       const [updateStatus, setUpdateStatus] = useState(null);
       const [showModal, setShowModal] = useState(false);
+      const [activeTab, setActiveTab] = useState('calendar');
 
       // Your webhook URLs
       const fetchCampaignsUrl = 'https://hook.us2.make.com/dlcqdia9qozi8lca39jytiu27xrf1t1l';
@@ -423,9 +399,6 @@
       // Get day name headers
       const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-      // Get count of campaigns pending approval
-      const pendingApprovalCount = campaigns.filter(camp => isClientApprovalStatus(camp.status)).length;
-
       // Format date for display
       const formatDate = (date) => {
         if (!date) return '';
@@ -435,11 +408,42 @@
           year: 'numeric'
         });
       };
+      
+      // Client approval status check
+      function isClientApprovalStatus(status) {
+        if (!status) return false;
+        return status.toLowerCase().includes('client approval');
+      }
+      
+      // Get count of campaigns pending approval
+      const pendingApprovalCount = campaigns.filter(camp => isClientApprovalStatus(camp.status)).length;
+
+      return (
         <div className="container mx-auto p-4">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="calendar-container flex-grow">
+          <div className="calendar-container">
             <div className="p-6 bg-transparent text-white header-container">
-              <h1 className="text-2xl font-bold text-center">CONTENT CALENDAR</h1>
+              <div className="flex justify-between items-center">
+                <h1 className="text-2xl font-bold">CONTENT CALENDAR</h1>
+                <div className="flex space-x-2">
+                  <button 
+                    onClick={() => setActiveTab('calendar')} 
+                    className={`px-4 py-2 rounded transition-all ${activeTab === 'calendar' ? 'bg-indigo-600' : 'bg-gray-800 bg-opacity-50'}`}
+                  >
+                    Calendar
+                  </button>
+                  <button 
+                    onClick={() => setActiveTab('approvals')} 
+                    className={`px-4 py-2 rounded transition-all flex items-center ${activeTab === 'approvals' ? 'bg-indigo-600' : 'bg-gray-800 bg-opacity-50'}`}
+                  >
+                    Pending Approvals
+                    {pendingApprovalCount > 0 && (
+                      <span className="ml-2 bg-yellow-500 text-black font-bold rounded-full w-6 h-6 flex items-center justify-center text-xs">
+                        {pendingApprovalCount}
+                      </span>
+                    )}
+                  </button>
+                </div>
+              </div>
             </div>
             
             {error && (
@@ -450,13 +454,13 @@
             )}
             
             {loading && (
-              <div className="flex justify-center items-center py-4 bg-gray-900 text-white">
+              <div className="flex justify-center items-center py-4 bg-transparent text-white">
                 <p>Loading campaigns...</p>
               </div>
             )}
             
             {activeTab === 'calendar' && (
-              <div className="p-6 bg-gray-900 bg-opacity-70">
+              <div className="p-6 bg-transparent">
                 <div className="flex justify-between items-center mb-4 text-white">
                   <button onClick={prevMonth} className="px-4 py-2 bg-gray-800 rounded hover:bg-gray-700">
                     &lt; Previous
@@ -470,98 +474,102 @@
                     </button>
                   </div>
                 </div>
-              
-              {/* Calendar grid */}
-              <div className="grid grid-cols-7 gap-1 rounded-lg overflow-hidden">
-                {/* Weekday headers */}
-                {weekdays.map(day => (
-                  <div key={day} className="p-2 bg-gray-800 bg-opacity-30 text-center font-semibold text-white">
-                    {day}
-                  </div>
-                ))}
                 
-                {/* Calendar days */}
-                {days.map((day, index) => {
-                  // Get campaigns for this day - show ALL campaigns
-                  const dayCampaigns = day.date ? 
-                    (campaignsByDate[day.date.toDateString()] || []) : [];
-                  
-                  return (
-                    <div 
-                      key={index}
-                      className={`min-h-28 p-1 calendar-cell ${
-                        day.isCurrentMonth ? 'bg-opacity-30 bg-gray-800' : 'bg-transparent bg-opacity-20'
-                      } ${
-                        selectedDate && day.date && selectedDate.toDateString() === day.date.toDateString() 
-                          ? 'ring-1 ring-white ring-opacity-20' 
-                          : ''
-                      } text-white`}
-                      onClick={() => day.date && setSelectedDate(day.date)}
-                    >
-                      {day.date && (
-                        <>
-                          <div className="text-right text-sm p-1">
-                            {day.date.getDate()}
-                          </div>
-                          <div className="mt-1">
-                            {dayCampaigns.map(campaign => (
-                              <div 
-                                key={campaign.id}
-                                className={`mb-1 py-1 px-2 text-xs text-white rounded cursor-pointer ${getCampaignTypeClass(campaign.type)}`}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleSelectCampaign(campaign);
-                                }}
-                              >
-                                <div className="flex flex-col">
-                                  <span className="font-semibold truncate">{campaign.title}</span>
-                                  <span className="mt-1 text-xs px-1 py-0.5 rounded inline-block w-fit status-badge">
-                                    {campaign.status || 'Pending'}
-                                  </span>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </>
-                      )}
+                {/* Calendar grid */}
+                <div className="grid grid-cols-7 gap-1 rounded-lg overflow-hidden">
+                  {/* Weekday headers */}
+                  {weekdays.map(day => (
+                    <div key={day} className="p-2 bg-gray-800 bg-opacity-30 text-center font-semibold text-white">
+                      {day}
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-            </div>
-            
-            {/* Right Sidebar for Client Approval Campaigns */}
-            <div className="sidebar-container w-full md:w-64">
-              <div className="p-4 bg-transparent text-white header-container">
-                <h2 className="text-lg font-bold text-center">PENDING APPROVALS</h2>
-              </div>
-              <div className="p-4">
-                {campaigns.filter(camp => isClientApprovalStatus(camp.status)).length > 0 ? (
-                  campaigns
-                    .filter(camp => isClientApprovalStatus(camp.status))
-                    .map(campaign => (
+                  ))}
+                  
+                  {/* Calendar days */}
+                  {days.map((day, index) => {
+                    // Get campaigns for this day - show ALL campaigns
+                    const dayCampaigns = day.date ? 
+                      (campaignsByDate[day.date.toDateString()] || []) : [];
+                    
+                    return (
                       <div 
-                        key={campaign.id}
-                        className={`mb-3 p-3 rounded cursor-pointer hover:bg-opacity-50 transition-all ${getCampaignTypeClass(campaign.type)}`}
-                        onClick={() => handleSelectCampaign(campaign)}
+                        key={index}
+                        className={`min-h-28 p-1 calendar-cell ${
+                          day.isCurrentMonth ? 'bg-opacity-30 bg-gray-800' : 'bg-transparent bg-opacity-20'
+                        } ${
+                          selectedDate && day.date && selectedDate.toDateString() === day.date.toDateString() 
+                            ? 'ring-1 ring-white ring-opacity-20' 
+                            : ''
+                        } text-white`}
+                        onClick={() => day.date && setSelectedDate(day.date)}
                       >
-                        <div className="flex flex-col">
-                          <span className="font-semibold text-white">{campaign.title}</span>
-                          <span className="text-xs mt-1 text-white opacity-80">{formatDate(campaign.start)}</span>
-                          <span className="mt-2 text-xs px-2 py-1 rounded inline-block w-fit status-badge">
-                            {campaign.status}
-                          </span>
-                        </div>
+                        {day.date && (
+                          <>
+                            <div className="text-right text-sm p-1">
+                              {day.date.getDate()}
+                            </div>
+                            <div className="mt-1">
+                              {dayCampaigns.map(campaign => (
+                                <div 
+                                  key={campaign.id}
+                                  className={`mb-1 py-1 px-2 text-xs text-white rounded cursor-pointer ${getCampaignTypeClass(campaign.type)}`}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleSelectCampaign(campaign);
+                                  }}
+                                >
+                                  <div className="flex flex-col">
+                                    <span className="font-semibold truncate">{campaign.title}</span>
+                                    <span className="mt-1 text-xs px-2 py-1 rounded inline-block w-fit status-badge">
+                                      {campaign.status || 'Pending'}
+                                    </span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </>
+                        )}
                       </div>
-                    ))
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            
+            {activeTab === 'approvals' && (
+              <div className="p-6 bg-transparent">
+                <h2 className="text-xl font-semibold text-white mb-4">Campaigns Awaiting Approval</h2>
+                
+                {campaigns.filter(camp => isClientApprovalStatus(camp.status)).length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {campaigns
+                      .filter(camp => isClientApprovalStatus(camp.status))
+                      .map(campaign => (
+                        <div 
+                          key={campaign.id}
+                          className={`p-4 rounded cursor-pointer hover:bg-opacity-50 transition-all ${getCampaignTypeClass(campaign.type)}`}
+                          onClick={() => handleSelectCampaign(campaign)}
+                        >
+                          <div className="flex flex-col">
+                            <span className="font-semibold text-white text-lg">{campaign.title}</span>
+                            <span className="text-xs mt-1 text-white opacity-80">{formatDate(campaign.start)}</span>
+                            <span className="mt-2 text-xs px-2 py-1 rounded inline-block w-fit status-badge">
+                              {campaign.status}
+                            </span>
+                            <p className="mt-2 text-sm text-white opacity-80 line-clamp-3">
+                              {campaign.description || "No description available"}
+                            </p>
+                          </div>
+                        </div>
+                      ))
+                    }
+                  </div>
                 ) : (
-                  <div className="text-center py-8 text-gray-400">
+                  <div className="text-center py-8 text-gray-400 bg-gray-800 bg-opacity-50 rounded">
                     <p>No campaigns pending approval</p>
                   </div>
                 )}
               </div>
-            </div>
+            )}
           </div>
           
           {showModal && selectedCampaign && (
@@ -703,12 +711,6 @@
           )}
         </div>
       );
-      
-      // Helper function for client approval status
-      function isClientApprovalStatus(status) {
-        if (!status) return false;
-        return status.toLowerCase().includes('client approval');
-      }
     };
 
     // Render the app
