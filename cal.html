@@ -349,7 +349,7 @@
           const payload = {
             ...selectedCampaign.rawData, // Include all original data
             campaignId: selectedCampaign.id,
-            approved: approved,
+            approved: approved ? "YES" : "NO",
             clientRevisions: clientRevisions,
             // Include the formatted data as well
             formattedData: {
@@ -373,25 +373,44 @@
             },
             body: JSON.stringify(payload)
           });
-          });
           
-          if (!response.ok) throw new Error('Failed to update campaign status');
+          if (!response.ok) throw new Error('Failed to send approval data');
           
-          // Update local state
-          setCampaigns(campaigns.map(campaign => 
-            campaign.id === selectedCampaign.id 
-              ? { 
-                  ...campaign, 
-                  status: approved ? 'Approved' : 'Needs Revision', 
-                  clientRevisions
-                } 
-              : campaign
-          ));
-          
+          // Do not update campaign status locally
+          // Just show success message
           setUpdateStatus({ 
             loading: false, 
             success: true, 
-            message: `Campaign ${approved ? 'approved' : 'sent for revision'} successfully!` 
+            message: `Campaign feedback sent successfully!` 
+          });
+          
+          // Clear selected campaign after a delay to show success message
+          setTimeout(() => {
+            setSelectedCampaign(null);
+            setClientRevisions('');
+            setUpdateStatus(null);
+            setShowModal(false);
+          }, 2000);
+          
+        } catch (error) {
+          console.error('Error sending approval data:', error);
+          setUpdateStatus({ 
+            loading: false, 
+            error: true, 
+            message: error.message || 'Error sending approval data' 
+          });
+        }
+      };
+          });
+          
+          if (!response.ok) throw new Error('Failed to send approval data');
+          
+          // Do not update campaign status locally
+          // Just show success message
+          setUpdateStatus({ 
+            loading: false, 
+            success: true, 
+            message: `Campaign feedback sent successfully!` 
           });
           
           // Clear selected campaign after a delay to show success message
