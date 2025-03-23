@@ -77,11 +77,6 @@
           setLoading(false);
         }
       };
-      
-      // If no campaigns are loaded yet, initialize with empty array instead of waiting for loading
-      useEffect(() => {
-        setCampaigns([]);
-      }, []);
 
       // Helper function to determine campaign type based on name
       const determineCampaignType = (name) => {
@@ -225,36 +220,41 @@
                 <p>Loading campaigns...</p>
               </div>
             )}
-            {(true && (
-              <div className="p-6 bg-gray-900">
-                <div className="flex justify-between items-center mb-4 text-white">
-                  <button onClick={prevMonth} className="px-4 py-2 bg-gray-800 rounded hover:bg-gray-700">
-                    &lt; Previous
+            
+            <div className="p-6 bg-gray-900">
+              <div className="flex justify-between items-center mb-4 text-white">
+                <button onClick={prevMonth} className="px-4 py-2 bg-gray-800 rounded hover:bg-gray-700">
+                  &lt; Previous
+                </button>
+                <h2 className="text-xl font-semibold">
+                  {currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
+                </h2>
+                <div className="flex space-x-2">
+                  <button onClick={nextMonth} className="px-4 py-2 bg-gray-800 rounded hover:bg-gray-700">
+                    Next &gt;
                   </button>
-                  <h2 className="text-xl font-semibold">
-                    {currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
-                  </h2>
-                  <div className="flex space-x-2">
-                    <button onClick={nextMonth} className="px-4 py-2 bg-gray-800 rounded hover:bg-gray-700">
-                      Next &gt;
-                    </button>
-                    <button className="px-4 py-2 bg-green-600 rounded hover:bg-green-500">
-                      + Add
-                    </button>
-                  </div>
+                  <button className="px-4 py-2 bg-green-600 rounded hover:bg-green-500">
+                    + Add
+                  </button>
                 </div>
+              </div>
+              
+              {/* Calendar grid */}
+              <div className="grid grid-cols-7 gap-1 rounded-lg overflow-hidden">
+                {/* Weekday headers */}
+                {weekdays.map(day => (
+                  <div key={day} className="p-2 bg-gray-800 text-center font-semibold text-white">
+                    {day}
+                  </div>
+                ))}
                 
-                {/* Calendar grid */}
-                <div className="grid grid-cols-7 gap-1 rounded-lg overflow-hidden">
-                  {/* Weekday headers */}
-                  {weekdays.map(day => (
-                    <div key={day} className="p-2 bg-gray-800 text-center font-semibold text-white">
-                      {day}
-                    </div>
-                  ))}
+                {/* Calendar days */}
+                {days.map((day, index) => {
+                  // Get campaigns for this day
+                  const dayCampaigns = day.date ? 
+                    campaignsByDate[day.date.toDateString()] || [] : [];
                   
-                  {/* Calendar days */}
-                  {days.map((day, index) => (
+                  return (
                     <div 
                       key={index}
                       className={`min-h-28 p-1 ${
@@ -272,7 +272,7 @@
                             {day.date.getDate()}
                           </div>
                           <div className="mt-1">
-                            {campaignsByDate[day.date.toDateString()]?.map(campaign => (
+                            {dayCampaigns.map(campaign => (
                               <div 
                                 key={campaign.id}
                                 className={`mb-1 py-1 px-2 text-xs text-white rounded cursor-pointer truncate ${getCampaignTypeClass(campaign.type)}`}
@@ -288,10 +288,10 @@
                         </>
                       )}
                     </div>
-                  ))}
-                </div>
+                  );
+                })}
               </div>
-            )}
+            </div>
           </div>
           
           {selectedCampaign && (
