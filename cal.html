@@ -431,9 +431,6 @@
                   <button onClick={nextMonth} className="px-4 py-2 bg-gray-800 rounded hover:bg-gray-700">
                     Next &gt;
                   </button>
-                  <button className="px-4 py-2 bg-green-600 rounded hover:bg-green-500">
-                    + Add
-                  </button>
                 </div>
               </div>
               
@@ -455,11 +452,11 @@
                   return (
                     <div 
                       key={index}
-                      className={`min-h-28 p-1 ${
-                        day.isCurrentMonth ? 'bg-opacity-50 bg-gray-900 border border-gray-800' : 'bg-black'
+                      className={`min-h-28 p-1 calendar-cell ${
+                        day.isCurrentMonth ? 'bg-opacity-30 bg-gray-800' : 'bg-black bg-opacity-50'
                       } ${
                         selectedDate && day.date && selectedDate.toDateString() === day.date.toDateString() 
-                          ? 'ring-1 ring-gray-600' 
+                          ? 'ring-1 ring-white ring-opacity-20' 
                           : ''
                       } text-white`}
                       onClick={() => day.date && setSelectedDate(day.date)}
@@ -499,7 +496,7 @@
             
             {/* Right Sidebar for Client Approval Campaigns */}
             <div className="sidebar-container w-full md:w-64">
-              <div className="p-4 bg-black text-white">
+              <div className="p-4 bg-black text-white header-container">
                 <h2 className="text-lg font-bold text-center">PENDING APPROVALS</h2>
               </div>
               <div className="p-4">
