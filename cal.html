@@ -231,11 +231,23 @@
               Stage: '', 
               Client: '', 
               'Campaign Type': [], 
-              'Send Date': ''
+              'Send Date': '',
+              File: []
             };
             
             // First line should be the ID
             campaign.id = lines[0].trim();
+            
+            // Look for file URL in the text
+            const urlMatch = section.match(/url:\s+(https?:\/\/[^\s]+)/);
+            if (urlMatch && urlMatch[1]) {
+              const fileUrl = urlMatch[1];
+              
+              // Add file info to campaign
+              campaign.File = [{
+                url: fileUrl
+              }];
+            }
             
             // Process remaining lines for fields
             for (let i = 1; i < lines.length; i++) {
@@ -278,6 +290,27 @@
       
       // Format a campaign into a standard structure
       const formatCampaign = (data) => {
+        // Extract URL from File array if it exists
+        let previewUrl = '';
+        
+        // Check if File field exists and contains items
+        if (data.File && Array.isArray(data.File) && data.File.length > 0) {
+          // Try to find url property in the file object or its children
+          const fileData = data.File[0];
+          
+          if (fileData) {
+            if (fileData.url) {
+              previewUrl = fileData.url;
+            } else if (fileData.children && fileData.children.length > 0) {
+              // Look one level deeper if needed
+              const childFile = fileData.children.find(child => child.url);
+              if (childFile) {
+                previewUrl = childFile.url;
+              }
+            }
+          }
+        }
+        
         // Create campaign object based on your data structure
         return {
           id: data.id || 'unknown-' + Math.random().toString(36).substr(2, 9),
@@ -290,6 +323,7 @@
           status: data.Stage || 'Unknown Status',
           clientId: data.Client || '',
           clientRevisions: data.ClientRevisions || '',
+          previewUrl: previewUrl,  // URL for preview
           rawData: data // Keep the raw data for reference
         };
       };
@@ -628,6 +662,24 @@
                         {selectedCampaign.description || "No campaign details available."}
                       </p>
                     </div>
+                    
+                    {/* Campaign Preview button - only for Client Approval status */}
+                    {isClientApprovalStatus(selectedCampaign.status) && selectedCampaign.previewUrl && (
+                      <div className="mt-6 mb-4">
+                        <a 
+                          href={selectedCampaign.previewUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block w-full py-3 px-4 bg-transparent text-white text-center rounded hover:bg-white hover:bg-opacity-10 transition-colors duration-200 flex items-center justify-center border border-white"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                          Open Campaign Preview
+                        </a>
+                      </div>
+                    )}
                   </div>
                   
                   {/* Client Review section - now 50% width */}
