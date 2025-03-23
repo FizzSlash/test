@@ -1,4 +1,81 @@
-<!DOCTYPE html>
+function showStatusMessage(message, type) {
+            const statusElement = document.getElementById('status-message');
+            statusElement.textContent = message;
+            statusElement.className = `status-message ${type === 'error' ? 'error-message' : 'success-message'}`;
+            statusElement.style.display = 'block';
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                statusElement.style.display = 'none';
+            }, 5000);
+        }
+        
+        function generateSampleCampaigns(campaignsPerWeek, month, year) {
+            // Get number of days in the displayed month
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            
+            // Simply multiply by 4 to get total monthly campaigns as requested
+            const totalCampaigns = campaignsPerWeek * 4;
+            
+            // Create evenly spaced days for campaigns
+            const campaigns = [];
+            
+            // Campaign types
+            const campaignTypes = [
+                "Email Newsletter", "Product Announcement", "Promotional Email", 
+                "Blog Post", "Social Media Campaign", "Seasonal Promotion", 
+                "Event Announcement", "Customer Spotlight", "Educational Content"
+            ];
+            
+            // Website URL
+            const websiteUrl = document.getElementById('website-url').value || 'https://example.com';
+            
+            // Distribute campaigns evenly throughout the month
+            for (let i = 0; i < totalCampaigns; i++) {
+                // Calculate day position (1 to daysInMonth)
+                // This spreads campaigns evenly across the month
+                const day = Math.floor(1 + (i * daysInMonth / totalCampaigns));
+                const typeIndex = i % campaignTypes.length;
+                
+                campaigns.push({
+                    date: `${year}-${month + 1}-${day}`,
+                    campaignName: campaignTypes[typeIndex],
+                    title: campaignTypes[typeIndex],
+                    campaignType: 'email',
+                    campaignInfo: `${campaignTypes[typeIndex]} featuring newest products and customer testimonials`,
+                    offer: typeIndex % 3 === 0 ? "15% discount" : typeIndex % 3 === 1 ? "Free shipping" : "Buy one get one free",
+                    abTest: typeIndex % 2 === 0 ? "Subject line A vs Subject line B" : "",
+                    relevantLinks: `${websiteUrl}/${campaignTypes[typeIndex].toLowerCase().replace(/\s+/g, '-')}`,
+                    website: websiteUrl
+                });
+            }
+            
+            // Add SMS campaigns if specified
+            const smsCount = document.getElementById('sms-count').value;
+            if (smsCount && parseInt(smsCount) > 0) {
+                for (let i = 0; i < parseInt(smsCount); i++) {
+                    // Offset SMS campaigns slightly from regular campaigns
+                    const day = Math.floor(3 + (i * daysInMonth / parseInt(smsCount)));
+                    
+                    campaigns.push({
+                        date: `${year}-${month + 1}-${Math.min(day, daysInMonth)}`,
+                        campaignName: `SMS Campaign ${i+1}`,
+                        title: `SMS Campaign ${i+1}`,
+                        campaignType: 'sms',
+                        campaignInfo: "Short-term flash sale announcement via SMS",
+                        offer: "SMS-exclusive offer",
+                        abTest: i % 2 === 0 ? "Message variant A/B test" : "",
+                        relevantLinks: `${websiteUrl}/sms-promo`,
+                        website: websiteUrl
+                    });
+                }
+            }
+            
+            return campaigns;
+        }
+    </script>
+</body>
+</html><!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -536,7 +613,7 @@
                 populateCalendar(currentMonth, currentYear);
             });
             
-            // Export to Airtable button
+            // Export to Airtable
             document.getElementById('export-btn').addEventListener('click', exportToAirtable);
         });
         
@@ -936,3 +1013,121 @@
                     campaignDiv.addEventListener('dragend', function() {
                         campaignDiv.style.opacity = '1';
                     });
+                });
+            });
+        }
+        
+        function clearExistingCampaigns() {
+            const campaigns = document.querySelectorAll('.campaign');
+            campaigns.forEach(campaign => campaign.remove());
+        }
+        
+        function addCampaignsToCalendar(campaignData) {
+            campaignData.forEach((campaign, index) => {
+                const dateStr = campaign.date; // Expected format: "YYYY-MM-DD" or "YYYY-M-D"
+                if (!dateStr) {
+                    console.error('Campaign missing date:', campaign);
+                    return;
+                }
+                
+                const dateParts = dateStr.split('-');
+                if (dateParts.length !== 3) {
+                    console.error('Invalid date format:', dateStr);
+                    return;
+                }
+                
+                const year = parseInt(dateParts[0]);
+                const month = parseInt(dateParts[1]);
+                const day = parseInt(dateParts[2]);
+                
+                // Find the day element
+                const dayElement = document.querySelector(`.calendar-day[data-date="${year}-${month}-${day}"]`);
+                
+                if (dayElement) {
+                    const campaignDiv = document.createElement('div');
+                    campaignDiv.className = 'campaign';
+                    campaignDiv.id = `campaign-${index}-${Date.now()}`;
+                    
+                    // Check if it's an SMS campaign and add appropriate class
+                    const isSMS = (campaign.campaignType === 'sms' || (campaign.title || campaign.campaignName || '').toLowerCase().includes('sms'));
+                    if (isSMS) {
+                        campaignDiv.classList.add('sms');
+                        campaign.campaignType = 'sms';
+                    } else {
+                        campaign.campaignType = 'email';
+                    }
+                    
+                    // Initialize missing fields if they don't exist
+                    if (!campaign.campaignInfo) campaign.campaignInfo = campaign.campaignIdea || '';
+                    if (!campaign.offer) campaign.offer = '';
+                    if (!campaign.abTest) campaign.abTest = '';
+                    if (!campaign.relevantLinks) campaign.relevantLinks = campaign.websiteLink || '';
+                    if (!campaign.website) {
+                        campaign.website = document.getElementById('website-url').value || '';
+                    }
+                    
+                    // Make title editable
+                    const titleDiv = document.createElement('div');
+                    titleDiv.className = 'campaign-title';
+                    titleDiv.contentEditable = true;
+                    titleDiv.textContent = campaign.title || campaign.campaignName || 'Campaign';
+                    titleDiv.addEventListener('blur', function() {
+                        // Update the data attribute when edited
+                        const campaignData = JSON.parse(campaignDiv.getAttribute('data-campaign'));
+                        campaignData.campaignName = titleDiv.textContent;
+                        campaignData.title = titleDiv.textContent;
+                        campaignDiv.setAttribute('data-campaign', JSON.stringify(campaignData));
+                    });
+                    campaignDiv.appendChild(titleDiv);
+                    
+                    // Make offer editable
+                    if (campaign.offer || campaign.offer === null) {
+                        const offerDiv = document.createElement('div');
+                        offerDiv.className = 'campaign-offer';
+                        offerDiv.contentEditable = true;
+                        offerDiv.textContent = campaign.offer || 'Add offer details';
+                        offerDiv.addEventListener('blur', function() {
+                            // Update the data attribute when edited
+                            const campaignData = JSON.parse(campaignDiv.getAttribute('data-campaign'));
+                            campaignData.offer = offerDiv.textContent;
+                            campaignDiv.setAttribute('data-campaign', JSON.stringify(campaignData));
+                        });
+                        campaignDiv.appendChild(offerDiv);
+                    }
+                    
+                    // Add delete button
+                    const deleteButton = document.createElement('span');
+                    deleteButton.className = 'delete-button';
+                    deleteButton.innerHTML = '&times;';
+                    deleteButton.title = 'Delete this campaign';
+                    deleteButton.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        if (confirm('Delete this campaign?')) {
+                            campaignDiv.remove();
+                        }
+                    });
+                    campaignDiv.appendChild(deleteButton);
+                    
+                    // Add data attribute with all campaign details
+                    campaignDiv.setAttribute('data-campaign', JSON.stringify(campaign));
+                    
+                    // Add click event to show more details
+                    campaignDiv.addEventListener('click', function(e) {
+                        // Don't open details if clicking on editable content
+                        if (e.target.contentEditable === 'true') {
+                            return;
+                        }
+                        
+                        // Get updated campaign data
+                        const campaignData = JSON.parse(campaignDiv.getAttribute('data-campaign'));
+                        
+                        // Show dialog with all campaign details
+                        showCampaignDetails(campaignData, campaignDiv);
+                    });
+                    
+                    dayElement.appendChild(campaignDiv);
+                } else {
+                    console.warn(`Day element not found for date: ${dateStr}`);
+                }
+            });
+        }
