@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Customer Journey Automation Mapping</title>
+  <title>Customer Journey Mapping</title>
   <!-- Include React and ReactDOM -->
   <script src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
@@ -11,11 +11,6 @@
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <!-- Include Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Include React DnD -->
-  <script src="https://unpkg.com/react-dnd@16.0.1/dist/umd/ReactDnD.min.js"></script>
-  <script src="https://unpkg.com/react-dnd-html5-backend@16.0.1/dist/umd/ReactDnDHTML5Backend.min.js"></script>
-  <!-- Include React Flow -->
-  <script src="https://unpkg.com/react-flow-renderer@10.3.16/dist/umd/index.js"></script>
   <style>
     body {
       background-color: rgba(20, 19, 28, 0.7);
@@ -40,9 +35,12 @@
       padding: 10px;
       color: white;
       width: 180px;
+      margin: 10px;
       transition: all 0.2s ease;
       backdrop-filter: blur(5px);
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+      position: absolute;
+      cursor: move;
     }
     
     .automation-node:hover {
@@ -74,26 +72,9 @@
         linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
       background-size: 20px 20px;
       width: 100%;
-      min-height: 600px;
+      height: 600px;
+      position: relative;
       overflow: hidden;
-    }
-    
-    /* Connection styling */
-    .connection-line {
-      stroke: rgba(255, 255, 255, 0.5);
-      stroke-width: 2;
-    }
-    
-    .react-flow__edge-path {
-      stroke: rgba(255, 255, 255, 0.5);
-      stroke-width: 2;
-    }
-    
-    .react-flow__handle {
-      width: 8px;
-      height: 8px;
-      background-color: white;
-      border: 1px solid rgba(255, 255, 255, 0.5);
     }
     
     /* Header styling for consistency */
@@ -104,7 +85,7 @@
     
     /* Toolbox styling */
     .toolbox {
-      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      border-right: 1px solid rgba(255, 255, 255, 0.1);
       background-color: rgba(0, 0, 0, 0.2);
     }
     
@@ -113,7 +94,7 @@
       background-color: rgba(36, 35, 49, 0.5);
       border-radius: 4px;
       color: white;
-      cursor: grab;
+      cursor: pointer;
       transition: all 0.2s ease;
     }
     
@@ -136,13 +117,6 @@
     .control-button:hover {
       background-color: rgba(255, 255, 255, 0.1);
       border-color: rgba(255, 255, 255, 0.4);
-    }
-    
-    /* Minimap styling */
-    .react-flow__minimap {
-      background-color: rgba(36, 35, 49, 0.5);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 4px;
     }
     
     /* Save notification */
@@ -187,6 +161,7 @@
     .node-details.hidden {
       transform: translateX(320px);
       opacity: 0;
+      pointer-events: none;
     }
     
     .detail-field {
@@ -202,77 +177,46 @@
       outline: none;
       border-color: rgba(255, 255, 255, 0.4);
     }
+    
+    .connection-line {
+      position: absolute;
+      height: 2px;
+      background-color: rgba(255, 255, 255, 0.4);
+      transform-origin: 0 0;
+      pointer-events: none;
+    }
   </style>
 </head>
 <body class="bg-transparent">
   <div id="root" class="min-h-screen py-8"></div>
 
   <script type="text/babel">
-    // Import React hooks and dependencies
-    const { useState, useEffect, useRef, useCallback } = React;
-    const { DndProvider, useDrag, useDrop } = ReactDnD;
-    const { HTML5Backend } = ReactDnDHTML5Backend;
-    const { ReactFlow, Background, Controls, MiniMap, useNodesState, useEdgesState, addEdge } = ReactFlowRenderer;
-    
-    // Custom node component
-    const AutomationNode = ({ data }) => {
-      return (
-        <div className={`automation-node ${data.type}`}>
-          <div className="font-semibold">{data.label}</div>
-          <div className="text-xs text-gray-300 mt-1">{data.description}</div>
-        </div>
-      );
-    };
-    
-    // Draggable tool item component
-    const ToolItem = ({ type, label, description }) => {
-      const [{ isDragging }, drag] = useDrag({
-        type: 'automation-node',
-        item: { type, label, description },
-        collect: (monitor) => ({
-          isDragging: monitor.isDragging(),
-        }),
-      });
-      
-      return (
-        <div 
-          ref={drag} 
-          className="tool-item p-2 mb-2"
-          style={{ opacity: isDragging ? 0.5 : 1 }}
-        >
-          <div className="text-sm font-medium">{label}</div>
-          <div className="text-xs text-gray-300">{type}</div>
-        </div>
-      );
-    };
+    // Import React hooks
+    const { useState, useEffect, useRef } = React;
     
     const CustomerJourney = () => {
-      // Node types for React Flow
-      const nodeTypes = {
-        automationNode: AutomationNode,
-      };
-      
-      // State for nodes and edges
-      const [nodes, setNodes, onNodesChange] = useNodesState([]);
-      const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-      const [saveNotification, setSaveNotification] = useState(false);
+      const [nodes, setNodes] = useState([]);
+      const [connections, setConnections] = useState([]);
       const [selectedNode, setSelectedNode] = useState(null);
-      const [journeyName, setJourneyName] = useState('New Customer Journey');
       const [showDetails, setShowDetails] = useState(false);
+      const [saveNotification, setSaveNotification] = useState(false);
+      const [journeyName, setJourneyName] = useState('New Customer Journey');
+      const [isDragging, setIsDragging] = useState(false);
+      const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
       
-      // Refs
-      const reactFlowWrapper = useRef(null);
-      const reactFlowInstance = useRef(null);
+      const canvasRef = useRef(null);
       
       // Load saved journeys on mount
       useEffect(() => {
         const savedJourney = localStorage.getItem('customerJourney');
         if (savedJourney) {
           try {
-            const { nodes: savedNodes, edges: savedEdges, name } = JSON.parse(savedJourney);
-            if (savedNodes && savedEdges) {
+            const { nodes: savedNodes, connections: savedConnections, name } = JSON.parse(savedJourney);
+            if (savedNodes) {
               setNodes(savedNodes);
-              setEdges(savedEdges);
+            }
+            if (savedConnections) {
+              setConnections(savedConnections);
             }
             if (name) {
               setJourneyName(name);
@@ -283,103 +227,52 @@
         }
       }, []);
       
-      // Handle connection events
-      const onConnect = useCallback((params) => {
-        setEdges((eds) => addEdge({
-          ...params,
-          animated: true,
-          style: { stroke: 'rgba(255, 255, 255, 0.5)', strokeWidth: 2 }
-        }, eds));
-      }, [setEdges]);
-      
-      // Handle drop events
-      const onDrop = useCallback((event) => {
-        event.preventDefault();
-        
-        if (!reactFlowInstance.current) return;
-        
-        const reactFlowBounds = reactFlowWrapper.current.getBoundingClientRect();
-        const item = JSON.parse(event.dataTransfer.getData('application/reactflow'));
-        
-        // Get position from drop coordinates
-        const position = reactFlowInstance.current.project({
-          x: event.clientX - reactFlowBounds.left,
-          y: event.clientY - reactFlowBounds.top,
-        });
-        
-        // Create a new node
-        const newNode = {
-          id: `node_${Date.now()}`,
-          type: 'automationNode',
-          position,
-          data: { 
-            label: item.label,
-            type: item.type,
-            description: item.description || `${item.type} step` 
-          },
+      // Save journey
+      const saveJourney = () => {
+        const journeyData = {
+          nodes,
+          connections,
+          name: journeyName
         };
         
-        setNodes((nds) => nds.concat(newNode));
-      }, [setNodes]);
-      
-      // Handle drag over events
-      const onDragOver = useCallback((event) => {
-        event.preventDefault();
-        event.dataTransfer.dropEffect = 'move';
-      }, []);
-      
-      // Handle node click events
-      const onNodeClick = useCallback((event, node) => {
-        setSelectedNode(node);
-        setShowDetails(true);
-      }, []);
-      
-      // Handle drag start for tool items
-      const onDragStart = (event, nodeData) => {
-        event.dataTransfer.setData('application/reactflow', JSON.stringify(nodeData));
-        event.dataTransfer.effectAllowed = 'move';
+        localStorage.setItem('customerJourney', JSON.stringify(journeyData));
+        
+        // Show notification
+        setSaveNotification(true);
+        setTimeout(() => setSaveNotification(false), 3000);
       };
       
-      // Handle saving the journey
-      const saveJourney = () => {
-        if (reactFlowInstance.current) {
-          const journeyData = {
-            nodes,
-            edges,
-            name: journeyName
-          };
-          
-          localStorage.setItem('customerJourney', JSON.stringify(journeyData));
-          
-          // Show notification
-          setSaveNotification(true);
-          setTimeout(() => setSaveNotification(false), 3000);
+      // Clear canvas
+      const clearCanvas = () => {
+        if (window.confirm('Are you sure you want to clear the canvas? This action cannot be undone.')) {
+          setNodes([]);
+          setConnections([]);
+          setSelectedNode(null);
+          setShowDetails(false);
         }
       };
       
-      // Handle exporting the journey as JSON
+      // Export journey
       const exportJourney = () => {
-        if (reactFlowInstance.current) {
-          const journeyData = {
-            nodes,
-            edges,
-            name: journeyName
-          };
-          
-          const jsonString = JSON.stringify(journeyData, null, 2);
-          const blob = new Blob([jsonString], { type: 'application/json' });
-          const url = URL.createObjectURL(blob);
-          
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = `${journeyName.replace(/\s+/g, '-').toLowerCase()}.json`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-        }
+        const journeyData = {
+          nodes,
+          connections,
+          name: journeyName
+        };
+        
+        const jsonString = JSON.stringify(journeyData, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${journeyName.replace(/\s+/g, '-').toLowerCase()}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
       };
       
-      // Handle importing a journey
+      // Import journey
       const importJourney = (event) => {
         const file = event.target.files[0];
         if (file) {
@@ -387,17 +280,19 @@
           reader.onload = (e) => {
             try {
               const journeyData = JSON.parse(e.target.result);
-              if (journeyData.nodes && journeyData.edges) {
+              if (journeyData.nodes) {
                 setNodes(journeyData.nodes);
-                setEdges(journeyData.edges);
-                if (journeyData.name) {
-                  setJourneyName(journeyData.name);
-                }
-                
-                // Show notification
-                setSaveNotification(true);
-                setTimeout(() => setSaveNotification(false), 3000);
               }
+              if (journeyData.connections) {
+                setConnections(journeyData.connections);
+              }
+              if (journeyData.name) {
+                setJourneyName(journeyData.name);
+              }
+              
+              // Show notification
+              setSaveNotification(true);
+              setTimeout(() => setSaveNotification(false), 3000);
             } catch (error) {
               console.error('Failed to import journey:', error);
             }
@@ -406,37 +301,179 @@
         }
       };
       
-      // Handle clearing the canvas
-      const clearCanvas = () => {
-        if (window.confirm('Are you sure you want to clear the canvas? This action cannot be undone.')) {
-          setNodes([]);
-          setEdges([]);
-          setSelectedNode(null);
-          setShowDetails(false);
-        }
+      // Add a new node from toolbox
+      const addNode = (type, label, description) => {
+        const canvasRect = canvasRef.current.getBoundingClientRect();
+        const newNode = {
+          id: `node-${Date.now()}`,
+          type,
+          label,
+          description,
+          x: canvasRect.width / 2 - 90 + Math.random() * 100,
+          y: canvasRect.height / 2 - 50 + Math.random() * 100
+        };
+        
+        setNodes([...nodes, newNode]);
       };
       
-      // Handle node updates
+      // Handle node click
+      const handleNodeClick = (node, e) => {
+        e.stopPropagation();
+        setSelectedNode(node);
+        setShowDetails(true);
+      };
+      
+      // Start dragging a node
+      const startDrag = (node, e) => {
+        e.stopPropagation();
+        if (e.button !== 0) return; // Only left mouse button
+        
+        setIsDragging(true);
+        setSelectedNode(node);
+        
+        const nodeEl = e.currentTarget;
+        const nodeRect = nodeEl.getBoundingClientRect();
+        
+        setDragOffset({
+          x: e.clientX - nodeRect.left,
+          y: e.clientY - nodeRect.top
+        });
+        
+        document.addEventListener('mousemove', handleDrag);
+        document.addEventListener('mouseup', stopDrag);
+      };
+      
+      // Handle node dragging
+      const handleDrag = (e) => {
+        if (!isDragging || !selectedNode) return;
+        
+        const canvasRect = canvasRef.current.getBoundingClientRect();
+        
+        const newX = e.clientX - canvasRect.left - dragOffset.x;
+        const newY = e.clientY - canvasRect.top - dragOffset.y;
+        
+        setNodes(nodes.map(node => 
+          node.id === selectedNode.id
+            ? { ...node, x: newX, y: newY }
+            : node
+        ));
+      };
+      
+      // Stop dragging
+      const stopDrag = () => {
+        setIsDragging(false);
+        document.removeEventListener('mousemove', handleDrag);
+        document.removeEventListener('mouseup', stopDrag);
+      };
+      
+      // Update node details
       const updateSelectedNode = (field, value) => {
         if (!selectedNode) return;
         
-        setNodes((nds) => 
-          nds.map((node) => {
-            if (node.id === selectedNode.id) {
-              return {
-                ...node,
-                data: {
-                  ...node.data,
-                  [field]: value
-                }
-              };
-            }
-            return node;
-          })
-        );
+        setNodes(nodes.map(node => 
+          node.id === selectedNode.id
+            ? { ...node, [field]: value }
+            : node
+        ));
+        
+        // Update the selected node as well
+        setSelectedNode(prev => ({ ...prev, [field]: value }));
       };
       
-      // Automation types for the toolbox
+      // Delete a node
+      const deleteNode = (nodeId) => {
+        setNodes(nodes.filter(node => node.id !== nodeId));
+        setConnections(connections.filter(conn => 
+          conn.source !== nodeId && conn.target !== nodeId
+        ));
+        setShowDetails(false);
+        setSelectedNode(null);
+      };
+      
+      // Create a connection between nodes
+      const createConnection = (sourceId, targetId) => {
+        // Check if connection already exists
+        const connectionExists = connections.some(conn => 
+          conn.source === sourceId && conn.target === targetId
+        );
+        
+        if (connectionExists) return;
+        
+        // Add new connection
+        setConnections([...connections, { source: sourceId, target: targetId }]);
+      };
+      
+      // Handle canvas click to deselect nodes
+      const handleCanvasClick = () => {
+        setSelectedNode(null);
+        setShowDetails(false);
+      };
+      
+      // Connect two selected nodes
+      const connectNodes = () => {
+        if (!selectedNode) return;
+        
+        // Start connection mode
+        const startConnection = (e) => {
+          e.stopPropagation();
+          const targetNode = nodes.find(node => node.id === e.currentTarget.dataset.nodeId);
+          
+          if (targetNode && targetNode.id !== selectedNode.id) {
+            createConnection(selectedNode.id, targetNode.id);
+          }
+          
+          // Exit connection mode
+          document.querySelectorAll('.automation-node').forEach(el => {
+            el.removeEventListener('click', startConnection);
+            el.classList.remove('connect-mode');
+          });
+        };
+        
+        // Mark all nodes as connection targets
+        document.querySelectorAll('.automation-node').forEach(el => {
+          if (el.dataset.nodeId !== selectedNode.id) {
+            el.addEventListener('click', startConnection);
+            el.classList.add('connect-mode');
+          }
+        });
+      };
+      
+      // Calculate connection lines between nodes
+      const renderConnections = () => {
+        return connections.map((conn, index) => {
+          const sourceNode = nodes.find(node => node.id === conn.source);
+          const targetNode = nodes.find(node => node.id === conn.target);
+          
+          if (!sourceNode || !targetNode) return null;
+          
+          // Calculate source and target positions
+          const sourceX = sourceNode.x + 90; // Center of node width
+          const sourceY = sourceNode.y + 20; // Near top of node
+          const targetX = targetNode.x + 90;
+          const targetY = targetNode.y;
+          
+          // Calculate angle and length
+          const dx = targetX - sourceX;
+          const dy = targetY - sourceY;
+          const length = Math.sqrt(dx * dx + dy * dy);
+          const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+          
+          return (
+            <div 
+              key={`conn-${index}`}
+              className="connection-line"
+              style={{
+                width: `${length}px`,
+                left: `${sourceX}px`,
+                top: `${sourceY}px`,
+                transform: `rotate(${angle}deg)`,
+              }}
+            ></div>
+          );
+        });
+      };
+      
+      // Automation step types
       const automationTypes = [
         { type: 'trigger', label: 'Trigger', description: 'Starts the automation' },
         { type: 'email', label: 'Send Email', description: 'Sends an email to contact' },
@@ -449,165 +486,159 @@
       ];
       
       return (
-        <DndProvider backend={HTML5Backend}>
-          <div className="container mx-auto p-4">
-            <div className="journey-container">
-              <div className="p-6 bg-transparent text-white header-container">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center">
-                    <h1 className="text-2xl font-bold">CUSTOMER JOURNEY</h1>
+        <div className="container mx-auto p-4">
+          <div className="journey-container">
+            <div className="p-6 bg-transparent text-white header-container">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center">
+                  <h1 className="text-2xl font-bold">CUSTOMER JOURNEY</h1>
+                  <input
+                    type="text"
+                    value={journeyName}
+                    onChange={(e) => setJourneyName(e.target.value)}
+                    className="ml-4 bg-transparent border-b border-white px-2 py-1"
+                  />
+                </div>
+                <div className="flex space-x-2">
+                  <button className="control-button" onClick={saveJourney}>
+                    Save
+                  </button>
+                  <button className="control-button" onClick={exportJourney}>
+                    Export
+                  </button>
+                  <label className="control-button cursor-pointer">
+                    Import
                     <input
-                      type="text"
-                      value={journeyName}
-                      onChange={(e) => setJourneyName(e.target.value)}
-                      className="ml-4 bg-transparent border-b border-white px-2 py-1"
+                      type="file"
+                      accept=".json"
+                      className="hidden"
+                      onChange={importJourney}
                     />
-                  </div>
-                  <div className="flex space-x-2">
-                    <button className="control-button" onClick={saveJourney}>
-                      Save
-                    </button>
-                    <button className="control-button" onClick={exportJourney}>
-                      Export
-                    </button>
-                    <label className="control-button cursor-pointer">
-                      Import
-                      <input
-                        type="file"
-                        accept=".json"
-                        className="hidden"
-                        onChange={importJourney}
-                      />
-                    </label>
-                    <button className="control-button" onClick={clearCanvas}>
-                      Clear
-                    </button>
-                  </div>
+                  </label>
+                  <button className="control-button" onClick={clearCanvas}>
+                    Clear
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex">
+              {/* Toolbox sidebar */}
+              <div className="w-48 p-4 bg-gray-900 bg-opacity-30 toolbox">
+                <h2 className="text-white font-bold mb-3">Automation Steps</h2>
+                <div className="space-y-2">
+                  {automationTypes.map((item, index) => (
+                    <div
+                      key={index}
+                      className={`tool-item p-2 ${item.type}`}
+                      onClick={() => addNode(item.type, item.label, item.description)}
+                    >
+                      <div className="text-sm font-medium text-white">{item.label}</div>
+                      <div className="text-xs text-gray-300">{item.description}</div>
+                    </div>
+                  ))}
                 </div>
               </div>
               
-              <div className="flex">
-                {/* Toolbox sidebar */}
-                <div className="w-48 p-4 bg-gray-900 bg-opacity-30 border-r border-white border-opacity-10">
-                  <h2 className="text-white font-bold mb-3">Automation Steps</h2>
-                  <div className="space-y-2">
-                    {automationTypes.map((type, index) => (
-                      <div
-                        key={index}
-                        draggable
-                        onDragStart={(e) => onDragStart(e, type)}
-                        className={`tool-item p-2 cursor-grab ${type.type}`}
-                      >
-                        <div className="text-sm font-medium text-white">{type.label}</div>
-                        <div className="text-xs text-gray-300">{type.description}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+              {/* Canvas area */}
+              <div 
+                className="flex-grow canvas-area" 
+                ref={canvasRef}
+                onClick={handleCanvasClick}
+              >
+                {/* Connection lines */}
+                {renderConnections()}
                 
-                {/* Main canvas */}
-                <div className="flex-grow">
-                  <div className="canvas-area" ref={reactFlowWrapper}>
-                    <ReactFlow
-                      nodes={nodes}
-                      edges={edges}
-                      onNodesChange={onNodesChange}
-                      onEdgesChange={onEdgesChange}
-                      onConnect={onConnect}
-                      onInit={(instance) => { reactFlowInstance.current = instance; }}
-                      onDrop={onDrop}
-                      onDragOver={onDragOver}
-                      onNodeClick={onNodeClick}
-                      nodeTypes={nodeTypes}
-                      fitView
-                    >
-                      <Background color="rgba(255, 255, 255, 0.05)" gap={20} />
-                      <Controls className="bg-opacity-30 bg-gray-900 border border-white border-opacity-10 rounded" />
-                      <MiniMap style={{ height: 120 }} nodeColor={(n) => {
-                        switch (n.data.type) {
-                          case 'trigger': return 'rgba(56, 189, 248, 0.8)';
-                          case 'email': return 'rgba(136, 84, 208, 0.8)';
-                          case 'action': return 'rgba(234, 179, 8, 0.8)';
-                          case 'filter': return 'rgba(239, 68, 68, 0.8)';
-                          default: return 'rgba(255, 255, 255, 0.8)';
-                        }
-                      }} />
-                    </ReactFlow>
+                {/* Automation nodes */}
+                {nodes.map(node => (
+                  <div
+                    key={node.id}
+                    data-node-id={node.id}
+                    className={`automation-node ${node.type}`}
+                    style={{ left: `${node.x}px`, top: `${node.y}px` }}
+                    onClick={(e) => handleNodeClick(node, e)}
+                    onMouseDown={(e) => startDrag(node, e)}
+                  >
+                    <div className="font-semibold">{node.label}</div>
+                    <div className="text-xs text-gray-300 mt-1">{node.description}</div>
                   </div>
-                </div>
+                ))}
               </div>
-            </div>
-            
-            {/* Node details panel */}
-            <div className={`node-details ${showDetails ? '' : 'hidden'}`}>
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold">Node Details</h3>
-                <button 
-                  className="text-white opacity-70 hover:opacity-100"
-                  onClick={() => setShowDetails(false)}
-                >
-                  ×
-                </button>
-              </div>
-              
-              {selectedNode && (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm mb-1">Label</label>
-                    <input
-                      type="text"
-                      value={selectedNode.data.label}
-                      onChange={(e) => updateSelectedNode('label', e.target.value)}
-                      className="detail-field"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm mb-1">Description</label>
-                    <input
-                      type="text"
-                      value={selectedNode.data.description}
-                      onChange={(e) => updateSelectedNode('description', e.target.value)}
-                      className="detail-field"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm mb-1">Type</label>
-                    <select
-                      value={selectedNode.data.type}
-                      onChange={(e) => updateSelectedNode('type', e.target.value)}
-                      className="detail-field"
-                    >
-                      <option value="trigger">Trigger</option>
-                      <option value="email">Email</option>
-                      <option value="action">Action</option>
-                      <option value="filter">Filter</option>
-                    </select>
-                  </div>
-                  
-                  <div className="mt-6">
-                    <button
-                      className="w-full py-2 bg-transparent border border-white text-white rounded hover:bg-white hover:bg-opacity-10"
-                      onClick={() => {
-                        setNodes((nds) => nds.filter((node) => node.id !== selectedNode.id));
-                        setShowDetails(false);
-                        setSelectedNode(null);
-                      }}
-                    >
-                      Delete Node
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-            
-            {/* Save notification */}
-            <div className={`save-notification ${saveNotification ? '' : 'hidden'}`}>
-              Journey saved successfully!
             </div>
           </div>
-        </DndProvider>
+          
+          {/* Node details panel */}
+          <div className={`node-details ${showDetails ? '' : 'hidden'}`}>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Node Details</h3>
+              <button 
+                className="text-white opacity-70 hover:opacity-100"
+                onClick={() => setShowDetails(false)}
+              >
+                ×
+              </button>
+            </div>
+            
+            {selectedNode && (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm mb-1">Label</label>
+                  <input
+                    type="text"
+                    value={selectedNode.label}
+                    onChange={(e) => updateSelectedNode('label', e.target.value)}
+                    className="detail-field"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm mb-1">Description</label>
+                  <input
+                    type="text"
+                    value={selectedNode.description}
+                    onChange={(e) => updateSelectedNode('description', e.target.value)}
+                    className="detail-field"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm mb-1">Type</label>
+                  <select
+                    value={selectedNode.type}
+                    onChange={(e) => updateSelectedNode('type', e.target.value)}
+                    className="detail-field"
+                  >
+                    <option value="trigger">Trigger</option>
+                    <option value="email">Email</option>
+                    <option value="action">Action</option>
+                    <option value="filter">Filter</option>
+                  </select>
+                </div>
+                
+                <div className="pt-4 space-y-2">
+                  <button
+                    className="w-full py-2 bg-transparent border border-white text-white rounded hover:bg-white hover:bg-opacity-10"
+                    onClick={connectNodes}
+                  >
+                    Connect to Another Node
+                  </button>
+                  
+                  <button
+                    className="w-full py-2 bg-transparent border border-red-400 text-red-400 rounded hover:bg-red-400 hover:bg-opacity-10"
+                    onClick={() => deleteNode(selectedNode.id)}
+                  >
+                    Delete Node
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* Save notification */}
+          <div className={`save-notification ${saveNotification ? '' : 'hidden'}`}>
+            Journey saved successfully!
+          </div>
+        </div>
       );
     };
     
