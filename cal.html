@@ -44,9 +44,102 @@
       const [updateStatus, setUpdateStatus] = useState(null);
       const [debug, setDebug] = useState('No data fetched yet');
 
-      // Your webhook URLs
+      // Your webhook URLs - adjust as needed
       const fetchCampaignsUrl = 'https://hook.us2.make.com/dlcqdia9qozi8lca39jytiu27xrf1t1l';
       const updateCampaignUrl = 'https://hook.us2.make.com/wem64vvx9irk7tys6itjpyt27bqorbvg';
+
+      // This is the simplified method to handle a simple text response
+      // from your webhook that contains the minimal campaign information
+      const processCampaignData = (responseText) => {
+        try {
+          // Try to parse as JSON first
+          try {
+            const jsonData = JSON.parse(responseText);
+            
+            // If it's a valid JSON object or array, process it accordingly
+            if (Array.isArray(jsonData)) {
+              // It's an array of campaigns
+              return jsonData.map(formatCampaign);
+            } else if (jsonData && typeof jsonData === 'object') {
+              // It's a single campaign object
+              return [formatCampaign(jsonData)];
+            }
+          } catch (e) {
+            // Not valid JSON, continue with text processing
+            console.log("Not valid JSON:", e);
+          }
+          
+          // If the above didn't work, try to extract data from text
+          // This is a very simple, flexible parser for key-value data
+          const lines = responseText.split('\n');
+          const campaignData = {};
+          
+          // Look for standard keys in the text
+          for (const line of lines) {
+            if (line.includes(':')) {
+              const [key, value] = line.split(':', 2).map(s => s.trim());
+              campaignData[key] = value;
+            }
+          }
+          
+          // If we found some useful data, format it
+          if (campaignData.id || campaignData.Tasks || campaignData.title) {
+            return [formatCampaign(campaignData)];
+          }
+          
+          // If all else fails, create a single dummy campaign from the text
+          return [{
+            id: 'text-1',
+            title: responseText.slice(0, 30) + '...',
+            type: 'email',
+            start: new Date(),
+            end: new Date(),
+            description: responseText,
+            status: 'Unknown',
+            clientId: 'Unknown',
+            feedback: ''
+          }];
+          
+        } catch (error) {
+          console.error('Error processing campaign data:', error);
+          setDebug(`Error processing data: ${error.message}`);
+          return [];
+        }
+      };
+      
+      // Helper function to format a campaign object consistently
+      const formatCampaign = (data) => {
+        // Handle different possible structures
+        const fields = data.fields || data;
+        const id = data.id || data.recordId || "unknown";
+        
+        // Extract values with fallbacks for different field naming formats
+        const getField = (possibleNames, defaultValue = '') => {
+          for (const name of possibleNames) {
+            if (fields[name] !== undefined) return fields[name];
+          }
+          return defaultValue;
+        };
+        
+        const title = getField(['Tasks', 'tasks', 'Task', 'task', 'Name', 'name', 'Title', 'title']);
+        const date = getField(['Send Date', 'send_date', 'Date', 'date', 'scheduled_date']);
+        const status = getField(['Stage', 'stage', 'Status', 'status']);
+        const client = getField(['CLIENT', 'Client', 'client', 'Customer', 'customer']);
+        const notes = getField(['Notes', 'notes', 'Description', 'description']);
+        
+        // Create a standardized campaign object
+        return {
+          id: id,
+          title: title || 'Untitled Campaign',
+          type: determineCampaignType(title),
+          start: new Date(date || new Date()),
+          end: new Date(date || new Date()),
+          description: notes || '',
+          status: status || 'pending',
+          clientId: client || '',
+          feedback: notes || ''
+        };
+      };
 
       useEffect(() => {
         fetchCampaigns();
@@ -65,46 +158,12 @@
           }
           
           const text = await response.text();
-          setDebug(`Raw response: ${text.substring(0, 200)}...`);
+          setDebug(`Raw response (first 200 chars): ${text.substring(0, 200)}`);
           
-          let data;
-          try {
-            data = JSON.parse(text);
-            setDebug(`Parsed data: ${JSON.stringify(data).substring(0, 200)}...`);
-          } catch (parseError) {
-            setDebug(`JSON parse error: ${parseError.message}`);
-            throw parseError;
-          }
+          // Process the response text in a flexible way
+          const formattedCampaigns = processCampaignData(text);
           
-          // Ensure data is an array
-          const dataArray = Array.isArray(data) ? data : [data];
-          setDebug(`Data array length: ${dataArray.length}`);
-          
-          // Format campaigns for calendar display
-          const formattedCampaigns = dataArray.map(record => {
-            setDebug(`Processing record: ${JSON.stringify(record).substring(0, 100)}...`);
-            
-            // Handle possible different field structures
-            const fields = record.fields || record;
-            const id = record.id || record.recordId || "unknown";
-            
-            const campaign = {
-              id: id,
-              title: fields.Tasks || fields.tasks || fields.Name || fields.name || 'Untitled Campaign',
-              type: determineCampaignType(fields.Tasks || fields.tasks || fields.Name || fields.name || ''),
-              start: new Date(fields['Send Date'] || fields.send_date || fields.date || '2025-01-01'),
-              end: new Date(fields['Send Date'] || fields.send_date || fields.date || '2025-01-01'),
-              description: fields.Notes || fields.notes || fields.Description || fields.description || '',
-              status: fields.Stage || fields.stage || fields.Status || fields.status || 'pending',
-              clientId: fields.CLIENT || fields.Client || fields.client || fields.customer || '',
-              feedback: fields.Notes || fields.notes || fields.Feedback || fields.feedback || ''
-            };
-            
-            setDebug(`Created campaign: ${JSON.stringify(campaign).substring(0, 100)}...`);
-            return campaign;
-          });
-          
-          setDebug(`Formatted ${formattedCampaigns.length} campaigns`);
+          setDebug(`Processed ${formattedCampaigns.length} campaigns`);
           setCampaigns(formattedCampaigns);
         } catch (error) {
           console.error('Error fetching campaigns:', error);
