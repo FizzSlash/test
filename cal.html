@@ -19,6 +19,26 @@
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
     }
     
+    /* Container styling with transparent white stroke */
+    .calendar-container {
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
+      background-color: rgba(20, 19, 28, 0.5);
+      backdrop-filter: blur(10px);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    
+    /* Sidebar styling with matching transparent white stroke */
+    .sidebar-container {
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
+      background-color: rgba(20, 19, 28, 0.5);
+      backdrop-filter: blur(10px);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    
     .campaign-email {
       background-color: rgba(136, 84, 208, 0.2);
       border-left: 3px solid rgba(136, 84, 208, 0.8);
@@ -62,7 +82,8 @@
       max-width: 800px;
       max-height: 90vh;
       overflow-y: auto;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
       display: flex;
       flex-direction: column;
     }
@@ -93,6 +114,21 @@
       background-color: rgba(250, 204, 21, 0.8) !important; /* Yellow highlight */
       color: #000 !important; /* Black text for better contrast */
       font-weight: 600;
+    }
+    
+    /* Calendar cell styling with subtle borders */
+    .calendar-cell {
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      transition: all 0.2s ease;
+    }
+    
+    .calendar-cell:hover {
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+    
+    /* Header styling for consistency */
+    .header-container {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     }
   </style>
 </head>
@@ -365,8 +401,8 @@
       return (
         <div className="container mx-auto p-4">
           <div className="flex flex-col md:flex-row gap-4">
-            <div className="backdrop-blur-sm bg-opacity-70 bg-gray-900 rounded-lg shadow-lg overflow-hidden flex-grow">
-            <div className="p-6 bg-black text-white">
+            <div className="calendar-container flex-grow">
+            <div className="p-6 bg-black text-white header-container">
               <h1 className="text-2xl font-bold text-center">CONTENT CALENDAR</h1>
             </div>
             
@@ -462,7 +498,7 @@
             </div>
             
             {/* Right Sidebar for Client Approval Campaigns */}
-            <div className="w-full md:w-64 bg-gray-900 bg-opacity-70 backdrop-blur-sm rounded-lg shadow-lg overflow-hidden">
+            <div className="sidebar-container w-full md:w-64">
               <div className="p-4 bg-black text-white">
                 <h2 className="text-lg font-bold text-center">PENDING APPROVALS</h2>
               </div>
