@@ -608,7 +608,7 @@
                               {campaign.description || "No description available"}
                             </p>
                             
-                            {campaign.campaignFile && isClientApprovalStatus(campaign.status) && (
+                            {campaign.campaignFile && (
                               <div className="mt-2">
                                 <span className="text-xs text-white flex items-center opacity-80">
                                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -694,7 +694,7 @@
                     </div>
                     
                     {/* Campaign preview button (using the file URL) */}
-                    {isClientApprovalStatus(selectedCampaign.status) && selectedCampaign.campaignFile && (
+                    {selectedCampaign.campaignFile && (
                       <div className="mt-6 mb-4">
                         <a 
                           href={selectedCampaign.campaignFile}
