@@ -278,7 +278,8 @@
           status: data.Stage || 'pending',
           clientId: data.Client || '',
           clientRevisions: data.ClientRevisions || '',
-          campaignFile: data.CampaignFile || '', // Add file attachment field
+          campaignFile: data.CampaignFile || '', // File attachment field
+          campaignUrl: data.CampaignUrl || '', // URL for preview
           rawData: data // Keep the raw data for reference
         };
       };
@@ -515,7 +516,7 @@
                                   <div className="flex flex-col">
                                     <span className="font-semibold truncate">{campaign.title}</span>
                                     <span className="mt-1 text-xs px-2 py-1 rounded inline-block w-fit status-badge">
-                                      {campaign.status || 'Pending'}
+                                      {campaign.status || 'Unknown Status'}
                                     </span>
                                   </div>
                                 </div>
@@ -553,6 +554,18 @@
                             <p className="mt-2 text-sm text-white opacity-80 line-clamp-3">
                               {campaign.description || "No description available"}
                             </p>
+                            
+                            {campaign.campaignUrl && isClientApprovalStatus(campaign.status) && (
+                              <div className="mt-2">
+                                <span className="text-xs text-purple-300 flex items-center">
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                  </svg>
+                                  Campaign preview available
+                                </span>
+                              </div>
+                            )}
                             
                             {campaign.campaignFile && (
                               <div className="mt-2">
@@ -603,7 +616,7 @@
                         <p className="mb-2 text-white">
                           <span className="font-semibold text-gray-400">Status:</span>{' '}
                           <span className="ml-2 px-2 py-1 rounded text-white status-badge">
-                            {selectedCampaign.status || 'Pending'}
+                            {selectedCampaign.status || 'Unknown Status'}
                           </span>
                         </p>
                       </div>
@@ -628,6 +641,24 @@
                         {selectedCampaign.description || "No campaign details available."}
                       </p>
                     </div>
+                    
+                    {/* Campaign preview button */}
+                    {isClientApprovalStatus(selectedCampaign.status) && selectedCampaign.campaignUrl && (
+                      <div className="mt-6 mb-4">
+                        <a 
+                          href={selectedCampaign.campaignUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block w-full py-3 px-4 bg-purple-600 text-white text-center rounded hover:bg-purple-500 transition-colors duration-200 flex items-center justify-center"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                          Open Campaign Preview
+                        </a>
+                      </div>
+                    )}
                     
                     {/* Download campaign file button */}
                     {selectedCampaign.campaignFile && (
@@ -695,7 +726,7 @@
                         ) : (
                           <div className="bg-gray-800 border border-gray-600 text-gray-300 p-3 rounded mt-4">
                             <p>This campaign is not ready for client approval.</p>
-                            <p className="mt-2 text-sm">Current status: <span className="font-semibold">{selectedCampaign.status || 'Pending'}</span></p>
+                            <p className="mt-2 text-sm">Current status: <span className="font-semibold">{selectedCampaign.status || 'Unknown Status'}</span></p>
                             <p className="mt-2 text-sm">Only campaigns with "Client Approval" status can be approved or revised.</p>
                           </div>
                         )}
