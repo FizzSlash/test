@@ -498,8 +498,8 @@
             <div className="modal-overlay" onClick={() => setShowModal(false)}>
               <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                 <div className="flex flex-col md:flex-row">
-                  {/* Main content area */}
-                  <div className="p-4 flex-grow">
+                  {/* Main content area - now 50% width */}
+                  <div className="p-4 w-full md:w-1/2">
                     <div className="flex justify-between items-center mb-4">
                       <h2 className="text-xl font-semibold text-white">{selectedCampaign.title}</h2>
                       <button 
@@ -553,8 +553,8 @@
                     )}
                   </div>
                   
-                  {/* Client Review sidebar with improved layout */}
-                  <div className="w-full md:w-1/3 p-4 border-t md:border-t-0 md:border-l border-gray-700 bg-gray-800 bg-opacity-30">
+                  {/* Client Review section - now 50% width */}
+                  <div className="w-full md:w-1/2 p-4 border-t md:border-t-0 md:border-l border-gray-700 bg-gray-800 bg-opacity-30">
                     <h3 className="text-lg font-semibold mb-4 text-white">Client Review</h3>
                     
                     {updateStatus?.loading ? (
