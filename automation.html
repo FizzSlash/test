@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Customer Journey Mapping</title>
+  <title>Flow Management</title>
   <!-- Include React and ReactDOM -->
   <script src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
@@ -11,6 +11,8 @@
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <!-- Include Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Include Lodash -->
+  <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
   <style>
     body {
       background-color: rgba(20, 19, 28, 0.7);
@@ -18,7 +20,7 @@
     }
     
     /* Container styling with transparent white stroke */
-    .journey-container {
+    .flow-container {
       border: 1px solid rgba(255, 255, 255, 0.1);
       box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
       background-color: rgba(20, 19, 28, 0.3);
@@ -27,54 +29,64 @@
       overflow: hidden;
     }
     
-    /* Node styling */
-    .automation-node {
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      background-color: rgba(36, 35, 49, 0.7);
-      border-radius: 6px;
-      padding: 10px;
-      color: white;
-      width: 180px;
-      margin: 10px;
-      transition: all 0.2s ease;
-      backdrop-filter: blur(5px);
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-      position: absolute;
-      cursor: move;
+    .flow-email {
+      background-color: rgba(136, 84, 208, 0.2);
+      border-left: 3px solid rgba(136, 84, 208, 0.8);
     }
     
-    .automation-node:hover {
-      border-color: rgba(255, 255, 255, 0.6);
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    .flow-email:hover {
+      background-color: rgba(136, 84, 208, 0.3);
     }
     
-    .automation-node.email {
-      border-left: 4px solid rgba(136, 84, 208, 0.8);
+    .flow-sms {
+      background-color: rgba(255, 220, 0, 0.2);
+      border-left: 3px solid rgba(255, 220, 0, 0.8);
     }
     
-    .automation-node.trigger {
-      border-left: 4px solid rgba(56, 189, 248, 0.8);
+    .flow-sms:hover {
+      background-color: rgba(255, 220, 0, 0.3);
     }
     
-    .automation-node.action {
-      border-left: 4px solid rgba(234, 179, 8, 0.8);
-    }
-    
-    .automation-node.filter {
-      border-left: 4px solid rgba(239, 68, 68, 0.8);
-    }
-    
-    /* Canvas styling */
-    .canvas-area {
-      background-color: rgba(17, 24, 39, 0.2);
-      background-image: 
-        linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-      background-size: 20px 20px;
-      width: 100%;
-      height: 600px;
-      position: relative;
+    /* Status badge styling */
+    .status-badge {
+      background-color: white !important;
+      border: 1px solid rgba(136, 84, 208, 0.4) !important;
+      color: rgb(136, 84, 208) !important;
+      font-weight: 500;
+      padding: 2px 8px;
+      white-space: normal;
+      display: inline-block;
+      max-width: 100%;
       overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    /* Modal styling */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(5px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    
+    .modal-content {
+      background-color: rgba(36, 35, 49, 0.5);
+      border-radius: 8px;
+      width: 90%;
+      max-width: 800px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      flex-direction: column;
     }
     
     /* Header styling for consistency */
@@ -83,107 +95,32 @@
       background-color: rgba(0, 0, 0, 0.2);
     }
     
-    /* Toolbox styling */
-    .toolbox {
-      border-right: 1px solid rgba(255, 255, 255, 0.1);
-      background-color: rgba(0, 0, 0, 0.2);
-    }
-    
-    .tool-item {
+    /* Card styling */
+    .flow-card {
       border: 1px solid rgba(255, 255, 255, 0.1);
       background-color: rgba(36, 35, 49, 0.5);
-      border-radius: 4px;
-      color: white;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    
-    .tool-item:hover {
-      border-color: rgba(255, 255, 255, 0.3);
-      background-color: rgba(36, 35, 49, 0.7);
-    }
-    
-    /* Controls styling */
-    .control-button {
-      background-color: transparent;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      color: white;
-      padding: 6px 12px;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    
-    .control-button:hover {
-      background-color: rgba(255, 255, 255, 0.1);
-      border-color: rgba(255, 255, 255, 0.4);
-    }
-    
-    /* Save notification */
-    .save-notification {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      background-color: rgba(16, 185, 129, 0.2);
-      border: 1px solid rgba(16, 185, 129, 0.5);
-      color: #d1fae5;
-      padding: 12px 20px;
-      border-radius: 4px;
-      backdrop-filter: blur(5px);
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-      transition: all 0.3s ease;
-      transform: translateY(0);
-      opacity: 1;
-    }
-    
-    .save-notification.hidden {
-      transform: translateY(20px);
-      opacity: 0;
-    }
-    
-    /* Node details panel */
-    .node-details {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      width: 300px;
-      background-color: rgba(36, 35, 49, 0.9);
-      border: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: 8px;
-      padding: 16px;
+      overflow: hidden;
+      transition: all 0.2s ease;
+    }
+    
+    .flow-card:hover {
+      border-color: rgba(255, 255, 255, 0.3);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+    
+    /* Button styling */
+    .flow-button {
+      background-color: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.3);
       color: white;
-      backdrop-filter: blur(10px);
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-      z-index: 50;
-      transition: all 0.3s ease;
+      transition: all 0.2s ease;
     }
     
-    .node-details.hidden {
-      transform: translateX(320px);
-      opacity: 0;
-      pointer-events: none;
-    }
-    
-    .detail-field {
+    .flow-button:hover {
       background-color: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 4px;
-      padding: 8px;
-      width: 100%;
-      color: white;
-    }
-    
-    .detail-field:focus {
-      outline: none;
-      border-color: rgba(255, 255, 255, 0.4);
-    }
-    
-    .connection-line {
-      position: absolute;
-      height: 2px;
-      background-color: rgba(255, 255, 255, 0.4);
-      transform-origin: 0 0;
-      pointer-events: none;
+      border-color: rgba(255, 255, 255, 0.5);
     }
   </style>
 </head>
@@ -192,459 +129,601 @@
 
   <script type="text/babel">
     // Import React hooks
-    const { useState, useEffect, useRef } = React;
+    const { useState, useEffect } = React;
     
-    const CustomerJourney = () => {
-      const [nodes, setNodes] = useState([]);
-      const [connections, setConnections] = useState([]);
-      const [selectedNode, setSelectedNode] = useState(null);
-      const [showDetails, setShowDetails] = useState(false);
-      const [saveNotification, setSaveNotification] = useState(false);
-      const [journeyName, setJourneyName] = useState('New Customer Journey');
-      const [isDragging, setIsDragging] = useState(false);
-      const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-      
-      const canvasRef = useRef(null);
-      
-      // Load saved journeys on mount
+    const FlowManagement = () => {
+      const [flows, setFlows] = useState([]);
+      const [selectedFlow, setSelectedFlow] = useState(null);
+      const [clientRevisions, setClientRevisions] = useState('');
+      const [loading, setLoading] = useState(false);
+      const [error, setError] = useState(null);
+      const [updateStatus, setUpdateStatus] = useState(null);
+      const [showModal, setShowModal] = useState(false);
+      const [activeTab, setActiveTab] = useState('queue');
+
+      // Your webhook URLs
+      const fetchFlowsUrl = 'https://hook.us2.make.com/dlcqdia9qozi8lca39jytiu27xrf1t1l';
+      const updateFlowUrl = 'https://hook.us2.make.com/wem64vvx9irk7tys6itjpyt27bqorbvg';
+
       useEffect(() => {
-        const savedJourney = localStorage.getItem('customerJourney');
-        if (savedJourney) {
+        fetchFlows();
+      }, []);
+
+      const fetchFlows = async () => {
+        try {
+          setLoading(true);
+          
+          const response = await fetch(fetchFlowsUrl);
+          
+          if (!response.ok) {
+            throw new Error(`Failed to fetch flows: ${response.status}`);
+          }
+          
+          const text = await response.text();
+          
+          let formattedFlows = [];
+          
           try {
-            const { nodes: savedNodes, connections: savedConnections, name } = JSON.parse(savedJourney);
-            if (savedNodes) {
-              setNodes(savedNodes);
-            }
-            if (savedConnections) {
-              setConnections(savedConnections);
-            }
-            if (name) {
-              setJourneyName(name);
+            // Try to parse as JSON
+            const data = JSON.parse(text);
+            
+            // Handle array or single object
+            if (Array.isArray(data)) {
+              formattedFlows = data.map(formatFlow);
+            } else if (data && typeof data === 'object') {
+              // Check if it's the new format with nested structure
+              if (data.id || data.Tasks || data.Stage || data.Client) {
+                formattedFlows = [formatFlow(data)];
+              } else {
+                // Try to process all keys as potential flows
+                Object.entries(data).forEach(([key, value]) => {
+                  if (value && typeof value === 'object') {
+                    formattedFlows.push(formatFlow(value));
+                  }
+                });
+              }
             }
           } catch (e) {
-            console.error('Failed to load saved journey:', e);
+            // If JSON parsing fails, try to extract data from text
+            formattedFlows = extractFlowsFromText(text);
           }
-        }
-      }, []);
-      
-      // Save journey
-      const saveJourney = () => {
-        const journeyData = {
-          nodes,
-          connections,
-          name: journeyName
-        };
-        
-        localStorage.setItem('customerJourney', JSON.stringify(journeyData));
-        
-        // Show notification
-        setSaveNotification(true);
-        setTimeout(() => setSaveNotification(false), 3000);
-      };
-      
-      // Clear canvas
-      const clearCanvas = () => {
-        if (window.confirm('Are you sure you want to clear the canvas? This action cannot be undone.')) {
-          setNodes([]);
-          setConnections([]);
-          setSelectedNode(null);
-          setShowDetails(false);
+          
+          setFlows(formattedFlows);
+        } catch (error) {
+          console.error('Error fetching flows:', error);
+          setError(error.message);
+          setFlows([]);
+        } finally {
+          setLoading(false);
         }
       };
-      
-      // Export journey
-      const exportJourney = () => {
-        const journeyData = {
-          nodes,
-          connections,
-          name: journeyName
-        };
+
+      // Extract flows from non-JSON text
+      const extractFlowsFromText = (text) => {
+        const flows = [];
         
-        const jsonString = JSON.stringify(journeyData, null, 2);
-        const blob = new Blob([jsonString], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
+        // Try to split on record boundaries
+        const sections = text.split(/id:[\s]*/g).filter(Boolean);
         
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `${journeyName.replace(/\s+/g, '-').toLowerCase()}.json`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      };
-      
-      // Import journey
-      const importJourney = (event) => {
-        const file = event.target.files[0];
-        if (file) {
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            try {
-              const journeyData = JSON.parse(e.target.result);
-              if (journeyData.nodes) {
-                setNodes(journeyData.nodes);
-              }
-              if (journeyData.connections) {
-                setConnections(journeyData.connections);
-              }
-              if (journeyData.name) {
-                setJourneyName(journeyData.name);
-              }
-              
-              // Show notification
-              setSaveNotification(true);
-              setTimeout(() => setSaveNotification(false), 3000);
-            } catch (error) {
-              console.error('Failed to import journey:', error);
+        for (const section of sections) {
+          try {
+            // Extract all key-value pairs
+            const lines = section.split('\n');
+            const flow = { 
+              id: '', 
+              recordId: '',
+              Notes: '', 
+              Tasks: '', 
+              Stage: '', 
+              Client: '', 
+              'Campaign Type': [], 
+              'Send Date': '',
+              File: []
+            };
+            
+            // First line should be the ID - this is the recordId in the format "recZrp1Ab0Cz8Cy3Y"
+            if (lines[0] && lines[0].trim()) {
+              flow.recordId = lines[0].trim();
+              flow.id = lines[0].trim(); // Use the same value for id for now
             }
+            
+            // Look for file URL in the text
+            const urlMatch = section.match(/url:\s+(https?:\/\/[^\s]+)/);
+            if (urlMatch && urlMatch[1]) {
+              const fileUrl = urlMatch[1];
+              
+              // Add file info to flow
+              flow.File = [{
+                url: fileUrl
+              }];
+            }
+            
+            // Process remaining lines for fields
+            for (let i = 1; i < lines.length; i++) {
+              const line = lines[i].trim();
+              if (line && line.includes(':')) {
+                const [key, ...valueParts] = line.split(':');
+                const value = valueParts.join(':').trim();
+                const trimmedKey = key.trim();
+                
+                // Map to your field names
+                if (trimmedKey === 'Notes') {
+                  flow.Notes = value;
+                } else if (trimmedKey === 'Tasks') {
+                  flow.Tasks = value;
+                } else if (trimmedKey === 'Stage') {
+                  flow.Stage = value;
+                } else if (trimmedKey === 'Client') {
+                  flow.Client = value;
+                } else if (trimmedKey === 'Campaign Type') {
+                  flow['Campaign Type'] = value;
+                } else if (trimmedKey === 'Send Date') {
+                  flow['Send Date'] = value;
+                } else if (trimmedKey === 'Client Revisions') {
+                  flow.ClientRevisions = value;
+                }
+              }
+            }
+            
+            // Only add if we have at least an ID and one field
+            if (flow.recordId && (flow.Tasks || flow.Notes)) {
+              flows.push(formatFlow(flow));
+            }
+          } catch (e) {
+            console.error('Error parsing flow section:', e);
+          }
+        }
+        
+        return flows;
+      };
+      
+      // Format a flow into a standard structure
+      const formatFlow = (data) => {
+        // Extract URL from File array if it exists
+        let previewUrl = '';
+        
+        // Check if File field exists and contains items
+        if (data.File && Array.isArray(data.File) && data.File.length > 0) {
+          // Try to find url property in the file object or its children
+          const fileData = data.File[0];
+          
+          if (fileData) {
+            if (fileData.url) {
+              previewUrl = fileData.url;
+            } else if (fileData.children && fileData.children.length > 0) {
+              // Look one level deeper if needed
+              const childFile = fileData.children.find(child => child.url);
+              if (childFile) {
+                previewUrl = childFile.url;
+              }
+            }
+          }
+        }
+        
+        // Create flow object based on your data structure
+        return {
+          id: data.id || 'unknown-' + Math.random().toString(36).substr(2, 9),
+          recordId: data.recordId || '', // Store the record ID but don't display it
+          title: data.Tasks || 'Untitled Flow',
+          type: data['Campaign Type'] && Array.isArray(data['Campaign Type']) && 
+                data['Campaign Type'].includes('sms') ? 'sms' : 'email',
+          scheduledDate: new Date(data['Send Date'] || new Date()),
+          description: data.Notes || '',
+          status: data.Stage || 'Pending',
+          clientId: data.Client || '',
+          clientRevisions: data.ClientRevisions || '',
+          previewUrl: previewUrl,  // URL for preview
+          steps: Math.floor(Math.random() * 6) + 2, // Mock data for steps (2-7)
+          progress: Math.floor(Math.random() * 101), // Mock data for progress (0-100)
+          rawData: data // Keep the raw data for reference
+        };
+      };
+
+      const handleSelectFlow = (flow) => {
+        setSelectedFlow(flow);
+        setClientRevisions(flow.clientRevisions || '');
+        setUpdateStatus(null);
+        setShowModal(true);
+      };
+
+      const handleApproval = async (approved) => {
+        try {
+          setUpdateStatus({ loading: true, error: null });
+          
+          // Create payload with all flow data plus approval status and revisions
+          const payload = {
+            ...selectedFlow.rawData, // Include all original data
+            flowId: selectedFlow.id,
+            recordId: selectedFlow.recordId, // Include the record ID in the payload
+            approved: approved ? "YES" : "NO",
+            clientRevisions: clientRevisions
           };
-          reader.readAsText(file);
+          
+          const response = await fetch(updateFlowUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+          });
+          
+          if (!response.ok) throw new Error('Failed to send approval data');
+          
+          setUpdateStatus({ 
+            loading: false, 
+            success: true, 
+            message: `Flow feedback sent successfully!` 
+          });
+          
+          // Clear selected flow after a delay to show success message
+          setTimeout(() => {
+            setSelectedFlow(null);
+            setClientRevisions('');
+            setUpdateStatus(null);
+            setShowModal(false);
+          }, 2000);
+          
+        } catch (error) {
+          console.error('Error sending approval data:', error);
+          setUpdateStatus({ 
+            loading: false, 
+            error: true, 
+            message: error.message || 'Error sending approval data' 
+          });
         }
       };
-      
-      // Add a new node from toolbox
-      const addNode = (type, label, description) => {
-        const canvasRect = canvasRef.current.getBoundingClientRect();
-        const newNode = {
-          id: `node-${Date.now()}`,
-          type,
-          label,
-          description,
-          x: canvasRect.width / 2 - 90 + Math.random() * 100,
-          y: canvasRect.height / 2 - 50 + Math.random() * 100
-        };
-        
-        setNodes([...nodes, newNode]);
+
+      const getFlowTypeClass = (type) => {
+        return type === 'sms' ? 'flow-sms' : 'flow-email';
       };
-      
-      // Handle node click
-      const handleNodeClick = (node, e) => {
-        e.stopPropagation();
-        setSelectedNode(node);
-        setShowDetails(true);
-      };
-      
-      // Start dragging a node
-      const startDrag = (node, e) => {
-        e.stopPropagation();
-        if (e.button !== 0) return; // Only left mouse button
-        
-        setIsDragging(true);
-        setSelectedNode(node);
-        
-        const nodeEl = e.currentTarget;
-        const nodeRect = nodeEl.getBoundingClientRect();
-        
-        setDragOffset({
-          x: e.clientX - nodeRect.left,
-          y: e.clientY - nodeRect.top
-        });
-        
-        document.addEventListener('mousemove', handleDrag);
-        document.addEventListener('mouseup', stopDrag);
-      };
-      
-      // Handle node dragging
-      const handleDrag = (e) => {
-        if (!isDragging || !selectedNode) return;
-        
-        const canvasRect = canvasRef.current.getBoundingClientRect();
-        
-        const newX = e.clientX - canvasRect.left - dragOffset.x;
-        const newY = e.clientY - canvasRect.top - dragOffset.y;
-        
-        setNodes(nodes.map(node => 
-          node.id === selectedNode.id
-            ? { ...node, x: newX, y: newY }
-            : node
-        ));
-      };
-      
-      // Stop dragging
-      const stopDrag = () => {
-        setIsDragging(false);
-        document.removeEventListener('mousemove', handleDrag);
-        document.removeEventListener('mouseup', stopDrag);
-      };
-      
-      // Update node details
-      const updateSelectedNode = (field, value) => {
-        if (!selectedNode) return;
-        
-        setNodes(nodes.map(node => 
-          node.id === selectedNode.id
-            ? { ...node, [field]: value }
-            : node
-        ));
-        
-        // Update the selected node as well
-        setSelectedNode(prev => ({ ...prev, [field]: value }));
-      };
-      
-      // Delete a node
-      const deleteNode = (nodeId) => {
-        setNodes(nodes.filter(node => node.id !== nodeId));
-        setConnections(connections.filter(conn => 
-          conn.source !== nodeId && conn.target !== nodeId
-        ));
-        setShowDetails(false);
-        setSelectedNode(null);
-      };
-      
-      // Create a connection between nodes
-      const createConnection = (sourceId, targetId) => {
-        // Check if connection already exists
-        const connectionExists = connections.some(conn => 
-          conn.source === sourceId && conn.target === targetId
-        );
-        
-        if (connectionExists) return;
-        
-        // Add new connection
-        setConnections([...connections, { source: sourceId, target: targetId }]);
-      };
-      
-      // Handle canvas click to deselect nodes
-      const handleCanvasClick = () => {
-        setSelectedNode(null);
-        setShowDetails(false);
-      };
-      
-      // Connect two selected nodes
-      const connectNodes = () => {
-        if (!selectedNode) return;
-        
-        // Start connection mode
-        const startConnection = (e) => {
-          e.stopPropagation();
-          const targetNode = nodes.find(node => node.id === e.currentTarget.dataset.nodeId);
-          
-          if (targetNode && targetNode.id !== selectedNode.id) {
-            createConnection(selectedNode.id, targetNode.id);
-          }
-          
-          // Exit connection mode
-          document.querySelectorAll('.automation-node').forEach(el => {
-            el.removeEventListener('click', startConnection);
-            el.classList.remove('connect-mode');
-          });
-        };
-        
-        // Mark all nodes as connection targets
-        document.querySelectorAll('.automation-node').forEach(el => {
-          if (el.dataset.nodeId !== selectedNode.id) {
-            el.addEventListener('click', startConnection);
-            el.classList.add('connect-mode');
-          }
+
+      // Format date for display
+      const formatDate = (date) => {
+        if (!date) return '';
+        return date.toLocaleDateString('en-US', { 
+          month: 'short', 
+          day: 'numeric',
+          year: 'numeric'
         });
       };
       
-      // Calculate connection lines between nodes
-      const renderConnections = () => {
-        return connections.map((conn, index) => {
-          const sourceNode = nodes.find(node => node.id === conn.source);
-          const targetNode = nodes.find(node => node.id === conn.target);
-          
-          if (!sourceNode || !targetNode) return null;
-          
-          // Calculate source and target positions
-          const sourceX = sourceNode.x + 90; // Center of node width
-          const sourceY = sourceNode.y + 20; // Near top of node
-          const targetX = targetNode.x + 90;
-          const targetY = targetNode.y;
-          
-          // Calculate angle and length
-          const dx = targetX - sourceX;
-          const dy = targetY - sourceY;
-          const length = Math.sqrt(dx * dx + dy * dy);
-          const angle = Math.atan2(dy, dx) * (180 / Math.PI);
-          
-          return (
-            <div 
-              key={`conn-${index}`}
-              className="connection-line"
-              style={{
-                width: `${length}px`,
-                left: `${sourceX}px`,
-                top: `${sourceY}px`,
-                transform: `rotate(${angle}deg)`,
-              }}
-            ></div>
-          );
-        });
-      };
+      // Client approval status check
+      function isClientApprovalStatus(status) {
+        if (!status) return false;
+        return status.toLowerCase().includes('client approval');
+      }
       
-      // Automation step types
-      const automationTypes = [
-        { type: 'trigger', label: 'Trigger', description: 'Starts the automation' },
-        { type: 'email', label: 'Send Email', description: 'Sends an email to contact' },
-        { type: 'action', label: 'Action', description: 'Performs an action' },
-        { type: 'filter', label: 'Filter', description: 'Conditional logic' },
-        { type: 'email', label: 'Email Sequence', description: 'Sends multiple emails' },
-        { type: 'action', label: 'Update CRM', description: 'Updates customer record' },
-        { type: 'action', label: 'Send SMS', description: 'Sends text message' },
-        { type: 'filter', label: 'Delay', description: 'Wait for time period' },
-      ];
+      // Get count of flows pending approval
+      const pendingApprovalCount = flows.filter(flow => isClientApprovalStatus(flow.status)).length;
       
+      // Get queue flows (not in client approval)
+      const queueFlows = flows.filter(flow => !isClientApprovalStatus(flow.status));
+      
+      // Get approval flows
+      const approvalFlows = flows.filter(flow => isClientApprovalStatus(flow.status));
+
       return (
         <div className="container mx-auto p-4">
-          <div className="journey-container">
+          <div className="flow-container">
             <div className="p-6 bg-transparent text-white header-container">
               <div className="flex justify-between items-center">
-                <div className="flex items-center">
-                  <h1 className="text-2xl font-bold">CUSTOMER JOURNEY</h1>
-                  <input
-                    type="text"
-                    value={journeyName}
-                    onChange={(e) => setJourneyName(e.target.value)}
-                    className="ml-4 bg-transparent border-b border-white px-2 py-1"
-                  />
-                </div>
+                <h1 className="text-2xl font-bold">FLOWS MANAGEMENT</h1>
                 <div className="flex space-x-2">
-                  <button className="control-button" onClick={saveJourney}>
-                    Save
+                  <button 
+                    onClick={() => setActiveTab('queue')} 
+                    className={`px-4 py-2 rounded transition-all ${activeTab === 'queue' ? 'border-b-2 border-white bg-transparent' : 'bg-transparent'}`}
+                  >
+                    Current Flows in Queue
                   </button>
-                  <button className="control-button" onClick={exportJourney}>
-                    Export
-                  </button>
-                  <label className="control-button cursor-pointer">
-                    Import
-                    <input
-                      type="file"
-                      accept=".json"
-                      className="hidden"
-                      onChange={importJourney}
-                    />
-                  </label>
-                  <button className="control-button" onClick={clearCanvas}>
-                    Clear
+                  <button 
+                    onClick={() => setActiveTab('approvals')} 
+                    className={`px-4 py-2 rounded transition-all flex items-center ${activeTab === 'approvals' ? 'border-b-2 border-white bg-transparent' : 'bg-transparent'}`}
+                  >
+                    Pending Approval
+                    {pendingApprovalCount > 0 && (
+                      <span className="ml-2 bg-white bg-opacity-20 text-white font-bold rounded-full w-6 h-6 flex items-center justify-center text-xs border border-white">
+                        {pendingApprovalCount}
+                      </span>
+                    )}
                   </button>
                 </div>
               </div>
             </div>
             
-            <div className="flex">
-              {/* Toolbox sidebar */}
-              <div className="w-48 p-4 bg-gray-900 bg-opacity-30 toolbox">
-                <h2 className="text-white font-bold mb-3">Automation Steps</h2>
-                <div className="space-y-2">
-                  {automationTypes.map((item, index) => (
-                    <div
-                      key={index}
-                      className={`tool-item p-2 ${item.type}`}
-                      onClick={() => addNode(item.type, item.label, item.description)}
-                    >
-                      <div className="text-sm font-medium text-white">{item.label}</div>
-                      <div className="text-xs text-gray-300">{item.description}</div>
-                    </div>
-                  ))}
-                </div>
+            {error && (
+              <div className="p-4 bg-red-800 text-white">
+                <p className="font-bold">Error:</p>
+                <p>{error}</p>
               </div>
-              
-              {/* Canvas area */}
-              <div 
-                className="flex-grow canvas-area" 
-                ref={canvasRef}
-                onClick={handleCanvasClick}
-              >
-                {/* Connection lines */}
-                {renderConnections()}
+            )}
+            
+            {loading && (
+              <div className="flex justify-center items-center py-4 bg-transparent text-white">
+                <p>Loading flows...</p>
+              </div>
+            )}
+            
+            {activeTab === 'queue' && (
+              <div className="p-6 bg-transparent">
+                <h2 className="text-xl font-semibold text-white mb-4">Flows Currently in Queue</h2>
                 
-                {/* Automation nodes */}
-                {nodes.map(node => (
-                  <div
-                    key={node.id}
-                    data-node-id={node.id}
-                    className={`automation-node ${node.type}`}
-                    style={{ left: `${node.x}px`, top: `${node.y}px` }}
-                    onClick={(e) => handleNodeClick(node, e)}
-                    onMouseDown={(e) => startDrag(node, e)}
-                  >
-                    <div className="font-semibold">{node.label}</div>
-                    <div className="text-xs text-gray-300 mt-1">{node.description}</div>
+                {queueFlows.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {queueFlows.map(flow => (
+                      <div 
+                        key={flow.id} 
+                        className={`flow-card ${getFlowTypeClass(flow.type)}`}
+                      >
+                        <div className="p-4">
+                          <div className="flex justify-between items-start">
+                            <h3 className="text-lg font-semibold text-white mb-2 flex-grow truncate">{flow.title}</h3>
+                            <span className="text-xs status-badge ml-2 mt-1">
+                              {flow.status}
+                            </span>
+                          </div>
+                          
+                          <div className="text-sm text-gray-300 mb-3">{formatDate(flow.scheduledDate)}</div>
+                          
+                          <p className="text-white text-sm mb-4 line-clamp-2">{flow.description}</p>
+                          
+                          <div className="flex justify-between items-center mb-3">
+                            <div className="text-gray-300 text-xs">
+                              <span className="font-semibold">Client:</span> {flow.clientId}
+                            </div>
+                            <div className="text-gray-300 text-xs">
+                              <span className="font-semibold">Steps:</span> {flow.steps}
+                            </div>
+                          </div>
+                          
+                          {/* Progress bar */}
+                          <div className="h-1.5 bg-gray-700 rounded-full mb-4 overflow-hidden">
+                            <div 
+                              className={`h-full rounded-full ${
+                                flow.progress >= 100 ? 'bg-green-500' : 'bg-blue-500'
+                              }`}
+                              style={{ width: `${flow.progress}%` }}
+                            ></div>
+                          </div>
+                          
+                          <button 
+                            className="w-full py-2 px-4 flow-button rounded font-medium"
+                            onClick={() => handleSelectFlow(flow)}
+                          >
+                            View Flow
+                          </button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                ) : (
+                  <div className="text-center py-8 text-gray-400 bg-transparent border border-gray-600 rounded">
+                    <p>No flows currently in queue</p>
+                  </div>
+                )}
               </div>
-            </div>
-          </div>
-          
-          {/* Node details panel */}
-          <div className={`node-details ${showDetails ? '' : 'hidden'}`}>
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Node Details</h3>
-              <button 
-                className="text-white opacity-70 hover:opacity-100"
-                onClick={() => setShowDetails(false)}
-              >
-                ×
-              </button>
-            </div>
+            )}
             
-            {selectedNode && (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm mb-1">Label</label>
-                  <input
-                    type="text"
-                    value={selectedNode.label}
-                    onChange={(e) => updateSelectedNode('label', e.target.value)}
-                    className="detail-field"
-                  />
-                </div>
+            {activeTab === 'approvals' && (
+              <div className="p-6 bg-transparent">
+                <h2 className="text-xl font-semibold text-white mb-4">Flows Awaiting Approval</h2>
                 
-                <div>
-                  <label className="block text-sm mb-1">Description</label>
-                  <input
-                    type="text"
-                    value={selectedNode.description}
-                    onChange={(e) => updateSelectedNode('description', e.target.value)}
-                    className="detail-field"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm mb-1">Type</label>
-                  <select
-                    value={selectedNode.type}
-                    onChange={(e) => updateSelectedNode('type', e.target.value)}
-                    className="detail-field"
-                  >
-                    <option value="trigger">Trigger</option>
-                    <option value="email">Email</option>
-                    <option value="action">Action</option>
-                    <option value="filter">Filter</option>
-                  </select>
-                </div>
-                
-                <div className="pt-4 space-y-2">
-                  <button
-                    className="w-full py-2 bg-transparent border border-white text-white rounded hover:bg-white hover:bg-opacity-10"
-                    onClick={connectNodes}
-                  >
-                    Connect to Another Node
-                  </button>
-                  
-                  <button
-                    className="w-full py-2 bg-transparent border border-red-400 text-red-400 rounded hover:bg-red-400 hover:bg-opacity-10"
-                    onClick={() => deleteNode(selectedNode.id)}
-                  >
-                    Delete Node
-                  </button>
-                </div>
+                {approvalFlows.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {approvalFlows.map(flow => (
+                      <div 
+                        key={flow.id} 
+                        className={`flow-card ${getFlowTypeClass(flow.type)}`}
+                      >
+                        <div className="p-4">
+                          <div className="flex justify-between items-start">
+                            <h3 className="text-lg font-semibold text-white mb-2 flex-grow truncate">{flow.title}</h3>
+                            <span className="text-xs status-badge ml-2 mt-1">
+                              {flow.status}
+                            </span>
+                          </div>
+                          
+                          <div className="text-sm text-gray-300 mb-3">{formatDate(flow.scheduledDate)}</div>
+                          
+                          <p className="text-white text-sm mb-4 line-clamp-2">{flow.description}</p>
+                          
+                          <div className="flex justify-between items-center mb-3">
+                            <div className="text-gray-300 text-xs">
+                              <span className="font-semibold">Client:</span> {flow.clientId}
+                            </div>
+                            <div className="text-gray-300 text-xs">
+                              <span className="font-semibold">Steps:</span> {flow.steps}
+                            </div>
+                          </div>
+                          
+                          {/* Ready for approval indicator */}
+                          <div className="flex items-center mb-4 text-green-400 text-xs">
+                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Ready for client approval
+                          </div>
+                          
+                          <button 
+                            className="w-full py-2 px-4 flow-button rounded font-medium"
+                            onClick={() => handleSelectFlow(flow)}
+                          >
+                            View Flow
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-400 bg-transparent border border-gray-600 rounded">
+                    <p>No flows pending approval</p>
+                  </div>
+                )}
               </div>
             )}
           </div>
           
-          {/* Save notification */}
-          <div className={`save-notification ${saveNotification ? '' : 'hidden'}`}>
-            Journey saved successfully!
-          </div>
+          {/* Flow details modal */}
+          {showModal && selectedFlow && (
+            <div className="modal-overlay" onClick={() => setShowModal(false)}>
+              <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                <div className="flex flex-col md:flex-row">
+                  {/* Main content area - now 50% width */}
+                  <div className="p-4 w-full md:w-1/2 overflow-hidden">
+                    <div className="flex justify-between items-center mb-4">
+                      <h2 className="text-xl font-semibold text-white truncate">{selectedFlow.title}</h2>
+                      <button 
+                        className="text-gray-400 hover:text-white text-xl font-bold ml-2"
+                        onClick={() => setShowModal(false)}
+                      >
+                        ×
+                      </button>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <p className="mb-2 text-white">
+                          <span className="font-semibold text-gray-400">Date:</span>{' '}
+                          <span className="whitespace-normal break-words">{formatDate(selectedFlow.scheduledDate)}</span>
+                        </p>
+                        <div className="mb-2 flex flex-wrap items-center">
+                          <span className="font-semibold text-gray-400">Status:</span>{' '}
+                          <span className="ml-2 px-2 py-1 rounded text-purple-600 inline-block status-badge">
+                            {selectedFlow.status}
+                          </span>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="mb-2 text-white">
+                          <span className="font-semibold text-gray-400">Type:</span>{' '}
+                          <span className={`ml-2 px-2 py-1 rounded text-white ${getFlowTypeClass(selectedFlow.type)}`}>
+                            {selectedFlow.type === 'sms' ? 'SMS' : 'Email'}
+                          </span>
+                        </p>
+                        <p className="mb-2 text-white whitespace-normal break-words">
+                          <span className="font-semibold text-gray-400">Client:</span>{' '}
+                          {selectedFlow.clientId}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    {/* Flow info */}
+                    <div className="mb-4">
+                      <p className="font-semibold text-gray-400 mb-1">Flow Details:</p>
+                      <p className="p-3 bg-gray-800 bg-opacity-50 border border-gray-700 rounded text-white whitespace-normal break-words">
+                        {selectedFlow.description || "No flow details available."}
+                      </p>
+                    </div>
+                    
+                    {/* Flow steps visualization */}
+                    <div className="mb-6">
+                      <p className="font-semibold text-gray-400 mb-3">Flow Steps:</p>
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex-1 h-2 bg-gray-700 rounded-full">
+                          <div 
+                            className="h-full bg-blue-500 rounded-full" 
+                            style={{ width: `${selectedFlow.progress}%` }}
+                          ></div>
+                        </div>
+                        <span className="ml-3 text-white text-sm font-medium">
+                          {selectedFlow.progress}%
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        {Array.from({ length: selectedFlow.steps }).map((_, i) => (
+                          <div 
+                            key={i} 
+                            className={`flex-1 p-2 ${i < selectedFlow.steps * (selectedFlow.progress/100) ? 'bg-blue-900' : 'bg-gray-800'} border border-gray-700 rounded-sm text-xs text-center text-white`}
+                          >
+                            Step {i+1}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    {/* Flow preview button */}
+                    {selectedFlow.previewUrl && (
+                      <div className="mt-6 mb-4">
+                        <a 
+                          href={selectedFlow.previewUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block w-full py-3 px-4 bg-transparent text-white text-center rounded hover:bg-white hover:bg-opacity-10 transition-colors duration-200 flex items-center justify-center border border-white"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                          Open Flow Preview
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Client Review section - now 50% width */}
+                  <div className="w-full md:w-1/2 p-4 border-t md:border-t-0 md:border-l border-gray-700 bg-gray-800 bg-opacity-30 overflow-hidden">
+                    <h3 className="text-lg font-semibold mb-4 text-white">Client Review</h3>
+                    
+                    {updateStatus?.loading ? (
+                      <div className="text-center py-8 text-gray-400">
+                        <p>Loading...</p>
+                      </div>
+                    ) : updateStatus?.success ? (
+                      <div className="bg-green-900 bg-opacity-20 border border-green-700 text-green-200 px-4 py-3 rounded mb-4">
+                        {updateStatus.message}
+                      </div>
+                    ) : updateStatus?.error ? (
+                      <div className="bg-red-900 bg-opacity-20 border border-red-700 text-red-200 px-4 py-3 rounded mb-4">
+                        {updateStatus.message}
+                      </div>
+                    ) : (
+                      <>
+                        <div className="mb-4">
+                          <label className="block font-semibold mb-2 text-white">Client Revisions:</label>
+                          <textarea
+                            className="w-full p-3 rounded bg-gray-800 border border-gray-700 text-white"
+                            rows={6}
+                            value={clientRevisions}
+                            onChange={(e) => setClientRevisions(e.target.value)}
+                            placeholder="Enter your revision requests here..."
+                            disabled={!isClientApprovalStatus(selectedFlow.status)}
+                          /></div>
+                        
+                        {isClientApprovalStatus(selectedFlow.status) ? (
+                          <div className="space-y-3 mt-4">
+                            <button
+                              onClick={() => handleApproval(true)}
+                              className="w-full py-3 bg-transparent border border-white text-white rounded hover:bg-white hover:bg-opacity-10"
+                            >
+                              Approve Flow
+                            </button>
+                            <button
+                              onClick={() => handleApproval(false)}
+                              className="w-full py-3 bg-transparent border border-white text-white rounded hover:bg-white hover:bg-opacity-10"
+                            >
+                              Request Revisions
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="bg-transparent border border-gray-600 text-gray-300 p-3 rounded mt-4">
+                            <p>This flow is not ready for client approval.</p>
+                            <p className="mt-2 text-sm">Current status: <span className="font-semibold">{selectedFlow.status}</span></p>
+                            <p className="mt-2 text-sm">Only flows with "Client Approval" status can be approved or revised.</p>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       );
     };
     
     // Render the app
     ReactDOM.render(
-      <CustomerJourney />,
+      <FlowManagement />,
       document.getElementById('root')
     );
   </script>
