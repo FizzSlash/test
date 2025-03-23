@@ -1,489 +1,4 @@
-// Show campaign details in a popup
-        // Create a new campaign
-        function createNewCampaign() {
-            const campaign = {
-                title: "New Campaign",
-                campaignName: "New Campaign",
-                campaignInfo: "",         // New field (replacing campaignIdea)
-                offer: "",
-                abTest: "",              // New field
-                relevantLinks: "",       // New field (replacing websiteLink)
-                website: document.getElementById('website-url').value || "", // New field
-                campaignType: "email",   // Explicitly set
-                client: document.getElementById('client-select').value || "" // Client field
-            };
-            
-            const overlay = document.createElement('div');
-            overlay.className = 'modal-overlay';
-            
-            const modal = document.createElement('div');
-            modal.className = 'modal-content';
-            
-            const closeBtn = document.createElement('span');
-            closeBtn.className = 'modal-close';
-            closeBtn.innerHTML = '&times;';
-            closeBtn.onclick = () => document.body.removeChild(overlay);
-            
-            // Date picker
-            const dateGroup = document.createElement('div');
-            dateGroup.className = 'form-group';
-            
-            const dateLabel = document.createElement('label');
-            dateLabel.textContent = 'Date:';
-            
-            const dateInput = document.createElement('input');
-            dateInput.type = 'date';
-            
-            // Default date
-            const title = document.getElementById('month-title').textContent;
-            const [monthName, year] = title.split(' ');
-            const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-            const monthIndex = months.indexOf(monthName);
-            dateInput.value = new Date(parseInt(year), monthIndex, 1).toISOString().split('T')[0];
-            
-            dateGroup.appendChild(dateLabel);
-            dateGroup.appendChild(dateInput);
-            
-            // Campaign Type
-            const typeGroup = document.createElement('div');
-            typeGroup.className = 'form-group';
-            
-            const typeLabel = document.createElement('label');
-            typeLabel.textContent = 'Campaign Type:';
-            
-            const typeSelect = document.createElement('select');
-            const emailOption = document.createElement('option');
-            emailOption.value = 'email';
-            emailOption.textContent = 'Email Campaign';
-            
-            const smsOption = document.createElement('option');
-            smsOption.value = 'sms';
-            smsOption.textContent = 'SMS Campaign';
-            
-            typeSelect.appendChild(emailOption);
-            typeSelect.appendChild(smsOption);
-            
-            typeGroup.appendChild(typeLabel);
-            typeGroup.appendChild(typeSelect);
-            
-            // Client field
-            const clientGroup = document.createElement('div');
-            clientGroup.className = 'form-group';
-            
-            const clientLabel = document.createElement('label');
-            clientLabel.textContent = 'Client:';
-            
-            const clientSelect = document.createElement('select');
-            const clients = JSON.parse(localStorage.getItem('clients') || '[]');
-            
-            // Add empty option
-            const emptyOption = document.createElement('option');
-            emptyOption.value = '';
-            emptyOption.textContent = 'Select a Client';
-            clientSelect.appendChild(emptyOption);
-            
-            // Add current client selection
-            const currentClient = document.getElementById('client-select').value;
-            if (currentClient) {
-                const currentOption = document.createElement('option');
-                currentOption.value = currentClient;
-                currentOption.textContent = currentClient;
-                currentOption.selected = true;
-                clientSelect.appendChild(currentOption);
-                campaign.client = currentClient;
-            }
-            
-            // Add other clients
-            clients.forEach(client => {
-                if (client !== currentClient) {
-                    const option = document.createElement('option');
-                    option.value = client;
-                    option.textContent = client;
-                    clientSelect.appendChild(option);
-                }
-            });
-            
-            // Update campaign client when selection changes
-            clientSelect.onchange = function() {
-                campaign.client = clientSelect.value;
-            };
-            
-            clientGroup.appendChild(clientLabel);
-            clientGroup.appendChild(clientSelect);
-            
-            const btn = document.createElement('button');
-            btn.className = 'submit-btn';
-            btn.textContent = 'Continue';
-            btn.onclick = function() {
-                const date = new Date(dateInput.value);
-                // Add a day to fix the off-by-one date issue
-                date.setDate(date.getDate() + 1);
-                campaign.date = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
-                campaign.campaignType = typeSelect.value;
-                
-                document.body.removeChild(overlay);
-                showCampaignDetails(campaign, null, true);
-            };
-            
-            modal.appendChild(closeBtn);
-            modal.appendChild(dateGroup);
-            modal.appendChild(typeGroup);
-            modal.appendChild(clientGroup);
-            modal.appendChild(btn);
-            
-            overlay.appendChild(modal);
-            document.body.appendChild(overlay);
-        }
-        
-        function showCampaignDetails(campaign, campaignElement, isNew = false) {
-            const overlay = document.createElement('div');
-            overlay.className = 'modal-overlay';
-            
-            const modal = document.createElement('div');
-            modal.className = 'modal-content';
-            
-            const closeButton = document.createElement('span');
-            closeButton.className = 'modal-close';
-            closeButton.innerHTML = '&times;';
-            closeButton.onclick = () => document.body.removeChild(overlay);
-            
-            // Create form for campaign details
-            const form = document.createElement('div');
-            form.className = 'campaign-details-form';
-            
-            // Title
-            const titleGroup = document.createElement('div');
-            titleGroup.className = 'form-group';
-            const titleLabel = document.createElement('label');
-            titleLabel.textContent = 'Campaign Name:';
-            const titleInput = document.createElement('input');
-            titleInput.type = 'text';
-            titleInput.value = campaign.title || campaign.campaignName || '';
-            titleGroup.appendChild(titleLabel);
-            titleGroup.appendChild(titleInput);
-            
-            // Client
-            const clientGroup = document.createElement('div');
-            clientGroup.className = 'form-group';
-            const clientLabel = document.createElement('label');
-            clientLabel.textContent = 'Client:';
-            const clientSelect = document.createElement('select');
-            
-            // Get clients list
-            const clients = JSON.parse(localStorage.getItem('clients') || '[]');
-            
-            // Add empty option
-            const emptyOption = document.createElement('option');
-            emptyOption.value = '';
-            emptyOption.textContent = 'Select a Client';
-            clientSelect.appendChild(emptyOption);
-            
-            // Add all clients
-            clients.forEach(client => {
-                const option = document.createElement('option');
-                option.value = client;
-                option.textContent = client;
-                // Select current client if it matches
-                if (client === campaign.client) {
-                    option.selected = true;
-                }
-                clientSelect.appendChild(option);
-            });
-            
-            clientGroup.appendChild(clientLabel);
-            clientGroup.appendChild(clientSelect);
-            
-            // Campaign Type
-            const typeGroup = document.createElement('div');
-            typeGroup.className = 'form-group';
-            const typeLabel = document.createElement('label');
-            typeLabel.textContent = 'Campaign Type:';
-            const typeSelect = document.createElement('select');
-            
-            const emailOption = document.createElement('option');
-            emailOption.value = 'email';
-            emailOption.textContent = 'Email Campaign';
-            emailOption.selected = (campaign.campaignType === 'email');
-            
-            const smsOption = document.createElement('option');
-            smsOption.value = 'sms';
-            smsOption.textContent = 'SMS Campaign';
-            smsOption.selected = (campaign.campaignType === 'sms');
-            
-            typeSelect.appendChild(emailOption);
-            typeSelect.appendChild(smsOption);
-            typeGroup.appendChild(typeLabel);
-            typeGroup.appendChild(typeSelect);
-            
-            // Campaign Info (replacing Campaign Idea)
-            const infoGroup = document.createElement('div');
-            infoGroup.className = 'form-group';
-            const infoLabel = document.createElement('label');
-            infoLabel.textContent = 'Campaign Information:';
-            const infoTextarea = document.createElement('textarea');
-            infoTextarea.value = campaign.campaignInfo || campaign.campaignIdea || '';
-            infoGroup.appendChild(infoLabel);
-            infoGroup.appendChild(infoTextarea);
-            
-            // Offer
-            const offerGroup = document.createElement('div');
-            offerGroup.className = 'form-group';
-            const offerLabel = document.createElement('label');
-            offerLabel.textContent = 'Offer:';
-            const offerInput = document.createElement('input');
-            offerInput.type = 'text';
-            offerInput.value = campaign.offer || '';
-            offerGroup.appendChild(offerLabel);
-            offerGroup.appendChild(offerInput);
-            
-            // A/B Test (new field)
-            const abGroup = document.createElement('div');
-            abGroup.className = 'form-group';
-            const abLabel = document.createElement('label');
-            abLabel.textContent = 'A/B Test Details:';
-            const abInput = document.createElement('input');
-            abInput.type = 'text';
-            abInput.value = campaign.abTest || '';
-            abGroup.appendChild(abLabel);
-            abGroup.appendChild(abInput);
-            
-            // Relevant Links (replacing Website Link)
-            const linksGroup = document.createElement('div');
-            linksGroup.className = 'form-group';
-            const linksLabel = document.createElement('label');
-            linksLabel.textContent = 'Relevant Links:';
-            const linksInput = document.createElement('input');
-            linksInput.type = 'text';
-            linksInput.value = campaign.relevantLinks || campaign.websiteLink || '';
-            linksGroup.appendChild(linksLabel);
-            linksGroup.appendChild(linksInput);
-            
-            // Website (new field)
-            const websiteGroup = document.createElement('div');
-            websiteGroup.className = 'form-group';
-            const websiteLabel = document.createElement('label');
-            websiteLabel.textContent = 'Website:';
-            const websiteInput = document.createElement('input');
-            websiteInput.type = 'text';
-            websiteInput.value = campaign.website || document.getElementById('website-url').value || '';
-            websiteGroup.appendChild(websiteLabel);
-            websiteGroup.appendChild(websiteInput);
-            
-            // Save button
-            const saveButton = document.createElement('button');
-            saveButton.className = 'submit-btn';
-            saveButton.textContent = isNew ? 'Create Campaign' : 'Save Changes';
-            saveButton.onclick = function() {
-                // Update campaign data with new fields
-                campaign.campaignName = titleInput.value;
-                campaign.title = titleInput.value;
-                campaign.client = clientSelect.value;
-                campaign.campaignType = typeSelect.value;
-                campaign.campaignInfo = infoTextarea.value;
-                campaign.offer = offerInput.value;
-                campaign.abTest = abInput.value;
-                campaign.relevantLinks = linksInput.value;
-                campaign.website = websiteInput.value;
-                
-                if (isNew) {
-                    // Create new campaign
-                    const [year, month, day] = campaign.date.split('-').map(Number);
-                    const dayEl = document.querySelector(`.calendar-day[data-date="${year}-${month}-${day}"]`);
-                    
-                    if (dayEl) {
-                        // Create element
-                        const newCamp = document.createElement('div');
-                        newCamp.className = 'campaign';
-                        newCamp.id = `campaign-new-${Date.now()}`;
-                        // Check if it's an SMS campaign
-                        if (campaign.campaignType === 'sms') {
-                            newCamp.classList.add('sms');
-                        }
-                        
-                        const title = document.createElement('div');
-                        title.className = 'campaign-title';
-                        title.contentEditable = true;
-                        title.textContent = campaign.campaignName;
-                        
-                        // Add client as tooltip
-                        if (campaign.client) {
-                            title.title = `Client: ${campaign.client}`;
-                        }
-                        
-                        const offer = document.createElement('div');
-                        offer.className = 'campaign-offer';
-                        offer.contentEditable = true;
-                        offer.textContent = campaign.offer || 'Add offer';
-                        
-                        // Add delete button
-                        const deleteButton = document.createElement('span');
-                        deleteButton.className = 'delete-button';
-                        deleteButton.innerHTML = '&times;';
-                        deleteButton.title = 'Delete this campaign';
-                        deleteButton.addEventListener('click', function(e) {
-                            e.stopPropagation();
-                            if (confirm('Delete this campaign?')) {
-                                newCamp.remove();
-                            }
-                        });
-                        
-                        // Set data and events
-                        newCamp.setAttribute('data-campaign', JSON.stringify(campaign));
-                        newCamp.setAttribute('draggable', 'true');
-                        
-                        newCamp.addEventListener('click', e => {
-                            if (e.target.contentEditable !== 'true') {
-                                showCampaignDetails(JSON.parse(newCamp.getAttribute('data-campaign')), newCamp);
-                            }
-                        });
-                        
-                        newCamp.addEventListener('dragstart', e => {
-                            e.dataTransfer.setData('text/plain', newCamp.getAttribute('data-campaign'));
-                            e.dataTransfer.setData('sourceId', newCamp.id);
-                            setTimeout(() => newCamp.style.opacity = '0.4', 0);
-                        });
-                        
-                        newCamp.addEventListener('dragend', () => newCamp.style.opacity = '1');
-                        
-                        // Append elements
-                        newCamp.appendChild(title);
-                        newCamp.appendChild(offer);
-                        newCamp.appendChild(deleteButton);
-                        dayEl.appendChild(newCamp);
-                        
-                        showStatusMessage('Campaign created', 'success');
-                    } else {
-                        showStatusMessage('Date not in view', 'error');
-                    }
-                } else {
-                    // Update existing campaign
-                    campaignElement.setAttribute('data-campaign', JSON.stringify(campaign));
-                    
-                    // Update visible content
-                    const titleEl = campaignElement.querySelector('.campaign-title');
-                    if (titleEl) {
-                        titleEl.textContent = campaign.campaignName;
-                        if (campaign.client) {
-                            titleEl.title = `Client: ${campaign.client}`;
-                        }
-                    }
-                    
-                    const offerEl = campaignElement.querySelector('.campaign-offer');
-                    if (offerEl) offerEl.textContent = campaign.offer;
-                    
-                    if (campaign.campaignType === 'sms') {
-                        campaignElement.classList.add('sms');
-                    } else {
-                        campaignElement.classList.remove('sms');
-                    }
-                }
-                
-                document.body.removeChild(overlay);
-            };
-            
-            // Add all elements to form
-            form.appendChild(titleGroup);
-            form.appendChild(clientGroup);
-            form.appendChild(typeGroup);
-            form.appendChild(infoGroup);
-            form.appendChild(offerGroup);
-            form.appendChild(abGroup);
-            form.appendChild(linksGroup);
-            form.appendChild(websiteGroup);
-            form.appendChild(saveButton);
-            
-            // Add elements to modal
-            modal.appendChild(closeButton);
-            modal.appendChild(form);
-            
-            // Add modal to overlay and overlay to body
-            overlay.appendChild(modal);
-            document.body.appendChild(overlay);
-        }
-        
-        function showStatusMessage(message, type) {
-            const statusElement = document.getElementById('status-message');
-            statusElement.textContent = message;
-            statusElement.className = `status-message ${type === 'error' ? 'error-message' : 'success-message'}`;
-            statusElement.style.display = 'block';
-            
-            // Auto-hide after 5 seconds
-            setTimeout(() => {
-                statusElement.style.display = 'none';
-            }, 5000);
-        }
-        
-        function generateSampleCampaigns(campaignsPerWeek, month, year, clientName) {
-            // Get number of days in the displayed month
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-            
-            // Simply multiply by 4 to get total monthly campaigns as requested
-            const totalCampaigns = campaignsPerWeek * 4;
-            
-            // Create evenly spaced days for campaigns
-            const campaigns = [];
-            
-            // Campaign types
-            const campaignTypes = [
-                "Email Newsletter", "Product Announcement", "Promotional Email", 
-                "Blog Post", "Social Media Campaign", "Seasonal Promotion", 
-                "Event Announcement", "Customer Spotlight", "Educational Content"
-            ];
-            
-            // Client name - use selected client or default to a placeholder
-            const client = clientName || document.getElementById('client-select').value || 'Unknown Client';
-            
-            // Website URL
-            const websiteUrl = document.getElementById('website-url').value || 'https://example.com';
-            
-            // Distribute campaigns evenly throughout the month
-            for (let i = 0; i < totalCampaigns; i++) {
-                // Calculate day position (1 to daysInMonth)
-                // This spreads campaigns evenly across the month
-                const day = Math.floor(1 + (i * daysInMonth / totalCampaigns));
-                const typeIndex = i % campaignTypes.length;
-                
-                campaigns.push({
-                    date: `${year}-${month + 1}-${day}`,
-                    campaignName: campaignTypes[typeIndex],
-                    title: campaignTypes[typeIndex],
-                    campaignType: 'email',
-                    campaignInfo: `${campaignTypes[typeIndex]} featuring newest products and customer testimonials`,
-                    offer: typeIndex % 3 === 0 ? "15% discount" : typeIndex % 3 === 1 ? "Free shipping" : "Buy one get one free",
-                    abTest: typeIndex % 2 === 0 ? "Subject line A vs Subject line B" : "",
-                    relevantLinks: `${websiteUrl}/${campaignTypes[typeIndex].toLowerCase().replace(/\s+/g, '-')}`,
-                    website: websiteUrl,
-                    client: client
-                });
-            }
-            
-            // Add SMS campaigns if specified
-            const smsCount = document.getElementById('sms-count').value;
-            if (smsCount && parseInt(smsCount) > 0) {
-                for (let i = 0; i < parseInt(smsCount); i++) {
-                    // Offset SMS campaigns slightly from regular campaigns
-                    const day = Math.floor(3 + (i * daysInMonth / parseInt(smsCount)));
-                    
-                    campaigns.push({
-                        date: `${year}-${month + 1}-${Math.min(day, daysInMonth)}`,
-                        campaignName: "SMS Campaign",
-                        title: "SMS Campaign",
-                        campaignType: 'sms',
-                        campaignInfo: "Short-term flash sale announcement via SMS",
-                        offer: "SMS-exclusive offer",
-                        abTest: i % 2 === 0 ? "Message variant A/B test" : "",
-                        relevantLinks: `${websiteUrl}/sms-promo`,
-                        website: websiteUrl,
-                        client: client
-                    });
-                }
-            }
-            
-            return campaigns;
-        }
-    </script>
-</body>
-</html><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -876,54 +391,6 @@
             color: white;
         }
         
-        /* Client management styles */
-        .client-manager {
-            display: flex;
-            gap: 5px;
-            margin-top: 8px;
-        }
-        
-        .client-manager button {
-            padding: 5px 8px;
-            font-size: 12px;
-            background-color: var(--input-bg);
-            color: var(--text-color);
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        
-        .client-manager button:hover {
-            background-color: rgba(60, 60, 80, 0.9);
-        }
-        
-        .client-list-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 12px;
-            margin-bottom: 8px;
-            background-color: rgba(48, 47, 66, 0.7);
-            border-radius: 4px;
-        }
-        
-        .client-list-item button {
-            background-color: rgba(231, 76, 60, 0.5);
-            color: white;
-            border: none;
-            border-radius: 4px;
-            padding: 4px 8px;
-            cursor: pointer;
-        }
-        
-        .client-list-item button:hover {
-            background-color: rgba(231, 76, 60, 0.8);
-        }
-        
-        .client-item-name {
-            font-weight: 500;
-        }
-        
         @media (max-width: 768px) {
             .form-row {
                 flex-direction: column;
@@ -970,24 +437,6 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="client-select">Client</label>
-                    <select id="client-select">
-                        <option value="">Select a Client</option>
-                        <option value="TriRig">TriRig</option>
-                        <option value="Hydrus">Hydrus</option>
-                        <option value="Sizzlefish">Sizzlefish</option>
-                        <option value="Ramrods">Ramrods</option>
-                        <option value="Lay It Flat">Lay It Flat</option>
-                    </select>
-                    <div class="client-manager">
-                        <button id="add-client-btn">Add Client</button>
-                        <button id="manage-clients-btn">Manage Clients</button>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="form-row">
-                <div class="form-group">
                     <label for="campaigns-per-week">Email Campaigns Per Week</label>
                     <select id="campaigns-per-week">
                         <option value="1">1 email campaign per week</option>
@@ -997,14 +446,14 @@
                         <option value="5">5 email campaigns per week</option>
                     </select>
                 </div>
-                
+            </div>
+            
+            <div class="form-row">
                 <div class="form-group">
                     <label for="sms-count">SMS Count This Month</label>
                     <input type="number" id="sms-count" placeholder="Number of SMS messages" min="0">
                 </div>
-            </div>
-            
-            <div class="form-row">
+                
                 <div class="form-group">
                     <label for="custom-requests">Custom Client Requests</label>
                     <input type="text" id="custom-requests" placeholder="Special requests or notes">
@@ -1056,9 +505,6 @@
             let currentMonth = currentDate.getMonth();
             let currentYear = currentDate.getFullYear();
             
-            // Initialize clients in localStorage if not already present
-            initializeClients();
-            
             // Initial calendar render
             renderCalendar(currentMonth, currentYear);
             
@@ -1092,135 +538,7 @@
             
             // Export to Airtable button
             document.getElementById('export-btn').addEventListener('click', exportToAirtable);
-            
-            // Client management buttons
-            document.getElementById('add-client-btn').addEventListener('click', addNewClient);
-            document.getElementById('manage-clients-btn').addEventListener('click', manageClients);
         });
-        
-        // Initialize client list in localStorage
-        function initializeClients() {
-            if (!localStorage.getItem('clients')) {
-                localStorage.setItem('clients', JSON.stringify([
-                    'TriRig',
-                    'Hydrus',
-                    'Sizzlefish',
-                    'Ramrods',
-                    'Lay It Flat'
-                ]));
-            }
-            updateClientDropdown();
-        }
-        
-        // Update client dropdown with current list from localStorage
-        function updateClientDropdown() {
-            const clientSelect = document.getElementById('client-select');
-            const currentSelection = clientSelect.value;
-            const clients = JSON.parse(localStorage.getItem('clients') || '[]');
-            
-            // Clear existing options except the first one
-            while (clientSelect.options.length > 1) {
-                clientSelect.remove(1);
-            }
-            
-            // Add client options
-            clients.forEach(client => {
-                const option = document.createElement('option');
-                option.value = client;
-                option.textContent = client;
-                clientSelect.appendChild(option);
-            });
-            
-            // Try to restore the previous selection if it exists
-            if (currentSelection) {
-                for (let i = 0; i < clientSelect.options.length; i++) {
-                    if (clientSelect.options[i].value === currentSelection) {
-                        clientSelect.selectedIndex = i;
-                        break;
-                    }
-                }
-            }
-        }
-        
-        // Add a new client
-        function addNewClient() {
-            const clientName = prompt('Enter new client name:');
-            if (clientName && clientName.trim()) {
-                const clients = JSON.parse(localStorage.getItem('clients') || '[]');
-                if (!clients.includes(clientName.trim())) {
-                    clients.push(clientName.trim());
-                    localStorage.setItem('clients', JSON.stringify(clients));
-                    updateClientDropdown();
-                    showStatusMessage(`Client "${clientName.trim()}" added successfully`, 'success');
-                } else {
-                    showStatusMessage(`Client "${clientName.trim()}" already exists`, 'error');
-                }
-            }
-        }
-        
-        // Manage existing clients
-        function manageClients() {
-            const overlay = document.createElement('div');
-            overlay.className = 'modal-overlay';
-            
-            const modal = document.createElement('div');
-            modal.className = 'modal-content';
-            
-            const closeBtn = document.createElement('span');
-            closeBtn.className = 'modal-close';
-            closeBtn.innerHTML = '&times;';
-            closeBtn.onclick = () => document.body.removeChild(overlay);
-            
-            const title = document.createElement('h3');
-            title.textContent = 'Manage Clients';
-            title.style.marginBottom = '15px';
-            
-            const clientsDiv = document.createElement('div');
-            clientsDiv.id = 'client-list';
-            const clients = JSON.parse(localStorage.getItem('clients') || '[]');
-            
-            clients.forEach(client => {
-                const clientRow = document.createElement('div');
-                clientRow.className = 'client-list-item';
-                
-                const clientName = document.createElement('span');
-                clientName.className = 'client-item-name';
-                clientName.textContent = client;
-                
-                const deleteBtn = document.createElement('button');
-                deleteBtn.textContent = 'Delete';
-                deleteBtn.onclick = () => {
-                    if (confirm(`Delete client "${client}"?`)) {
-                        const updatedClients = clients.filter(c => c !== client);
-                        localStorage.setItem('clients', JSON.stringify(updatedClients));
-                        clientRow.remove();
-                        updateClientDropdown();
-                    }
-                };
-                
-                clientRow.appendChild(clientName);
-                clientRow.appendChild(deleteBtn);
-                clientsDiv.appendChild(clientRow);
-            });
-            
-            const addBtn = document.createElement('button');
-            addBtn.className = 'submit-btn';
-            addBtn.textContent = 'Add New Client';
-            addBtn.style.marginTop = '15px';
-            addBtn.onclick = () => {
-                addNewClient();
-                document.body.removeChild(overlay);
-                manageClients(); // Reopen with updated list
-            };
-            
-            modal.appendChild(closeBtn);
-            modal.appendChild(title);
-            modal.appendChild(clientsDiv);
-            modal.appendChild(addBtn);
-            
-            overlay.appendChild(modal);
-            document.body.appendChild(overlay);
-        }
         
         function renderCalendar(month, year) {
             const calendarGrid = document.getElementById('calendar-grid');
@@ -1283,7 +601,6 @@
         
         async function populateCalendar(month, year) {
             const websiteUrl = document.getElementById('website-url').value;
-            const clientName = document.getElementById('client-select').value;
             const campaignsPerWeek = document.getElementById('campaigns-per-week').value;
             const smsCount = document.getElementById('sms-count').value;
             const customRequests = document.getElementById('custom-requests').value;
@@ -1293,17 +610,11 @@
                 return;
             }
             
-            if (!clientName) {
-                showStatusMessage('Please select a client', 'error');
-                return;
-            }
-            
             document.getElementById('loading-overlay').style.display = 'flex';
             
             try {
                 const webhookData = {
                     websiteUrl,
-                    clientName,
                     campaignsPerWeek: parseInt(campaignsPerWeek) || 3,
                     smsCount: parseInt(smsCount) || 0,
                     customRequests,
@@ -1386,14 +697,12 @@
                         }
                     }
                     
-                    // Add client name to each campaign
+                    // Ensure campaigns have campaignType set
                     campaignData = campaignData.map(campaign => {
                         if (!campaign.campaignType) {
                             // Set default type based on name
                             campaign.campaignType = (campaign.campaignName || '').toLowerCase().includes('sms') ? 'sms' : 'email';
                         }
-                        // Add client name
-                        campaign.client = clientName;
                         return campaign;
                     });
                 } catch (e) {
@@ -1402,7 +711,7 @@
                     
                     // If webhook fails, generate sample data based on campaignsPerWeek
                     console.log('Using generated sample data');
-                    campaignData = generateSampleCampaigns(parseInt(campaignsPerWeek) || 2, month, year, clientName);
+                    campaignData = generateSampleCampaigns(parseInt(campaignsPerWeek) || 2, month, year);
                 }
                 
                 // Check for empty array
@@ -1418,7 +727,7 @@
                 // Enable draggable functionality
                 enableDraggable();
                 
-                showStatusMessage(`Calendar populated with ${campaignData.length} campaigns for ${clientName}`, 'success');
+                showStatusMessage(`Calendar populated with ${campaignData.length} campaigns`, 'success');
             } catch (error) {
                 console.error('Error connecting to webhook:', error);
                 showStatusMessage('Error connecting to webhook', 'error');
@@ -1457,11 +766,6 @@
                             if (dateStr && dateStr !== campaignData.date) {
                                 campaignData.date = dateStr;
                             }
-                        }
-                        
-                        // Ensure client is set
-                        if (!campaignData.client) {
-                            campaignData.client = document.getElementById('client-select').value || '';
                         }
                         
                         campaigns.push(campaignData);
@@ -1678,19 +982,12 @@
                     if (campaign.websiteLink && !campaign.relevantLinks) campaign.relevantLinks = campaign.websiteLink;
                     if (!campaign.abTest) campaign.abTest = "";
                     if (!campaign.website) campaign.website = document.getElementById('website-url').value || '';
-                    if (!campaign.client) campaign.client = document.getElementById('client-select').value || '';
                     
                     // Make title editable
                     const titleDiv = document.createElement('div');
                     titleDiv.className = 'campaign-title';
                     titleDiv.contentEditable = true;
                     titleDiv.textContent = campaign.title || campaign.campaignName || 'Campaign';
-                    
-                    // Add client name as a tooltip
-                    if (campaign.client) {
-                        titleDiv.title = `Client: ${campaign.client}`;
-                    }
-                    
                     titleDiv.addEventListener('blur', function() {
                         // Update the data attribute when edited
                         const campaignData = JSON.parse(campaignDiv.getAttribute('data-campaign'));
@@ -1751,3 +1048,381 @@
                 }
             });
         }
+        
+        // Show campaign details in a popup
+        // Create a new campaign
+        function createNewCampaign() {
+            const campaign = {
+                title: "New Campaign",
+                campaignName: "New Campaign",
+                campaignInfo: "",         // New field (replacing campaignIdea)
+                offer: "",
+                abTest: "",              // New field
+                relevantLinks: "",       // New field (replacing websiteLink)
+                website: document.getElementById('website-url').value || "", // New field
+                campaignType: "email"    // Explicitly set
+            };
+            
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            
+            const modal = document.createElement('div');
+            modal.className = 'modal-content';
+            
+            const closeBtn = document.createElement('span');
+            closeBtn.className = 'modal-close';
+            closeBtn.innerHTML = '&times;';
+            closeBtn.onclick = () => document.body.removeChild(overlay);
+            
+            // Date picker
+            const dateGroup = document.createElement('div');
+            dateGroup.className = 'form-group';
+            
+            const dateLabel = document.createElement('label');
+            dateLabel.textContent = 'Date:';
+            
+            const dateInput = document.createElement('input');
+            dateInput.type = 'date';
+            
+            // Default date
+            const title = document.getElementById('month-title').textContent;
+            const [monthName, year] = title.split(' ');
+            const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            const monthIndex = months.indexOf(monthName);
+            dateInput.value = new Date(parseInt(year), monthIndex, 1).toISOString().split('T')[0];
+            
+            dateGroup.appendChild(dateLabel);
+            dateGroup.appendChild(dateInput);
+            
+            // Campaign Type
+            const typeGroup = document.createElement('div');
+            typeGroup.className = 'form-group';
+            
+            const typeLabel = document.createElement('label');
+            typeLabel.textContent = 'Campaign Type:';
+            
+            const typeSelect = document.createElement('select');
+            const emailOption = document.createElement('option');
+            emailOption.value = 'email';
+            emailOption.textContent = 'Email Campaign';
+            
+            const smsOption = document.createElement('option');
+            smsOption.value = 'sms';
+            smsOption.textContent = 'SMS Campaign';
+            
+            typeSelect.appendChild(emailOption);
+            typeSelect.appendChild(smsOption);
+            
+            typeGroup.appendChild(typeLabel);
+            typeGroup.appendChild(typeSelect);
+            
+            const btn = document.createElement('button');
+            btn.className = 'submit-btn';
+            btn.textContent = 'Continue';
+            btn.onclick = function() {
+                const date = new Date(dateInput.value);
+                // Add a day to fix the off-by-one date issue
+                date.setDate(date.getDate() + 1);
+                campaign.date = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+                campaign.campaignType = typeSelect.value;
+                
+                document.body.removeChild(overlay);
+                showCampaignDetails(campaign, null, true);
+            };
+            
+            modal.appendChild(closeBtn);
+            modal.appendChild(dateGroup);
+            modal.appendChild(typeGroup);
+            modal.appendChild(btn);
+            
+            overlay.appendChild(modal);
+            document.body.appendChild(overlay);
+        }
+        
+        function showCampaignDetails(campaign, campaignElement, isNew = false) {
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            
+            const modal = document.createElement('div');
+            modal.className = 'modal-content';
+            
+            const closeButton = document.createElement('span');
+            closeButton.className = 'modal-close';
+            closeButton.innerHTML = '&times;';
+            closeButton.onclick = () => document.body.removeChild(overlay);
+            
+            // Create form for campaign details
+            const form = document.createElement('div');
+            form.className = 'campaign-details-form';
+            
+            // Title
+            const titleGroup = document.createElement('div');
+            titleGroup.className = 'form-group';
+            const titleLabel = document.createElement('label');
+            titleLabel.textContent = 'Campaign Name:';
+            const titleInput = document.createElement('input');
+            titleInput.type = 'text';
+            titleInput.value = campaign.title || campaign.campaignName || '';
+            titleGroup.appendChild(titleLabel);
+            titleGroup.appendChild(titleInput);
+            
+            // Campaign Type
+            const typeGroup = document.createElement('div');
+            typeGroup.className = 'form-group';
+            const typeLabel = document.createElement('label');
+            typeLabel.textContent = 'Campaign Type:';
+            const typeSelect = document.createElement('select');
+            
+            const emailOption = document.createElement('option');
+            emailOption.value = 'email';
+            emailOption.textContent = 'Email Campaign';
+            emailOption.selected = (campaign.campaignType === 'email');
+            
+            const smsOption = document.createElement('option');
+            smsOption.value = 'sms';
+            smsOption.textContent = 'SMS Campaign';
+            smsOption.selected = (campaign.campaignType === 'sms');
+            
+            typeSelect.appendChild(emailOption);
+            typeSelect.appendChild(smsOption);
+            typeGroup.appendChild(typeLabel);
+            typeGroup.appendChild(typeSelect);
+            
+            // Campaign Info (replacing Campaign Idea)
+            const infoGroup = document.createElement('div');
+            infoGroup.className = 'form-group';
+            const infoLabel = document.createElement('label');
+            infoLabel.textContent = 'Campaign Information:';
+            const infoTextarea = document.createElement('textarea');
+            infoTextarea.value = campaign.campaignInfo || campaign.campaignIdea || '';
+            infoGroup.appendChild(infoLabel);
+            infoGroup.appendChild(infoTextarea);
+            
+            // Offer
+            const offerGroup = document.createElement('div');
+            offerGroup.className = 'form-group';
+            const offerLabel = document.createElement('label');
+            offerLabel.textContent = 'Offer:';
+            const offerInput = document.createElement('input');
+            offerInput.type = 'text';
+            offerInput.value = campaign.offer || '';
+            offerGroup.appendChild(offerLabel);
+            offerGroup.appendChild(offerInput);
+            
+            // A/B Test (new field)
+            const abGroup = document.createElement('div');
+            abGroup.className = 'form-group';
+            const abLabel = document.createElement('label');
+            abLabel.textContent = 'A/B Test Details:';
+            const abInput = document.createElement('input');
+            abInput.type = 'text';
+            abInput.value = campaign.abTest || '';
+            abGroup.appendChild(abLabel);
+            abGroup.appendChild(abInput);
+            
+            // Relevant Links (replacing Website Link)
+            const linksGroup = document.createElement('div');
+            linksGroup.className = 'form-group';
+            const linksLabel = document.createElement('label');
+            linksLabel.textContent = 'Relevant Links:';
+            const linksInput = document.createElement('input');
+            linksInput.type = 'text';
+            linksInput.value = campaign.relevantLinks || campaign.websiteLink || '';
+            linksGroup.appendChild(linksLabel);
+            linksGroup.appendChild(linksInput);
+            
+            // Website (new field)
+            const websiteGroup = document.createElement('div');
+            websiteGroup.className = 'form-group';
+            const websiteLabel = document.createElement('label');
+            websiteLabel.textContent = 'Website:';
+            const websiteInput = document.createElement('input');
+            websiteInput.type = 'text';
+            websiteInput.value = campaign.website || document.getElementById('website-url').value || '';
+            websiteGroup.appendChild(websiteLabel);
+            websiteGroup.appendChild(websiteInput);
+            
+            // Save button
+            const saveButton = document.createElement('button');
+            saveButton.className = 'submit-btn';
+            saveButton.textContent = isNew ? 'Create Campaign' : 'Save Changes';
+            saveButton.onclick = function() {
+                // Update campaign data with new fields
+                campaign.campaignName = titleInput.value;
+                campaign.title = titleInput.value;
+                campaign.campaignType = typeSelect.value;
+                campaign.campaignInfo = infoTextarea.value;
+                campaign.offer = offerInput.value;
+                campaign.abTest = abInput.value;
+                campaign.relevantLinks = linksInput.value;
+                campaign.website = websiteInput.value;
+                
+                if (isNew) {
+                    // Create new campaign
+                    const [year, month, day] = campaign.date.split('-').map(Number);
+                    const dayEl = document.querySelector(`.calendar-day[data-date="${year}-${month}-${day}"]`);
+                    
+                    if (dayEl) {
+                        // Create element
+                        const newCamp = document.createElement('div');
+                        newCamp.className = 'campaign';
+                        // Check if it's an SMS campaign
+                        if (campaign.campaignType === 'sms') {
+                            newCamp.classList.add('sms');
+                        }
+                        
+                        const title = document.createElement('div');
+                        title.className = 'campaign-title';
+                        title.contentEditable = true;
+                        title.textContent = campaign.campaignName;
+                        
+                        const offer = document.createElement('div');
+                        offer.className = 'campaign-offer';
+                        offer.contentEditable = true;
+                        offer.textContent = campaign.offer || 'Add offer';
+                        
+                        // Set data and events
+                        newCamp.setAttribute('data-campaign', JSON.stringify(campaign));
+                        newCamp.setAttribute('draggable', 'true');
+                        
+                        newCamp.addEventListener('click', e => {
+                            if (e.target.contentEditable !== 'true') {
+                                showCampaignDetails(JSON.parse(newCamp.getAttribute('data-campaign')), newCamp);
+                            }
+                        });
+                        
+                        newCamp.addEventListener('dragstart', e => {
+                            e.dataTransfer.setData('text/plain', newCamp.getAttribute('data-campaign'));
+                            e.dataTransfer.setData('sourceId', newCamp.id);
+                            setTimeout(() => newCamp.style.opacity = '0.4', 0);
+                        });
+                        
+                        newCamp.addEventListener('dragend', () => newCamp.style.opacity = '1');
+                        
+                        // Append elements
+                        newCamp.appendChild(title);
+                        newCamp.appendChild(offer);
+                        dayEl.appendChild(newCamp);
+                        
+                        showStatusMessage('Campaign created', 'success');
+                    } else {
+                        showStatusMessage('Date not in view', 'error');
+                    }
+                } else {
+                    // Update existing campaign
+                    campaignElement.setAttribute('data-campaign', JSON.stringify(campaign));
+                    
+                    // Update visible content
+                    const titleEl = campaignElement.querySelector('.campaign-title');
+                    if (titleEl) titleEl.textContent = campaign.campaignName;
+                    
+                    const offerEl = campaignElement.querySelector('.campaign-offer');
+                    if (offerEl) offerEl.textContent = campaign.offer;
+                    
+                    if (campaign.campaignType === 'sms') {
+                        campaignElement.classList.add('sms');
+                    } else {
+                        campaignElement.classList.remove('sms');
+                    }
+                }
+                
+                document.body.removeChild(overlay);
+            };
+            
+            // Add all elements to form
+            form.appendChild(titleGroup);
+            form.appendChild(typeGroup);
+            form.appendChild(infoGroup);
+            form.appendChild(offerGroup);
+            form.appendChild(abGroup);
+            form.appendChild(linksGroup);
+            form.appendChild(websiteGroup);
+            form.appendChild(saveButton);
+            
+            // Add elements to modal
+            modal.appendChild(closeButton);
+            modal.appendChild(form);
+            
+            // Add modal to overlay and overlay to body
+            overlay.appendChild(modal);
+            document.body.appendChild(overlay);
+        }
+        
+        function showStatusMessage(message, type) {
+            const statusElement = document.getElementById('status-message');
+            statusElement.textContent = message;
+            statusElement.className = `status-message ${type === 'error' ? 'error-message' : 'success-message'}`;
+            statusElement.style.display = 'block';
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                statusElement.style.display = 'none';
+            }, 5000);
+        }
+        
+        function generateSampleCampaigns(campaignsPerWeek, month, year) {
+            // Get number of days in the displayed month
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            
+            // Simply multiply by 4 to get total monthly campaigns as requested
+            const totalCampaigns = campaignsPerWeek * 4;
+            
+            // Create evenly spaced days for campaigns
+            const campaigns = [];
+            
+            // Campaign types
+            const campaignTypes = [
+                "Email Newsletter", "Product Announcement", "Promotional Email", 
+                "Blog Post", "Social Media Campaign", "Seasonal Promotion", 
+                "Event Announcement", "Customer Spotlight", "Educational Content"
+            ];
+            
+            // Website URL
+            const websiteUrl = document.getElementById('website-url').value || 'https://example.com';
+            
+            // Distribute campaigns evenly throughout the month
+            for (let i = 0; i < totalCampaigns; i++) {
+                // Calculate day position (1 to daysInMonth)
+                // This spreads campaigns evenly across the month
+                const day = Math.floor(1 + (i * daysInMonth / totalCampaigns));
+                const typeIndex = i % campaignTypes.length;
+                
+                campaigns.push({
+                    date: `${year}-${month + 1}-${day}`,
+                    campaignName: campaignTypes[typeIndex],
+                    title: campaignTypes[typeIndex],
+                    campaignType: 'email',
+                    campaignInfo: `${campaignTypes[typeIndex]} featuring newest products and customer testimonials`,
+                    offer: typeIndex % 3 === 0 ? "15% discount" : typeIndex % 3 === 1 ? "Free shipping" : "Buy one get one free",
+                    abTest: typeIndex % 2 === 0 ? "Subject line A vs Subject line B" : "",
+                    relevantLinks: `${websiteUrl}/${campaignTypes[typeIndex].toLowerCase().replace(/\s+/g, '-')}`,
+                    website: websiteUrl
+                });
+            }
+            
+            // Add SMS campaigns if specified
+            const smsCount = document.getElementById('sms-count').value;
+            if (smsCount && parseInt(smsCount) > 0) {
+                for (let i = 0; i < parseInt(smsCount); i++) {
+                    // Offset SMS campaigns slightly from regular campaigns
+                    const day = Math.floor(3 + (i * daysInMonth / parseInt(smsCount)));
+                    
+                    campaigns.push({
+                        date: `${year}-${month + 1}-${Math.min(day, daysInMonth)}`,
+                        campaignName: "SMS Campaign",
+                        title: "SMS Campaign",
+                        campaignType: 'sms',
+                        campaignInfo: "Short-term flash sale announcement via SMS",
+                        offer: "SMS-exclusive offer",
+                        abTest: i % 2 === 0 ? "Message variant A/B test" : "",
+                        relevantLinks: `${websiteUrl}/sms-promo`,
+                        website: websiteUrl
+                    });
+                }
+            }
+            
+            return campaigns;
+        }
+    </script>
+</body>
+</html>
