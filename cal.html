@@ -24,6 +24,9 @@
     .campaign-sms {
       background-color: #d69e2e;
     }
+    .tab-active {
+      border-bottom: 2px solid #6366f1;
+    }
   </style>
 </head>
 <body class="bg-gray-900">
@@ -43,103 +46,11 @@
       const [selectedDate, setSelectedDate] = useState(null);
       const [updateStatus, setUpdateStatus] = useState(null);
       const [debug, setDebug] = useState('No data fetched yet');
+      const [activeTab, setActiveTab] = useState('details'); // 'details' or 'approval'
 
-      // Your webhook URLs - adjust as needed
+      // Your webhook URLs
       const fetchCampaignsUrl = 'https://hook.us2.make.com/dlcqdia9qozi8lca39jytiu27xrf1t1l';
       const updateCampaignUrl = 'https://hook.us2.make.com/wem64vvx9irk7tys6itjpyt27bqorbvg';
-
-      // This is the simplified method to handle a simple text response
-      // from your webhook that contains the minimal campaign information
-      const processCampaignData = (responseText) => {
-        try {
-          // Try to parse as JSON first
-          try {
-            const jsonData = JSON.parse(responseText);
-            
-            // If it's a valid JSON object or array, process it accordingly
-            if (Array.isArray(jsonData)) {
-              // It's an array of campaigns
-              return jsonData.map(formatCampaign);
-            } else if (jsonData && typeof jsonData === 'object') {
-              // It's a single campaign object
-              return [formatCampaign(jsonData)];
-            }
-          } catch (e) {
-            // Not valid JSON, continue with text processing
-            console.log("Not valid JSON:", e);
-          }
-          
-          // If the above didn't work, try to extract data from text
-          // This is a very simple, flexible parser for key-value data
-          const lines = responseText.split('\n');
-          const campaignData = {};
-          
-          // Look for standard keys in the text
-          for (const line of lines) {
-            if (line.includes(':')) {
-              const [key, value] = line.split(':', 2).map(s => s.trim());
-              campaignData[key] = value;
-            }
-          }
-          
-          // If we found some useful data, format it
-          if (campaignData.id || campaignData.Tasks || campaignData.title) {
-            return [formatCampaign(campaignData)];
-          }
-          
-          // If all else fails, create a single dummy campaign from the text
-          return [{
-            id: 'text-1',
-            title: responseText.slice(0, 30) + '...',
-            type: 'email',
-            start: new Date(),
-            end: new Date(),
-            description: responseText,
-            status: 'Unknown',
-            clientId: 'Unknown',
-            feedback: ''
-          }];
-          
-        } catch (error) {
-          console.error('Error processing campaign data:', error);
-          setDebug(`Error processing data: ${error.message}`);
-          return [];
-        }
-      };
-      
-      // Helper function to format a campaign object consistently
-      const formatCampaign = (data) => {
-        // Handle different possible structures
-        const fields = data.fields || data;
-        const id = data.id || data.recordId || "unknown";
-        
-        // Extract values with fallbacks for different field naming formats
-        const getField = (possibleNames, defaultValue = '') => {
-          for (const name of possibleNames) {
-            if (fields[name] !== undefined) return fields[name];
-          }
-          return defaultValue;
-        };
-        
-        const title = getField(['Tasks', 'tasks', 'Task', 'task', 'Name', 'name', 'Title', 'title']);
-        const date = getField(['Send Date', 'send_date', 'Date', 'date', 'scheduled_date']);
-        const status = getField(['Stage', 'stage', 'Status', 'status']);
-        const client = getField(['CLIENT', 'Client', 'client', 'Customer', 'customer']);
-        const notes = getField(['Notes', 'notes', 'Description', 'description']);
-        
-        // Create a standardized campaign object
-        return {
-          id: id,
-          title: title || 'Untitled Campaign',
-          type: determineCampaignType(title),
-          start: new Date(date || new Date()),
-          end: new Date(date || new Date()),
-          description: notes || '',
-          status: status || 'pending',
-          clientId: client || '',
-          feedback: notes || ''
-        };
-      };
 
       useEffect(() => {
         fetchCampaigns();
@@ -160,8 +71,33 @@
           const text = await response.text();
           setDebug(`Raw response (first 200 chars): ${text.substring(0, 200)}`);
           
-          // Process the response text in a flexible way
-          const formattedCampaigns = processCampaignData(text);
+          let formattedCampaigns = [];
+          
+          try {
+            // Try to parse as JSON
+            const data = JSON.parse(text);
+            
+            // Handle array or single object
+            if (Array.isArray(data)) {
+              formattedCampaigns = data.map(formatCampaign);
+            } else if (data && typeof data === 'object') {
+              // Check if it's the new format with nested structure
+              if (data.id || data.Tasks || data.Stage || data.Client) {
+                formattedCampaigns = [formatCampaign(data)];
+              } else {
+                // Try to process all keys as potential campaigns
+                Object.entries(data).forEach(([key, value]) => {
+                  if (value && typeof value === 'object') {
+                    formattedCampaigns.push(formatCampaign(value));
+                  }
+                });
+              }
+            }
+          } catch (e) {
+            setDebug(`JSON parsing failed: ${e.message}. Will try to extract data from text.`);
+            // If JSON parsing fails, try to extract data from text
+            formattedCampaigns = extractCampaignsFromText(text);
+          }
           
           setDebug(`Processed ${formattedCampaigns.length} campaigns`);
           setCampaigns(formattedCampaigns);
@@ -169,11 +105,124 @@
           console.error('Error fetching campaigns:', error);
           setDebug(`Error: ${error.message}`);
           setError(error.message);
-          // If fetching fails, set an empty array
           setCampaigns([]);
         } finally {
           setLoading(false);
         }
+      };
+
+      // Extract campaigns from non-JSON text
+      const extractCampaignsFromText = (text) => {
+        const campaigns = [];
+        
+        // Try to split on record boundaries
+        const sections = text.split(/id:[\s]*/g).filter(Boolean);
+        
+        for (const section of sections) {
+          try {
+            // Extract all key-value pairs
+            const lines = section.split('\n');
+            const campaign = { id: '', fields: {} };
+            
+            // First line should be the ID
+            campaign.id = lines[0].trim();
+            
+            // Process remaining lines for fields
+            for (let i = 1; i < lines.length; i++) {
+              const line = lines[i].trim();
+              if (line && line.includes(':')) {
+                const [key, ...valueParts] = line.split(':');
+                const value = valueParts.join(':').trim();
+                
+                // Map to standard field names
+                if (key.includes('Tasks') || key.includes('Task')) {
+                  campaign.fields.Tasks = value;
+                } else if (key.includes('Date')) {
+                  campaign.fields['Send Date'] = value;
+                } else if (key.includes('Stage') || key.includes('Status')) {
+                  campaign.fields.Stage = value;
+                } else if (key.includes('Client') || key.includes('CLIENT')) {
+                  campaign.fields.CLIENT = value;
+                } else if (key.includes('Notes')) {
+                  campaign.fields.Notes = value;
+                }
+              }
+            }
+            
+            // Only add if we have at least an ID and one field
+            if (campaign.id && Object.keys(campaign.fields).length > 0) {
+              campaigns.push(formatCampaign(campaign));
+            }
+          } catch (e) {
+            console.error('Error parsing campaign section:', e);
+          }
+        }
+        
+        return campaigns;
+      };
+      
+      // Format a campaign into a standard structure
+      const formatCampaign = (data) => {
+        // Handle different data structures
+        let id = '';
+        let tasks = '';
+        let date = '';
+        let stage = '';
+        let client = '';
+        let notes = '';
+        
+        // Extract ID
+        if (data.id) {
+          id = data.id;
+        } else if (data.recordId) {
+          id = data.recordId;
+        }
+        
+        // Extract fields based on your new data structure
+        if (data.Tasks) {
+          tasks = data.Tasks;
+        } else if (data.fields && data.fields.Tasks) {
+          tasks = data.fields.Tasks;
+        }
+        
+        if (data['Send Date']) {
+          date = data['Send Date'];
+        } else if (data.fields && data.fields['Send Date']) {
+          date = data.fields['Send Date'];
+        }
+        
+        if (data.Stage !== undefined) {
+          stage = data.Stage;
+        } else if (data.fields && data.fields.Stage !== undefined) {
+          stage = data.fields.Stage;
+        }
+        
+        if (data.Client) {
+          client = data.Client;
+        } else if (data.CLIENT) {
+          client = data.CLIENT;
+        } else if (data.fields && (data.fields.Client || data.fields.CLIENT)) {
+          client = data.fields.Client || data.fields.CLIENT;
+        }
+        
+        if (data.Notes) {
+          notes = data.Notes;
+        } else if (data.fields && data.fields.Notes) {
+          notes = data.fields.Notes;
+        }
+        
+        // Create campaign object
+        return {
+          id: id || 'unknown-' + Math.random().toString(36).substr(2, 9),
+          title: tasks || 'Untitled Campaign',
+          type: determineCampaignType(tasks),
+          start: new Date(date || new Date()),
+          end: new Date(date || new Date()),
+          description: notes || '',
+          status: stage || 'pending',
+          clientId: client || '',
+          feedback: notes || ''
+        };
       };
 
       // Helper function to determine campaign type based on name
@@ -191,6 +240,7 @@
         setSelectedCampaign(campaign);
         setFeedback(campaign.feedback || '');
         setUpdateStatus(null);
+        setActiveTab('details');
       };
 
       const handleApproval = async (approved) => {
@@ -306,6 +356,19 @@
         });
       };
 
+      // Get status badge color
+      const getStatusColor = (status) => {
+        if (!status) return 'bg-gray-500';
+        
+        const statusLower = status.toLowerCase();
+        if (statusLower.includes('approved')) return 'bg-green-600';
+        if (statusLower.includes('rejected')) return 'bg-red-600';
+        if (statusLower.includes('revision') || statusLower.includes('needs')) return 'bg-yellow-600';
+        if (statusLower.includes('design') || statusLower.includes('qa')) return 'bg-blue-600';
+        if (statusLower.includes('ready')) return 'bg-purple-600';
+        return 'bg-gray-600';
+      };
+
       return (
         <div className="container mx-auto p-4">
           <div className="bg-gray-900 rounded-lg shadow-lg overflow-hidden">
@@ -326,23 +389,24 @@
               </div>
             )}
             
-            {/* Display debug info (remove in production) */}
+            {/* Debug panel - remove in production */}
             <div className="p-4 bg-gray-800 text-white text-sm border-b border-gray-700">
-              <p className="font-bold">Debug:</p>
-              <p className="mb-2">{debug}</p>
+              <div className="flex justify-between items-center">
+                <p className="font-bold">Debug Info:</p>
+                <button 
+                  onClick={fetchCampaigns}
+                  className="px-3 py-1 bg-blue-600 rounded hover:bg-blue-500"
+                >
+                  Refresh Data
+                </button>
+              </div>
               <p>Total Campaigns: {campaigns.length}</p>
               {campaigns.length > 0 && (
                 <div className="mt-2">
                   <p>First Campaign:</p>
-                  <pre className="text-xs overflow-auto max-h-40 bg-gray-900 p-2">{JSON.stringify(campaigns[0], null, 2)}</pre>
+                  <pre className="text-xs overflow-auto max-h-20 bg-gray-900 p-2 mt-1">{JSON.stringify(campaigns[0], null, 2)}</pre>
                 </div>
               )}
-              <button 
-                onClick={fetchCampaigns}
-                className="mt-2 px-3 py-1 bg-blue-600 rounded hover:bg-blue-500"
-              >
-                Refresh Data
-              </button>
             </div>
             
             <div className="p-6 bg-gray-900">
@@ -399,13 +463,18 @@
                             {dayCampaigns.map(campaign => (
                               <div 
                                 key={campaign.id}
-                                className={`mb-1 py-1 px-2 text-xs text-white rounded cursor-pointer truncate ${getCampaignTypeClass(campaign.type)}`}
+                                className={`mb-1 py-1 px-2 text-xs text-white rounded cursor-pointer ${getCampaignTypeClass(campaign.type)}`}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleSelectCampaign(campaign);
                                 }}
                               >
-                                {campaign.title}
+                                <div className="flex justify-between items-center">
+                                  <span className="truncate">{campaign.title}</span>
+                                  <span className={`ml-1 px-1 py-0.5 text-xs rounded ${getStatusColor(campaign.status)}`}>
+                                    {campaign.status || 'Pending'}
+                                  </span>
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -419,90 +488,143 @@
           </div>
           
           {selectedCampaign && (
-            <div className="mt-4 bg-gray-900 text-white rounded-lg shadow-lg p-4">
-              <h2 className="text-xl font-semibold mb-2">{selectedCampaign.title}</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div>
-                  <p className="mb-2">
-                    <span className="font-semibold">Date:</span> {formatDate(selectedCampaign.start)}
-                  </p>
-                  <p className="mb-2">
-                    <span className="font-semibold">Status:</span> 
-                    <span className="ml-2 px-2 py-1 rounded text-white bg-gray-700">
-                      {selectedCampaign.status}
-                    </span>
-                  </p>
-                </div>
-                <div>
-                  <p className="mb-2">
-                    <span className="font-semibold">Type:</span> 
-                    <span className={`ml-2 px-2 py-1 rounded text-white ${getCampaignTypeClass(selectedCampaign.type)}`}>
-                      {selectedCampaign.type === 'sms' ? 'SMS' : 'Email'}
-                    </span>
-                  </p>
-                  <p className="mb-2">
-                    <span className="font-semibold">Client:</span> {selectedCampaign.clientId}
-                  </p>
-                </div>
+            <div className="mt-4 bg-gray-900 text-white rounded-lg shadow-lg">
+              {/* Tabbed navigation */}
+              <div className="flex border-b border-gray-700">
+                <button 
+                  className={`px-4 py-3 font-medium ${activeTab === 'details' ? 'text-indigo-400 tab-active' : 'text-gray-400 hover:text-white'}`}
+                  onClick={() => setActiveTab('details')}
+                >
+                  Campaign Details
+                </button>
+                <button 
+                  className={`px-4 py-3 font-medium ${activeTab === 'approval' ? 'text-indigo-400 tab-active' : 'text-gray-400 hover:text-white'}`}
+                  onClick={() => setActiveTab('approval')}
+                >
+                  Approve/Revise
+                </button>
               </div>
               
-              {selectedCampaign.description && (
-                <div className="mb-4 p-3 bg-gray-800 border border-gray-700 rounded">
-                  <p className="font-semibold text-sm text-white mb-1">Campaign Details:</p>
-                  <p className="text-sm">{selectedCampaign.description}</p>
+              {/* Details tab */}
+              {activeTab === 'details' && (
+                <div className="p-4">
+                  <h2 className="text-xl font-semibold mb-3">{selectedCampaign.title}</h2>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <p className="mb-2">
+                        <span className="font-semibold text-gray-400">Date:</span>{' '}
+                        {formatDate(selectedCampaign.start)}
+                      </p>
+                      <p className="mb-2">
+                        <span className="font-semibold text-gray-400">Status:</span>{' '}
+                        <span className={`ml-2 px-2 py-1 rounded text-white ${getStatusColor(selectedCampaign.status)}`}>
+                          {selectedCampaign.status || 'Pending'}
+                        </span>
+                      </p>
+                    </div>
+                    <div>
+                      <p className="mb-2">
+                        <span className="font-semibold text-gray-400">Type:</span>{' '}
+                        <span className={`ml-2 px-2 py-1 rounded text-white ${getCampaignTypeClass(selectedCampaign.type)}`}>
+                          {selectedCampaign.type === 'sms' ? 'SMS' : 'Email'}
+                        </span>
+                      </p>
+                      <p className="mb-2">
+                        <span className="font-semibold text-gray-400">Client:</span>{' '}
+                        {selectedCampaign.clientId}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {selectedCampaign.description && (
+                    <div className="mb-4">
+                      <p className="font-semibold text-gray-400 mb-1">Campaign Details:</p>
+                      <p className="p-3 bg-gray-800 border border-gray-700 rounded">{selectedCampaign.description}</p>
+                    </div>
+                  )}
+                  
+                  {selectedCampaign.feedback && (
+                    <div className="mb-4">
+                      <p className="font-semibold text-gray-400 mb-1">Previous Feedback:</p>
+                      <p className="p-3 bg-gray-800 border border-gray-700 rounded">{selectedCampaign.feedback}</p>
+                    </div>
+                  )}
+                  
+                  <div className="mt-4 flex justify-end">
+                    <button
+                      onClick={() => setActiveTab('approval')}
+                      className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-500"
+                    >
+                      Go to Approval
+                    </button>
+                    <button
+                      onClick={() => setSelectedCampaign(null)}
+                      className="ml-2 px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600"
+                    >
+                      Close
+                    </button>
+                  </div>
                 </div>
               )}
+              
+              {/* Approval tab */}
+              {activeTab === 'approval' && (
+                <div className="p-4">
+                  <h2 className="text-xl font-semibold mb-3">
+                    Approve or Revise: {selectedCampaign.title}
+                  </h2>
                   
-              {updateStatus?.loading ? (
-                <div className="flex justify-center py-2">
-                  <p>Updating campaign...</p>
-                </div>
-              ) : updateStatus?.success ? (
-                <div className="bg-green-900 border border-green-700 text-green-200 px-4 py-2 rounded mb-4">
-                  {updateStatus.message}
-                </div>
-              ) : updateStatus?.error ? (
-                <div className="bg-red-900 border border-red-700 text-red-200 px-4 py-2 rounded mb-4">
-                  {updateStatus.message}
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="border-t border-gray-700 pt-4">
-                    <label className="block font-semibold mb-2">Client Notes:</label>
-                    <textarea
-                      className="w-full p-2 rounded bg-gray-800 border border-gray-700 text-white"
-                      rows={4}
-                      value={feedback}
-                      onChange={(e) => setFeedback(e.target.value)}
-                      placeholder="Enter your feedback or revision requests here..."
-                      disabled={updateStatus?.loading}
-                    />
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <button
-                      onClick={() => handleApproval(true)}
-                      className="py-2 bg-green-700 text-white rounded hover:bg-green-600"
-                    >
-                      Approve
-                    </button>
-                    <button
-                      onClick={() => handleApproval(false)}
-                      className="py-2 bg-yellow-700 text-white rounded hover:bg-yellow-600"
-                    >
-                      Revise
-                    </button>
-                  </div>
-                  
-                  <button
-                    onClick={() => {
-                      setSelectedCampaign(null);
-                      setFeedback('');
-                    }}
-                    className="w-full py-2 bg-gray-700 text-white rounded hover:bg-gray-600"
-                  >
-                    Cancel
-                  </button>
+                  {updateStatus?.loading ? (
+                    <div className="flex justify-center py-6">
+                      <p>Updating campaign...</p>
+                    </div>
+                  ) : updateStatus?.success ? (
+                    <div className="bg-green-900 border border-green-700 text-green-200 px-4 py-3 rounded mb-4">
+                      {updateStatus.message}
+                    </div>
+                  ) : updateStatus?.error ? (
+                    <div className="bg-red-900 border border-red-700 text-red-200 px-4 py-3 rounded mb-4">
+                      {updateStatus.message}
+                    </div>
+                  ) : (
+                    <>
+                      <div className="mb-4">
+                        <label className="block font-semibold mb-2">Client Notes:</label>
+                        <textarea
+                          className="w-full p-3 rounded bg-gray-800 border border-gray-700 text-white"
+                          rows={6}
+                          value={feedback}
+                          onChange={(e) => setFeedback(e.target.value)}
+                          placeholder="Enter your feedback or revision requests here..."
+                        />
+                      </div>
+                      
+                      <div className="flex flex-col sm:flex-row gap-3">
+                        <button
+                          onClick={() => handleApproval(true)}
+                          className="py-3 bg-green-700 text-white rounded hover:bg-green-600 flex-1"
+                        >
+                          Approve Campaign
+                        </button>
+                        <button
+                          onClick={() => handleApproval(false)}
+                          className="py-3 bg-yellow-700 text-white rounded hover:bg-yellow-600 flex-1"
+                        >
+                          Request Revisions
+                        </button>
+                      </div>
+                      
+                      <div className="mt-4 flex justify-end">
+                        <button
+                          onClick={() => setActiveTab('details')}
+                          className="px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600"
+                        >
+                          Back to Details
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
             </div>
