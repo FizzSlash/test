@@ -260,20 +260,23 @@
               if (line && line.includes(':')) {
                 const [key, ...valueParts] = line.split(':');
                 const value = valueParts.join(':').trim();
+                const trimmedKey = key.trim();
                 
                 // Map to your field names
-                if (key.trim() === 'Notes') {
+                if (trimmedKey === 'Notes') {
                   campaign.Notes = value;
-                } else if (key.trim() === 'Tasks') {
+                } else if (trimmedKey === 'Tasks') {
                   campaign.Tasks = value;
-                } else if (key.trim() === 'Stage') {
+                } else if (trimmedKey === 'Stage') {
                   campaign.Stage = value;
-                } else if (key.trim() === 'Client') {
+                } else if (trimmedKey === 'Client') {
                   campaign.Client = value;
-                } else if (key.trim() === 'Campaign Type') {
+                } else if (trimmedKey === 'Campaign Type') {
                   campaign['Campaign Type'] = value;
-                } else if (key.trim() === 'Send Date') {
+                } else if (trimmedKey === 'Send Date') {
                   campaign['Send Date'] = value;
+                } else if (trimmedKey === 'Client Revisions') {
+                  campaign.ClientRevisions = value;
                 }
               }
             }
@@ -325,7 +328,7 @@
           start: new Date(data['Send Date'] || new Date()),
           end: new Date(data['Send Date'] || new Date()),
           description: data.Notes || '',
-          status: data.Stage || 'pending',
+          status: data.Stage || 'Unknown Status',
           clientId: data.Client || '',
           clientRevisions: data.ClientRevisions || '',
           campaignFile: fileUrl, // URL from the file data
@@ -644,11 +647,11 @@
               <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                 <div className="flex flex-col md:flex-row">
                   {/* Main content area - now 50% width */}
-                  <div className="p-4 w-full md:w-1/2">
+                  <div className="p-4 w-full md:w-1/2 overflow-hidden">
                     <div className="flex justify-between items-center mb-4">
-                      <h2 className="text-xl font-semibold text-white">{selectedCampaign.title}</h2>
+                      <h2 className="text-xl font-semibold text-white truncate">{selectedCampaign.title}</h2>
                       <button 
-                        className="text-gray-400 hover:text-white text-xl font-bold"
+                        className="text-gray-400 hover:text-white text-xl font-bold ml-2"
                         onClick={() => setShowModal(false)}
                       >
                         ×
@@ -659,12 +662,12 @@
                       <div>
                         <p className="mb-2 text-white">
                           <span className="font-semibold text-gray-400">Date:</span>{' '}
-                          {formatDate(selectedCampaign.start)}
+                          <span className="whitespace-normal break-words">{formatDate(selectedCampaign.start)}</span>
                         </p>
                         <p className="mb-2 text-white">
                           <span className="font-semibold text-gray-400">Status:</span>{' '}
                           <span className="ml-2 px-2 py-1 rounded text-white border border-white bg-transparent">
-                            {selectedCampaign.status || 'Unknown Status'}
+                            {selectedCampaign.status}
                           </span>
                         </p>
                       </div>
@@ -675,7 +678,7 @@
                             {selectedCampaign.type === 'sms' ? 'SMS' : 'Email'}
                           </span>
                         </p>
-                        <p className="mb-2 text-white">
+                        <p className="mb-2 text-white whitespace-normal break-words">
                           <span className="font-semibold text-gray-400">Client:</span>{' '}
                           {selectedCampaign.clientId}
                         </p>
@@ -685,7 +688,7 @@
                     {/* Always show campaign info regardless of status */}
                     <div className="mb-4">
                       <p className="font-semibold text-gray-400 mb-1">Campaign Details:</p>
-                      <p className="p-3 bg-gray-800 bg-opacity-50 border border-gray-700 rounded text-white">
+                      <p className="p-3 bg-gray-800 bg-opacity-50 border border-gray-700 rounded text-white whitespace-normal break-words">
                         {selectedCampaign.description || "No campaign details available."}
                       </p>
                     </div>
@@ -724,13 +727,13 @@
                   </div>
                   
                   {/* Client Review section - now 50% width */}
-                  <div className="w-full md:w-1/2 p-4 border-t md:border-t-0 md:border-l border-gray-700 bg-gray-800 bg-opacity-30">
+                  <div className="w-full md:w-1/2 p-4 border-t md:border-t-0 md:border-l border-gray-700 bg-gray-800 bg-opacity-30 overflow-hidden">
                     <h3 className="text-lg font-semibold mb-4 text-white">Client Review</h3>
                     
                     {updateStatus?.loading ? (
-                      <div className="flex justify-center py-6">
-                        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-white"></div>
-                      </div>
+                                                <div className="text-center py-8 text-gray-400">
+                            <p>Loading campaigns...</p>
+                          </div>
                     ) : updateStatus?.success ? (
                       <div className="bg-green-900 bg-opacity-20 border border-green-700 text-green-200 px-4 py-3 rounded mb-4">
                         {updateStatus.message}
