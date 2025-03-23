@@ -231,28 +231,11 @@
               Stage: '', 
               Client: '', 
               'Campaign Type': [], 
-              'Send Date': '',
-              File: []
+              'Send Date': ''
             };
             
             // First line should be the ID
             campaign.id = lines[0].trim();
-            
-            // Look for file URL in the text
-            const urlMatch = section.match(/url:\s+(https?:\/\/[^\s]+)/);
-            if (urlMatch && urlMatch[1]) {
-              const fileUrl = urlMatch[1];
-              
-              // Look for filename
-              const filenameMatch = section.match(/filename:\s+([^\n]+)/);
-              const filename = filenameMatch ? filenameMatch[1].trim() : '';
-              
-              // Add file info to campaign
-              campaign.File = [{
-                url: fileUrl,
-                filename: filename
-              }];
-            }
             
             // Process remaining lines for fields
             for (let i = 1; i < lines.length; i++) {
@@ -295,30 +278,6 @@
       
       // Format a campaign into a standard structure
       const formatCampaign = (data) => {
-        // Extract URL from File array if it exists
-        let fileUrl = '';
-        let fileName = '';
-        
-        // Check if File field exists and contains items
-        if (data.File && Array.isArray(data.File) && data.File.length > 0) {
-          // Try to find url property in the file object or its children
-          const fileData = data.File[0];
-          
-          if (fileData) {
-            if (fileData.url) {
-              fileUrl = fileData.url;
-              fileName = fileData.filename || '';
-            } else if (fileData.children && fileData.children.length > 0) {
-              // Look one level deeper if needed
-              const childFile = fileData.children.find(child => child.url);
-              if (childFile) {
-                fileUrl = childFile.url;
-                fileName = childFile.filename || '';
-              }
-            }
-          }
-        }
-        
         // Create campaign object based on your data structure
         return {
           id: data.id || 'unknown-' + Math.random().toString(36).substr(2, 9),
@@ -331,8 +290,6 @@
           status: data.Stage || 'Unknown Status',
           clientId: data.Client || '',
           clientRevisions: data.ClientRevisions || '',
-          campaignFile: fileUrl, // URL from the file data
-          fileName: fileName,    // Filename for display
           rawData: data // Keep the raw data for reference
         };
       };
@@ -474,7 +431,7 @@
               <div className="flex justify-between items-center">
                 <h1 className="text-2xl font-bold">CONTENT CALENDAR</h1>
                 <div className="flex space-x-2">
-                                      <button 
+                  <button 
                     onClick={() => setActiveTab('calendar')} 
                     className={`px-4 py-2 rounded transition-all ${activeTab === 'calendar' ? 'border-b-2 border-white bg-transparent' : 'bg-transparent'}`}
                   >
@@ -558,7 +515,7 @@
                             </div>
                             <div className="mt-1">
                               {dayCampaigns.map(campaign => (
-                <div 
+                                <div 
                                   key={campaign.id}
                                   className={`mb-1 py-1 px-2 text-xs text-white rounded cursor-pointer ${getCampaignTypeClass(campaign.type)}`}
                                   onClick={(e) => {
@@ -569,7 +526,7 @@
                                   <div className="flex flex-col">
                                     <span className="font-semibold truncate">{campaign.title}</span>
                                     <span className="mt-1 text-xs px-2 py-1 rounded inline-block w-fit border border-white bg-transparent">
-                                      {campaign.status || 'Unknown Status'}
+                                      {campaign.status}
                                     </span>
                                   </div>
                                 </div>
@@ -604,37 +561,16 @@
                             <span className="mt-2 text-xs px-2 py-1 rounded inline-block w-fit border border-white bg-transparent">
                               {campaign.status}
                             </span>
-                            <p className="mt-2 text-sm text-white opacity-80 line-clamp-3">
+                            <p className="mt-2 text-sm text-white opacity-80 line-clamp-3 whitespace-normal break-words">
                               {campaign.description || "No description available"}
                             </p>
-                            
-                            {campaign.campaignFile && (
-                              <div className="mt-2">
-                                <span className="text-xs text-white flex items-center opacity-80">
-                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                  </svg>
-                                  Preview available
-                                </span>
-                              </div>
-                            )}
-                              <div className="mt-2">
-                                <span className="text-xs text-blue-300 flex items-center">
-                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                                  </svg>
-                                  Campaign file attached
-                                </span>
-                              </div>
-                            )}
                           </div>
                         </div>
                       ))
                     }
                   </div>
                 ) : (
-                  <div className="text-center py-8 text-gray-400 bg-gray-800 bg-opacity-50 rounded">
+                  <div className="text-center py-8 text-gray-400 bg-transparent border border-gray-600 rounded">
                     <p>No campaigns pending approval</p>
                   </div>
                 )}
@@ -692,38 +628,6 @@
                         {selectedCampaign.description || "No campaign details available."}
                       </p>
                     </div>
-                    
-                    {/* Campaign preview button (using the file URL) */}
-                    {selectedCampaign.campaignFile && (
-                      <div className="mt-6 mb-4">
-                        <a 
-                          href={selectedCampaign.campaignFile}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block w-full py-3 px-4 bg-transparent text-white text-center rounded hover:bg-white hover:bg-opacity-10 transition-colors duration-200 flex items-center justify-center border border-white"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                          </svg>
-                          Open Campaign Preview
-                        </a>
-                      </div>
-                    )}
-                      <div className="mt-6 mb-4">
-                        <a 
-                          href={selectedCampaign.campaignFile}
-                          download
-                          target="_blank"
-                          className="block w-full py-3 px-4 bg-indigo-600 text-white text-center rounded hover:bg-indigo-500 transition-colors duration-200 flex items-center justify-center"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                          </svg>
-                          Open Campaign File
-                        </a>
-                      </div>
-                    )}
                   </div>
                   
                   {/* Client Review section - now 50% width */}
@@ -731,9 +635,9 @@
                     <h3 className="text-lg font-semibold mb-4 text-white">Client Review</h3>
                     
                     {updateStatus?.loading ? (
-                                                <div className="text-center py-8 text-gray-400">
-                            <p>Loading campaigns...</p>
-                          </div>
+                      <div className="text-center py-8 text-gray-400">
+                        <p>Loading...</p>
+                      </div>
                     ) : updateStatus?.success ? (
                       <div className="bg-green-900 bg-opacity-20 border border-green-700 text-green-200 px-4 py-3 rounded mb-4">
                         {updateStatus.message}
@@ -774,7 +678,7 @@
                         ) : (
                           <div className="bg-transparent border border-gray-600 text-gray-300 p-3 rounded mt-4">
                             <p>This campaign is not ready for client approval.</p>
-                            <p className="mt-2 text-sm">Current status: <span className="font-semibold">{selectedCampaign.status || 'Unknown Status'}</span></p>
+                            <p className="mt-2 text-sm">Current status: <span className="font-semibold">{selectedCampaign.status}</span></p>
                             <p className="mt-2 text-sm">Only campaigns with "Client Approval" status can be approved or revised.</p>
                           </div>
                         )}
