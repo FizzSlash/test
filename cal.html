@@ -47,6 +47,20 @@
       background-color: rgba(255, 220, 0, 0.3);
     }
     
+    /* Status badge styling */
+    .status-badge {
+      background-color: white !important;
+      border: 1px solid rgba(136, 84, 208, 0.4) !important;
+      color: rgb(136, 84, 208) !important;
+      font-weight: 500;
+      padding: 2px 8px;
+      white-space: normal;
+      display: inline-block;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
     /* Tab styling */
     .tab-active {
       background-color: rgba(99, 102, 241, 0.8);
@@ -110,20 +124,6 @@
     
     .submit-btn:hover {
       background-color: rgba(255, 255, 255, 0.3);
-    }
-    
-    /* Add a highlighted status badge class */
-    .status-badge {
-      background-color: white !important;
-      border: 1px solid rgba(136, 84, 208, 0.4) !important;
-      color: rgb(136, 84, 208) !important;
-      font-weight: 500;
-      padding: 2px 8px;
-      white-space: normal;
-      display: inline-block;
-      max-width: 100%;
-      overflow: hidden;
-      text-overflow: ellipsis;
     }
     
     /* Calendar cell styling with subtle borders */
@@ -350,20 +350,7 @@
             ...selectedCampaign.rawData, // Include all original data
             campaignId: selectedCampaign.id,
             approved: approved ? "YES" : "NO",
-            clientRevisions: clientRevisions,
-            // Include the formatted data as well
-            formattedData: {
-              id: selectedCampaign.id,
-              title: selectedCampaign.title,
-              type: selectedCampaign.type,
-              start: selectedCampaign.start,
-              end: selectedCampaign.end,
-              description: selectedCampaign.description,
-              status: selectedCampaign.status,
-              clientId: selectedCampaign.clientId,
-              clientRevisions: clientRevisions,
-              previewUrl: selectedCampaign.previewUrl
-            }
+            clientRevisions: clientRevisions
           };
           
           const response = await fetch(updateCampaignUrl, {
@@ -376,8 +363,6 @@
           
           if (!response.ok) throw new Error('Failed to send approval data');
           
-          // Do not update campaign status locally
-          // Just show success message
           setUpdateStatus({ 
             loading: false, 
             success: true, 
@@ -398,35 +383,6 @@
             loading: false, 
             error: true, 
             message: error.message || 'Error sending approval data' 
-          });
-        }
-      };
-          });
-          
-          if (!response.ok) throw new Error('Failed to send approval data');
-          
-          // Do not update campaign status locally
-          // Just show success message
-          setUpdateStatus({ 
-            loading: false, 
-            success: true, 
-            message: `Campaign feedback sent successfully!` 
-          });
-          
-          // Clear selected campaign after a delay to show success message
-          setTimeout(() => {
-            setSelectedCampaign(null);
-            setClientRevisions('');
-            setUpdateStatus(null);
-            setShowModal(false);
-          }, 2000);
-          
-        } catch (error) {
-          console.error('Error updating approval status:', error);
-          setUpdateStatus({ 
-            loading: false, 
-            error: true, 
-            message: error.message || 'Error updating campaign status' 
           });
         }
       };
@@ -753,8 +709,7 @@
                             onChange={(e) => setClientRevisions(e.target.value)}
                             placeholder="Enter your revision requests here..."
                             disabled={!isClientApprovalStatus(selectedCampaign.status)}
-                          />
-                        </div>
+                          /></div>
                         
                         {isClientApprovalStatus(selectedCampaign.status) ? (
                           <div className="space-y-3 mt-4">
