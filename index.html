@@ -10,6 +10,7 @@
             --bg-color: rgba(20, 19, 28, 0.7);
             --card-bg: rgba(36, 35, 49, 0.7);
             --accent-yellow: #FFDC00;
+            --accent-purple: #8854D0;
             --text-color: #FFFFFF;
             --input-bg: rgba(48, 47, 66, 0.8);
             --border-color: rgba(58, 57, 82, 0.5);
@@ -253,7 +254,7 @@
         
         .campaign.sms {
             background-color: rgba(136, 84, 208, 0.2);
-            border-left: 3px solid rgba(136, 84, 208, 0.8);
+            border-left: 3px solid var(--accent-purple);
         }
         
         .campaign.sms:hover {
@@ -515,6 +516,60 @@
             document.getElementById('populate-btn').addEventListener('click', function() {
                 populateCalendar(currentMonth, currentYear);
             });
+
+            // Export to Airtable button
+            document.getElementById('export-btn').addEventListener('click', function() {
+                exportToAirtable();
+            });
+            
+            // Function to export all campaign data to Airtable
+            async function exportToAirtable() {
+                document.getElementById('loading-overlay').style.display = 'flex';
+                
+                try {
+                    // Collect all campaigns
+                    const campaignElements = document.querySelectorAll('.campaign');
+                    const campaigns = [];
+                    
+                    campaignElements.forEach(element => {
+                        const campaign = JSON.parse(element.getAttribute('data-campaign'));
+                        
+                        // Get the date from the parent element
+                        const dayElement = element.closest('.calendar-day');
+                        if (dayElement) {
+                            campaign.date = dayElement.getAttribute('data-date');
+                        }
+                        
+                        campaigns.push(campaign);
+                    });
+                    
+                    if (campaigns.length === 0) {
+                        showStatusMessage('No campaigns to export', 'error');
+                        document.getElementById('loading-overlay').style.display = 'none';
+                        return;
+                    }
+                    
+                    // Send data to the Export webhook
+                    const response = await fetch('https://hook.us2.make.com/iybaaa3op04dakasknke6nygxe5oezjn', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(campaigns)
+                    });
+                    
+                    if (response.ok) {
+                        showStatusMessage('Successfully exported to Airtable', 'success');
+                    } else {
+                        showStatusMessage('Failed to export to Airtable: ' + response.statusText, 'error');
+                    }
+                } catch (error) {
+                    console.error('Error exporting to Airtable:', error);
+                    showStatusMessage('Error exporting to Airtable', 'error');
+                } finally {
+                    document.getElementById('loading-overlay').style.display = 'none';
+                }
+            }
         });
         
         function renderCalendar(month, year) {
@@ -806,7 +861,7 @@
                     
                     const titleDiv = document.createElement('div');
                     titleDiv.className = 'campaign-title';
-                    titleDiv.textContent = campaign.title || campaign.campaignName || 'Campaign';
+                    titleDiv.textContent = campaign.campaignName || 'Campaign';
                     campaignDiv.appendChild(titleDiv);
                     
                     if (campaign.offer) {
@@ -863,389 +918,3 @@
         function addCampaignsToCalendar(campaignData) {
             campaignData.forEach((campaign, index) => {
                 const dateStr = campaign.date; // Expected format: "YYYY-MM-DD" or "YYYY-M-D"
-                if (!dateStr) {
-                    console.error('Campaign missing date:', campaign);
-                    return;
-                }
-                
-                const dateParts = dateStr.split('-');
-                if (dateParts.length !== 3) {
-                    console.error('Invalid date format:', dateStr);
-                    return;
-                }
-                
-                const year = parseInt(dateParts[0]);
-                const month = parseInt(dateParts[1]);
-                const day = parseInt(dateParts[2]);
-                
-                // Find the day element
-                const dayElement = document.querySelector(`.calendar-day[data-date="${year}-${month}-${day}"]`);
-                
-                if (dayElement) {
-                    const campaignDiv = document.createElement('div');
-                    campaignDiv.className = 'campaign';
-                    campaignDiv.id = `campaign-${index}-${Date.now()}`;
-                    
-                    // Check if it's an SMS campaign and add appropriate class
-                    const isSMS = (campaign.campaignType === 'sms' || (campaign.title || campaign.campaignName || '').toLowerCase().includes('sms'));
-                    if (isSMS) {
-                        campaignDiv.classList.add('sms');
-                    }
-                    
-                    // Make title editable
-                    const titleDiv = document.createElement('div');
-                    titleDiv.className = 'campaign-title';
-                    titleDiv.contentEditable = true;
-                    titleDiv.textContent = campaign.title || campaign.campaignName || 'Campaign';
-                    titleDiv.addEventListener('blur', function() {
-                        // Update the data attribute when edited
-                        const campaignData = JSON.parse(campaignDiv.getAttribute('data-campaign'));
-                        campaignData.campaignName = titleDiv.textContent;
-                        campaignDiv.setAttribute('data-campaign', JSON.stringify(campaignData));
-                    });
-                    campaignDiv.appendChild(titleDiv);
-                    
-                    // Make offer editable
-                    if (campaign.offer || campaign.offer === null) {
-                        const offerDiv = document.createElement('div');
-                        offerDiv.className = 'campaign-offer';
-                        offerDiv.contentEditable = true;
-                        offerDiv.textContent = campaign.offer || 'Add offer details';
-                        offerDiv.addEventListener('blur', function() {
-                            // Update the data attribute when edited
-                            const campaignData = JSON.parse(campaignDiv.getAttribute('data-campaign'));
-                            campaignData.offer = offerDiv.textContent;
-                            campaignDiv.setAttribute('data-campaign', JSON.stringify(campaignData));
-                        });
-                        campaignDiv.appendChild(offerDiv);
-                    }
-                    
-                    // Add delete button
-                    const deleteButton = document.createElement('span');
-                    deleteButton.className = 'delete-button';
-                    deleteButton.innerHTML = '&times;';
-                    deleteButton.title = 'Delete this campaign';
-                    deleteButton.addEventListener('click', function(e) {
-                        e.stopPropagation();
-                        if (confirm('Delete this campaign?')) {
-                            campaignDiv.remove();
-                        }
-                    });
-                    campaignDiv.appendChild(deleteButton);
-                    
-                    // Add data attribute with all campaign details
-                    campaignDiv.setAttribute('data-campaign', JSON.stringify(campaign));
-                    
-                    // Add click event to show more details
-                    campaignDiv.addEventListener('click', function(e) {
-                        // Don't open details if clicking on editable content
-                        if (e.target.contentEditable === 'true') {
-                            return;
-                        }
-                        
-                        // Get updated campaign data
-                        const campaignData = JSON.parse(campaignDiv.getAttribute('data-campaign'));
-                        
-                        // Show dialog with all campaign details
-                        showCampaignDetails(campaignData, campaignDiv);
-                    });
-                    
-                    dayElement.appendChild(campaignDiv);
-                } else {
-                    console.warn(`Day element not found for date: ${dateStr}`);
-                }
-            });
-        }
-        
-        // Show campaign details in a popup
-        // Create a new campaign
-        function createNewCampaign() {
-            const campaign = {
-                title: "New Campaign",
-                campaignName: "New Campaign",
-                offer: "",
-                campaignIdea: "",
-                websiteLink: ""
-            };
-            
-            const overlay = document.createElement('div');
-            overlay.className = 'modal-overlay';
-            
-            const modal = document.createElement('div');
-            modal.className = 'modal-content';
-            
-            const closeBtn = document.createElement('span');
-            closeBtn.className = 'modal-close';
-            closeBtn.innerHTML = '&times;';
-            closeBtn.onclick = () => document.body.removeChild(overlay);
-            
-            // Date picker
-            const dateGroup = document.createElement('div');
-            dateGroup.className = 'form-group';
-            
-            const dateLabel = document.createElement('label');
-            dateLabel.textContent = 'Date:';
-            
-            const dateInput = document.createElement('input');
-            dateInput.type = 'date';
-            
-            // Default date
-            const title = document.getElementById('month-title').textContent;
-            const [monthName, year] = title.split(' ');
-            const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-            const monthIndex = months.indexOf(monthName);
-            dateInput.value = new Date(parseInt(year), monthIndex, 1).toISOString().split('T')[0];
-            
-            dateGroup.appendChild(dateLabel);
-            dateGroup.appendChild(dateInput);
-            
-            const btn = document.createElement('button');
-            btn.className = 'submit-btn';
-            btn.textContent = 'Continue';
-            btn.onclick = function() {
-                const date = new Date(dateInput.value);
-                // Add a day to fix the off-by-one date issue
-                date.setDate(date.getDate() + 1);
-                campaign.date = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
-                document.body.removeChild(overlay);
-                showCampaignDetails(campaign, null, true);
-            };
-            
-            modal.appendChild(closeBtn);
-            modal.appendChild(dateGroup);
-            modal.appendChild(btn);
-            
-            overlay.appendChild(modal);
-            document.body.appendChild(overlay);
-        }
-        
-        function showCampaignDetails(campaign, campaignElement, isNew = false) {
-            const overlay = document.createElement('div');
-            overlay.className = 'modal-overlay';
-            
-            const modal = document.createElement('div');
-            modal.className = 'modal-content';
-            
-            const closeButton = document.createElement('span');
-            closeButton.className = 'modal-close';
-            closeButton.innerHTML = '&times;';
-            closeButton.onclick = () => document.body.removeChild(overlay);
-            
-            // Create form for campaign details
-            const form = document.createElement('div');
-            form.className = 'campaign-details-form';
-            
-            // Title
-            const titleGroup = document.createElement('div');
-            titleGroup.className = 'form-group';
-            const titleLabel = document.createElement('label');
-            titleLabel.textContent = 'Campaign Name:';
-            const titleInput = document.createElement('input');
-            titleInput.type = 'text';
-            titleInput.value = campaign.title || campaign.campaignName || '';
-            titleGroup.appendChild(titleLabel);
-            titleGroup.appendChild(titleInput);
-            
-            // Offer
-            const offerGroup = document.createElement('div');
-            offerGroup.className = 'form-group';
-            const offerLabel = document.createElement('label');
-            offerLabel.textContent = 'Offer:';
-            const offerInput = document.createElement('input');
-            offerInput.type = 'text';
-            offerInput.value = campaign.offer || '';
-            offerGroup.appendChild(offerLabel);
-            offerGroup.appendChild(offerInput);
-            
-            // Campaign Idea
-            const ideaGroup = document.createElement('div');
-            ideaGroup.className = 'form-group';
-            const ideaLabel = document.createElement('label');
-            ideaLabel.textContent = 'Campaign Idea:';
-            const ideaTextarea = document.createElement('textarea');
-            ideaTextarea.value = campaign.campaignIdea || campaign.idea || '';
-            ideaGroup.appendChild(ideaLabel);
-            ideaGroup.appendChild(ideaTextarea);
-            
-            // Website Link
-            const linkGroup = document.createElement('div');
-            linkGroup.className = 'form-group';
-            const linkLabel = document.createElement('label');
-            linkLabel.textContent = 'Website Link:';
-            const linkInput = document.createElement('input');
-            linkInput.type = 'text';
-            linkInput.value = campaign.websiteLink || '';
-            linkGroup.appendChild(linkLabel);
-            linkGroup.appendChild(linkInput);
-            
-            // Save button
-            const saveButton = document.createElement('button');
-            saveButton.className = 'submit-btn';
-            saveButton.textContent = isNew ? 'Create Campaign' : 'Save Changes';
-            saveButton.onclick = function() {
-                // Update campaign data
-                campaign.campaignName = titleInput.value;
-                campaign.title = titleInput.value;
-                campaign.offer = offerInput.value;
-                campaign.campaignIdea = ideaTextarea.value;
-                campaign.websiteLink = linkInput.value;
-                campaign.campaignType = campaign.campaignName.toLowerCase().includes('sms') ? 'sms' : 'email';
-                
-                if (isNew) {
-                    // Create new campaign
-                    const [year, month, day] = campaign.date.split('-').map(Number);
-                    const dayEl = document.querySelector(`.calendar-day[data-date="${year}-${month}-${day}"]`);
-                    
-                    if (dayEl) {
-                        // Create element
-                        const newCamp = document.createElement('div');
-                        newCamp.className = 'campaign';
-                        // Check if it's an SMS campaign
-                        const isSMS = campaign.campaignType === 'sms' || campaign.campaignName.toLowerCase().includes('sms');
-                        if (isSMS) {
-                            newCamp.classList.add('sms');
-                        }
-                        
-                        const title = document.createElement('div');
-                        title.className = 'campaign-title';
-                        title.contentEditable = true;
-                        title.textContent = campaign.campaignName;
-                        
-                        const offer = document.createElement('div');
-                        offer.className = 'campaign-offer';
-                        offer.contentEditable = true;
-                        offer.textContent = campaign.offer || 'Add offer';
-                        
-                        // Set data and events
-                        newCamp.setAttribute('data-campaign', JSON.stringify(campaign));
-                        newCamp.setAttribute('draggable', 'true');
-                        
-                        newCamp.addEventListener('click', e => {
-                            if (e.target.contentEditable !== 'true') {
-                                showCampaignDetails(JSON.parse(newCamp.getAttribute('data-campaign')), newCamp);
-                            }
-                        });
-                        
-                        newCamp.addEventListener('dragstart', e => {
-                            e.dataTransfer.setData('text/plain', newCamp.getAttribute('data-campaign'));
-                            e.dataTransfer.setData('sourceId', newCamp.id);
-                            setTimeout(() => newCamp.style.opacity = '0.4', 0);
-                        });
-                        
-                        newCamp.addEventListener('dragend', () => newCamp.style.opacity = '1');
-                        
-                        // Append elements
-                        newCamp.appendChild(title);
-                        newCamp.appendChild(offer);
-                        dayEl.appendChild(newCamp);
-                        
-                        showStatusMessage('Campaign created', 'success');
-                    } else {
-                        showStatusMessage('Date not in view', 'error');
-                    }
-                } else {
-                    // Update existing campaign
-                    campaignElement.setAttribute('data-campaign', JSON.stringify(campaign));
-                    
-                    // Update visible content
-                    const titleEl = campaignElement.querySelector('.campaign-title');
-                    if (titleEl) titleEl.textContent = campaign.campaignName;
-                    
-                    const offerEl = campaignElement.querySelector('.campaign-offer');
-                    if (offerEl) offerEl.textContent = campaign.offer;
-                    
-                    if (campaign.campaignName.toLowerCase().includes('sms')) {
-                        campaignElement.classList.add('sms');
-                    } else {
-                        campaignElement.classList.remove('sms');
-                    }
-                }
-                
-                document.body.removeChild(overlay);
-            };
-            
-            // Add all elements to form
-            form.appendChild(titleGroup);
-            form.appendChild(offerGroup);
-            form.appendChild(ideaGroup);
-            form.appendChild(linkGroup);
-            form.appendChild(saveButton);
-            
-            // Add elements to modal
-            modal.appendChild(closeButton);
-            modal.appendChild(form);
-            
-            // Add modal to overlay and overlay to body
-            overlay.appendChild(modal);
-            document.body.appendChild(overlay);
-        }
-        
-        function showStatusMessage(message, type) {
-            const statusElement = document.getElementById('status-message');
-            statusElement.textContent = message;
-            statusElement.className = `status-message ${type === 'error' ? 'error-message' : 'success-message'}`;
-            statusElement.style.display = 'block';
-            
-            // Auto-hide after 5 seconds
-            setTimeout(() => {
-                statusElement.style.display = 'none';
-            }, 5000);
-        }
-        
-        function generateSampleCampaigns(campaignsPerWeek, month, year) {
-            // Get number of days in the displayed month
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-            
-            // Simply multiply by 4 to get total monthly campaigns as requested
-            const totalCampaigns = campaignsPerWeek * 4;
-            
-            // Create evenly spaced days for campaigns
-            const campaigns = [];
-            
-            // Campaign types
-            const campaignTypes = [
-                "Email Newsletter", "Product Announcement", "Promotional Email", 
-                "Blog Post", "Social Media Campaign", "Seasonal Promotion", 
-                "Event Announcement", "Customer Spotlight", "Educational Content"
-            ];
-            
-            // Distribute campaigns evenly throughout the month
-            for (let i = 0; i < totalCampaigns; i++) {
-                // Calculate day position (1 to daysInMonth)
-                // This spreads campaigns evenly across the month
-                const day = Math.floor(1 + (i * daysInMonth / totalCampaigns));
-                const typeIndex = i % campaignTypes.length;
-                
-                campaigns.push({
-                    date: `${year}-${month + 1}-${day}`,
-                    campaignName: campaignTypes[typeIndex],
-                    offer: typeIndex % 3 === 0 ? "15% discount" : typeIndex % 3 === 1 ? "Free shipping" : "Buy one get one free",
-                    campaignIdea: `${campaignTypes[typeIndex]} featuring newest products and customer testimonials`,
-                    websiteLink: `https://example.com/${campaignTypes[typeIndex].toLowerCase().replace(/\s+/g, '-')}`,
-                    campaignType: 'email'
-                });
-            }
-            
-            // Add SMS campaigns if specified
-            const smsCount = document.getElementById('sms-count').value;
-            if (smsCount && parseInt(smsCount) > 0) {
-                for (let i = 0; i < parseInt(smsCount); i++) {
-                    // Offset SMS campaigns slightly from regular campaigns
-                    const day = Math.floor(3 + (i * daysInMonth / parseInt(smsCount)));
-                    
-                    campaigns.push({
-                        date: `${year}-${month + 1}-${Math.min(day, daysInMonth)}`,
-                        campaignName: "SMS Campaign",
-                        offer: "SMS-exclusive offer",
-                        campaignIdea: "Short-term flash sale announcement via SMS",
-                        websiteLink: "https://example.com/sms-promo",
-                        campaignType: 'sms'
-                    });
-                }
-            }
-            
-            return campaigns;
-        }
-    </script>
-</body>
-</html>
