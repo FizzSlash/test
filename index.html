@@ -352,8 +352,6 @@
             max-width: 500px;
             position: relative;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-            max-height: 90vh;
-            overflow-y: auto;
         }
         
         .modal-close {
@@ -421,12 +419,6 @@
                 display: inline-block;
                 font-weight: 500;
                 margin-bottom: 10px;
-            }
-            
-            .modal-content {
-                width: 95%;
-                max-height: 80vh;
-                padding: 15px;
             }
         }
     </style>
@@ -544,7 +536,7 @@
                 populateCalendar(currentMonth, currentYear);
             });
             
-            // Export to Airtable
+            // Export to Airtable button
             document.getElementById('export-btn').addEventListener('click', exportToAirtable);
         });
         
@@ -892,7 +884,7 @@
                     }
                     
                     // Check if it's an SMS campaign
-                    const isSMS = (campaign.campaignType === 'sms' || campaign.campaignName.toLowerCase().includes('sms'));
+                    const isSMS = (campaign.campaignType === 'sms' || e.dataTransfer.getData('text/plain').toLowerCase().includes('"campaignType":"sms"'));
                     if (isSMS) {
                         campaignDiv.classList.add('sms');
                     }
