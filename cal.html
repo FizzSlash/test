@@ -344,16 +344,35 @@
       const handleApproval = async (approved) => {
         try {
           setUpdateStatus({ loading: true, error: null });
+          
+          // Create payload with all campaign data plus approval status and revisions
+          const payload = {
+            ...selectedCampaign.rawData, // Include all original data
+            campaignId: selectedCampaign.id,
+            approved: approved,
+            clientRevisions: clientRevisions,
+            // Include the formatted data as well
+            formattedData: {
+              id: selectedCampaign.id,
+              title: selectedCampaign.title,
+              type: selectedCampaign.type,
+              start: selectedCampaign.start,
+              end: selectedCampaign.end,
+              description: selectedCampaign.description,
+              status: selectedCampaign.status,
+              clientId: selectedCampaign.clientId,
+              clientRevisions: clientRevisions,
+              previewUrl: selectedCampaign.previewUrl
+            }
+          };
+          
           const response = await fetch(updateCampaignUrl, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-              campaignId: selectedCampaign.id,
-              approved: approved,
-              clientRevisions: clientRevisions
-            })
+            body: JSON.stringify(payload)
+          });
           });
           
           if (!response.ok) throw new Error('Failed to update campaign status');
