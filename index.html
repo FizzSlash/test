@@ -652,31 +652,17 @@
                         campaignDiv.classList.add('sms');
                     }
                     
-                    // Make title editable
+                    // Create title element
                     const titleDiv = document.createElement('div');
                     titleDiv.className = 'campaign-title';
-                    titleDiv.contentEditable = true;
                     titleDiv.textContent = campaign.campaignName || 'Campaign';
-                    titleDiv.addEventListener('blur', function() {
-                        // Update the data attribute when edited
-                        const campaignData = JSON.parse(campaignDiv.getAttribute('data-campaign'));
-                        campaignData.campaignName = titleDiv.textContent;
-                        campaignDiv.setAttribute('data-campaign', JSON.stringify(campaignData));
-                    });
                     campaignDiv.appendChild(titleDiv);
                     
-                    // Make offer editable
-                    if (campaign.offer || campaign.offer === null) {
+                    // Create offer element if it exists
+                    if (campaign.offer || campaign.offer === '') {
                         const offerDiv = document.createElement('div');
                         offerDiv.className = 'campaign-offer';
-                        offerDiv.contentEditable = true;
-                        offerDiv.textContent = campaign.offer || 'Add offer details';
-                        offerDiv.addEventListener('blur', function() {
-                            // Update the data attribute when edited
-                            const campaignData = JSON.parse(campaignDiv.getAttribute('data-campaign'));
-                            campaignData.offer = offerDiv.textContent;
-                            campaignDiv.setAttribute('data-campaign', JSON.stringify(campaignData));
-                        });
+                        offerDiv.textContent = campaign.offer || '';
                         campaignDiv.appendChild(offerDiv);
                     }
                     
@@ -703,11 +689,6 @@
                     
                     // Add click event to show more details
                     campaignDiv.addEventListener('click', function(e) {
-                        // Don't open details if clicking on editable content
-                        if (e.target.contentEditable === 'true') {
-                            return;
-                        }
-                        
                         // Get updated campaign data
                         const campaignData = JSON.parse(campaignDiv.getAttribute('data-campaign'));
                         
@@ -728,6 +709,87 @@
             const campaign = {
                 campaignName: "New Campaign",
                 campaignInfo: "",
+                offer: "",
+                abTest: "",
+                relevantLinks: "",
+                website: "",
+                campaignType: "email"
+            };
+            
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            
+            const modal = document.createElement('div');
+            modal.className = 'modal-content';
+            
+            const closeBtn = document.createElement('span');
+            closeBtn.className = 'modal-close';
+            closeBtn.innerHTML = '&times;';
+            closeBtn.onclick = () => document.body.removeChild(overlay);
+            
+            // Date picker
+            const dateGroup = document.createElement('div');
+            dateGroup.className = 'form-group';
+            
+            const dateLabel = document.createElement('label');
+            dateLabel.textContent = 'Date:';
+            
+            const dateInput = document.createElement('input');
+            dateInput.type = 'date';
+            
+            // Default date
+            const title = document.getElementById('month-title').textContent;
+            const [monthName, year] = title.split(' ');
+            const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            const monthIndex = months.indexOf(monthName);
+            dateInput.value = new Date(parseInt(year), monthIndex, 1).toISOString().split('T')[0];
+            
+            dateGroup.appendChild(dateLabel);
+            dateGroup.appendChild(dateInput);
+            
+            // Type selector
+            const typeGroup = document.createElement('div');
+            typeGroup.className = 'form-group';
+            
+            const typeLabel = document.createElement('label');
+            typeLabel.textContent = 'Type:';
+            
+            const typeSelect = document.createElement('select');
+            
+            const emailOption = document.createElement('option');
+            emailOption.value = 'email';
+            emailOption.textContent = 'Email';
+            
+            const smsOption = document.createElement('option');
+            smsOption.value = 'sms';
+            smsOption.textContent = 'SMS';
+            
+            typeSelect.appendChild(emailOption);
+            typeSelect.appendChild(smsOption);
+            
+            typeGroup.appendChild(typeLabel);
+            typeGroup.appendChild(typeSelect);
+            
+            const btn = document.createElement('button');
+            btn.className = 'submit-btn';
+            btn.textContent = 'Continue';
+            btn.onclick = function() {
+                const date = new Date(dateInput.value);
+                // Add a day to fix the off-by-one date issue
+                date.setDate(date.getDate() + 1);
+                campaign.date = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+                campaign.campaignType = typeSelect.value;
+                document.body.removeChild(overlay);
+                showCampaignDetails(campaign, null, true);
+            };
+            
+            modal.appendChild(closeBtn);
+            modal.appendChild(dateGroup);
+            modal.appendChild(typeGroup);
+            modal.appendChild(btn);
+            
+            overlay.appendChild(modal);
+            document.body.appendChild(overlay);
                 offer: "",
                 abTest: "",
                 relevantLinks: "",
@@ -1025,6 +1087,8 @@
                         campaignType: campaign.campaignType || 'email',
                         campaignInfo: campaign.campaignInfo || '',
                         offer: campaign.offer || '',
+                        abTest: campaign.abTest || '',
+                        relevantLinks: campaign.relevantLinks || '',
                         website: campaign.website || '',
                         date: campaign.date || ''
                     };
@@ -1038,40 +1102,28 @@
                     return;
                 }
                 
-                // Log the data being sent
-                console.log('Sending data to webhook:', campaigns);
-                
-                // Prepare the data to send
-                const dataToSend = JSON.stringify(campaigns);
-                console.log('JSON data being sent:', dataToSend);
-                
-                // Send direct to iframe for testing
-                // Create a temporary form to submit data
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = 'https://hook.us2.make.com/iybaaa3op04dakasknke6nygxe5oezjn';
-                form.target = '_blank'; // Open in new tab
-                
-                // Create hidden input with the data
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = 'data';
-                input.value = dataToSend;
-                
-                // Add the input to the form
-                form.appendChild(input);
-                
-                // Add form to document and submit
-                document.body.appendChild(form);
-                form.submit();
-                
-                // Clean up the form
-                document.body.removeChild(form);
-                
-                showStatusMessage('Export request sent - check new tab for results', 'success');
+                try {
+                    // Send data to the Export webhook
+                    const response = await fetch('https://hook.us2.make.com/iybaaa3op04dakasknke6nygxe5oezjn', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(campaigns)
+                    });
+                    
+                    if (response.ok) {
+                        showStatusMessage('Successfully exported to Airtable', 'success');
+                    } else {
+                        showStatusMessage('Failed to export to Airtable', 'error');
+                    }
+                } catch (fetchError) {
+                    console.error('Error sending data:', fetchError);
+                    showStatusMessage('Error exporting to Airtable', 'error');
+                }
             } catch (error) {
-                console.error('General error during export:', error);
-                showStatusMessage('Error exporting to Airtable: ' + error.message, 'error');
+                console.error('Error preparing data:', error);
+                showStatusMessage('Error exporting to Airtable', 'error');
             } finally {
                 document.getElementById('loading-overlay').style.display = 'none';
             }
@@ -1118,6 +1170,8 @@
                     campaignName: campaignTypes[typeIndex],
                     campaignInfo: `${campaignTypes[typeIndex]} featuring newest products and customer testimonials`,
                     offer: typeIndex % 3 === 0 ? "15% discount" : typeIndex % 3 === 1 ? "Free shipping" : "Buy one get one free",
+                    abTest: i % 2 === 0 ? "Subject line A/B test" : "",
+                    relevantLinks: "https://example.com/blog\nhttps://example.com/resources",
                     website: "https://example.com",
                     campaignType: 'email'
                 });
@@ -1135,6 +1189,8 @@
                         campaignName: "SMS Campaign",
                         campaignInfo: "Short-term flash sale announcement via SMS",
                         offer: "SMS-exclusive offer",
+                        abTest: "",
+                        relevantLinks: "https://example.com/sms-landing",
                         website: "https://example.com",
                         campaignType: 'sms'
                     });
