@@ -232,6 +232,7 @@
             const lines = section.split('\n');
             const campaign = { 
               id: '', 
+              recordId: '',
               Notes: '', 
               Tasks: '', 
               Stage: '', 
@@ -241,8 +242,11 @@
               File: []
             };
             
-            // First line should be the ID
-            campaign.id = lines[0].trim();
+            // First line should be the ID - this is the recordId in the format "recZrp1Ab0Cz8Cy3Y"
+            if (lines[0] && lines[0].trim()) {
+              campaign.recordId = lines[0].trim();
+              campaign.id = lines[0].trim(); // Use the same value for id for now
+            }
             
             // Look for file URL in the text
             const urlMatch = section.match(/url:\s+(https?:\/\/[^\s]+)/);
@@ -283,7 +287,7 @@
             }
             
             // Only add if we have at least an ID and one field
-            if (campaign.id && (campaign.Tasks || campaign.Notes)) {
+            if (campaign.recordId && (campaign.Tasks || campaign.Notes)) {
               campaigns.push(formatCampaign(campaign));
             }
           } catch (e) {
@@ -320,6 +324,7 @@
         // Create campaign object based on your data structure
         return {
           id: data.id || 'unknown-' + Math.random().toString(36).substr(2, 9),
+          recordId: data.recordId || '', // Store the record ID but don't display it
           title: data.Tasks || 'Untitled Campaign',
           type: data['Campaign Type'] && Array.isArray(data['Campaign Type']) && 
                 data['Campaign Type'].includes('sms') ? 'sms' : 'email',
@@ -349,6 +354,7 @@
           const payload = {
             ...selectedCampaign.rawData, // Include all original data
             campaignId: selectedCampaign.id,
+            recordId: selectedCampaign.recordId, // Include the record ID in the payload
             approved: approved ? "YES" : "NO",
             clientRevisions: clientRevisions
           };
@@ -708,8 +714,8 @@
                             value={clientRevisions}
                             onChange={(e) => setClientRevisions(e.target.value)}
                             placeholder="Enter your revision requests here..."
-                            disabled={!isClientApprovalStatus(selectedCampaign.status)}
-                          /></div>
+                            disabled={!isClientApprovalStatus(selectedCampaign.status)}/>
+                        </div>
                         
                         {isClientApprovalStatus(selectedCampaign.status) ? (
                           <div className="space-y-3 mt-4">
