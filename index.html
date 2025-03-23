@@ -1,665 +1,1428 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Campaign Approval Calendar</title>
-  <!-- Include React and ReactDOM -->
-  <script src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
-  <!-- Include Babel for JSX -->
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <!-- Include Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Include Lodash -->
-  <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
-  <style>
-    body {
-      background-color: rgba(20, 19, 28, 0.7);
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-    }
-    
-    /* Container styling with transparent white stroke */
-    .calendar-container {
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
-      background-color: rgba(20, 19, 28, 0.3);
-      backdrop-filter: blur(10px);
-      border-radius: 8px;
-      overflow: hidden;
-    }
-    
-    /* Sidebar styling with matching transparent white stroke */
-    .sidebar-container {
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
-      background-color: rgba(20, 19, 28, 0.3);
-      backdrop-filter: blur(10px);
-      border-radius: 8px;
-      overflow: hidden;
-    }
-    
-    .campaign-email {
-      background-color: rgba(136, 84, 208, 0.2);
-      border-left: 3px solid rgba(136, 84, 208, 0.8);
-    }
-    
-    .campaign-email:hover {
-      background-color: rgba(136, 84, 208, 0.3);
-    }
-    
-    .campaign-sms {
-      background-color: rgba(255, 220, 0, 0.2);
-      border-left: 3px solid var(--accent-yellow);
-    }
-    
-    .campaign-sms:hover {
-      background-color: rgba(255, 220, 0, 0.3);
-    }
-    
-    .tab-active {
-      border-bottom: 2px solid #6366f1;
-    }
-    
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.7);
-      backdrop-filter: blur(5px);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-    }
-    
-    .modal-content {
-      background-color: rgba(36, 35, 49, 0.5);
-      border-radius: 8px;
-      width: 90%;
-      max-width: 800px;
-      max-height: 90vh;
-      overflow-y: auto;
-      box-shadow: 0 0 20px rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      display: flex;
-      flex-direction: column;
-    }
-    
-    .submit-btn {
-      background-color: rgba(255, 255, 255, 0.2);
-      color: #FFF;
-      border: 1px solid rgba(255, 255, 255, 0.4);
-      padding: 12px;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 16px;
-      font-weight: 600;
-      text-align: center;
-      display: block;
-      width: 100%;
-      transition: all 0.3s;
-      margin-top: 15px;
-      backdrop-filter: blur(5px);
-    }
-    
-    .submit-btn:hover {
-      background-color: rgba(255, 255, 255, 0.3);
-    }
-    
-    /* Add a highlighted status badge class */
-    .status-badge {
-      background-color: rgba(250, 204, 21, 0.8) !important; /* Yellow highlight */
-      color: #000 !important; /* Black text for better contrast */
-      font-weight: 600;
-    }
-    
-    /* Calendar cell styling with subtle borders */
-    .calendar-cell {
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      transition: all 0.2s ease;
-    }
-    
-    .calendar-cell:hover {
-      background-color: rgba(255, 255, 255, 0.05);
-    }
-    
-    /* Header styling for consistency */
-    .header-container {
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Content Calendar Creation</title>
+    <style>
+        /* Dark theme colors from screenshot with increased transparency */
+        :root {
+            --bg-color: rgba(20, 19, 28, 0.7);
+            --card-bg: rgba(36, 35, 49, 0.7);
+            --accent-yellow: #FFDC00;
+            --text-color: #FFFFFF;
+            --input-bg: rgba(48, 47, 66, 0.8);
+            --border-color: rgba(58, 57, 82, 0.5);
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: transparent;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: var(--bg-color);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        header {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        h1 {
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        
+        .tab-container {
+            display: flex;
+            justify-content: center;
+            padding: 10px 0;
+        }
+        
+        .tab {
+            padding: 8px 30px;
+            font-size: 16px;
+            font-weight: 500;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            background: transparent;
+            color: var(--text-color);
+            cursor: pointer;
+            margin: 0 5px;
+            transition: all 0.3s;
+        }
+        
+        .tab.active {
+            background-color: var(--accent-yellow);
+            color: #000;
+            border-color: var(--accent-yellow);
+        }
+        
+        .form-container {
+            padding: 20px;
+            background-color: var(--card-bg);
+            margin: 15px;
+            border-radius: 8px;
+        }
+        
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+            gap: 15px;
+        }
+        
+        .form-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            border: none;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            font-size: 15px;
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .submit-btn {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: #FFF;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            padding: 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            text-align: center;
+            display: block;
+            width: 100%;
+            transition: all 0.3s;
+            margin-top: 15px;
+            backdrop-filter: blur(5px);
+        }
+        
+        .submit-btn:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+        
+        .submit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        #export-btn {
+            background-color: rgba(46, 204, 113, 0.3);
+            border-color: rgba(46, 204, 113, 0.6);
+        }
+        
+        #export-btn:hover {
+            background-color: rgba(46, 204, 113, 0.4);
+        }
+        
+        .calendar-container {
+            padding: 20px;
+            margin: 15px;
+            background-color: var(--card-bg);
+            border-radius: 8px;
+        }
+        
+        .month-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .month-title {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .calendar-controls {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .calendar-control-btn {
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            border: none;
+            border-radius: 5px;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .days-header {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            text-align: center;
+            font-weight: 500;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            grid-auto-rows: minmax(100px, auto);
+            gap: 4px;
+            background-color: rgba(20, 19, 28, 0.4);
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+        
+        .calendar-day {
+            background-color: rgba(48, 47, 66, 0.5);
+            padding: 6px;
+            position: relative;
+            min-height: 100px;
+            overflow: hidden;
+            border-radius: 4px;
+        }
+        
+        .calendar-day:hover {
+            background-color: rgba(60, 60, 80, 0.95);
+        }
+        
+        .date-number {
+            position: absolute;
+            top: 5px;
+            right: 8px;
+            font-size: 12px;
+            opacity: 0.8;
+        }
+        
+        .empty-day {
+            background-color: rgba(36, 35, 49, 0.3);
+        }
+        
+        .campaign {
+            margin-top: 20px;
+            padding: 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            background-color: rgba(255, 220, 0, 0.2);
+            border-left: 3px solid var(--accent-yellow);
+            margin-bottom: 5px;
+            overflow: hidden;
+            word-break: break-word;
+            max-height: calc(100% - 30px);
+            cursor: grab;
+        }
+        
+        .campaign:hover {
+            background-color: rgba(255, 220, 0, 0.3);
+        }
+        
+        .campaign.sms {
+            background-color: rgba(136, 84, 208, 0.2);
+            border-left: 3px solid rgba(136, 84, 208, 0.8);
+        }
+        
+        .campaign.sms:hover {
+            background-color: rgba(136, 84, 208, 0.3);
+        }
+        
+        .campaign.dragging {
+            opacity: 0.4;
+        }
+        
+        .drop-hover {
+            background-color: rgba(80, 80, 120, 0.7) !important;
+        }
+        
+        .campaign-title {
+            font-weight: 600;
+            margin-bottom: 2px;
+            font-size: 10px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .campaign-offer {
+            font-size: 9px;
+            opacity: 0.8;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .loading-spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid var(--accent-yellow);
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .status-message {
+            display: none;
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        
+        .success-message {
+            background-color: rgba(46, 204, 113, 0.2);
+            border: 1px solid #2ecc71;
+        }
+        
+        .error-message {
+            background-color: rgba(231, 76, 60, 0.2);
+            border: 1px solid #e74c3c;
+        }
+        
+        /* Modal styles for campaign details */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            position: relative;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+        
+        .modal-close {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-color);
+        }
+        
+        .campaign-details-form .form-group {
+            margin-bottom: 15px;
+        }
+        
+        #add-camp {
+            background-color: rgba(46, 204, 113, 0.5);
+        }
+        
+        .delete-button {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+            width: 16px;
+            height: 16px;
+            line-height: 14px;
+            text-align: center;
+            border-radius: 50%;
+            background-color: rgba(0, 0, 0, 0.3);
+        }
+        
+        .delete-button:hover {
+            background-color: rgba(231, 76, 60, 0.7);
+            color: white;
+        }
+        
+        @media (max-width: 768px) {
+            .form-row {
+                flex-direction: column;
+            }
+            
+            .calendar-grid {
+                grid-template-columns: repeat(1, 1fr);
+            }
+            
+            .days-header {
+                display: none;
+            }
+            
+            .calendar-day {
+                margin-bottom: 4px;
+            }
+            
+            .date-number {
+                position: static;
+                margin-bottom: 10px;
+                display: inline-block;
+                padding-right: 5px;
+            }
+            
+            .mobile-day {
+                display: inline-block;
+                font-weight: 500;
+                margin-bottom: 10px;
+            }
+        }
+    </style>
 </head>
-<body class="bg-transparent">
-  <div id="root" class="min-h-screen py-8"></div>
-
-  <script type="text/babel">
-    // Import React hooks
-    const { useState, useEffect } = React;
-    
-    const CampaignCalendar = () => {
-      const [campaigns, setCampaigns] = useState([]);
-      const [selectedCampaign, setSelectedCampaign] = useState(null);
-      const [feedback, setFeedback] = useState('');
-      const [loading, setLoading] = useState(false);
-      const [error, setError] = useState(null);
-      const [currentMonth, setCurrentMonth] = useState(new Date());
-      const [selectedDate, setSelectedDate] = useState(null);
-      const [updateStatus, setUpdateStatus] = useState(null);
-      const [showModal, setShowModal] = useState(false);
-
-      // Your webhook URLs
-      const fetchCampaignsUrl = 'https://hook.us2.make.com/dlcqdia9qozi8lca39jytiu27xrf1t1l';
-      const updateCampaignUrl = 'https://hook.us2.make.com/wem64vvx9irk7tys6itjpyt27bqorbvg';
-
-      useEffect(() => {
-        fetchCampaigns();
-      }, []);
-
-      const fetchCampaigns = async () => {
-        try {
-          setLoading(true);
-          
-          const response = await fetch(fetchCampaignsUrl);
-          
-          if (!response.ok) {
-            throw new Error(`Failed to fetch campaigns: ${response.status}`);
-          }
-          
-          const text = await response.text();
-          
-          let formattedCampaigns = [];
-          
-          try {
-            // Try to parse as JSON
-            const data = JSON.parse(text);
-            
-            // Handle array or single object
-            if (Array.isArray(data)) {
-              formattedCampaigns = data.map(formatCampaign);
-            } else if (data && typeof data === 'object') {
-              // Check if it's the new format with nested structure
-              if (data.id || data.Tasks || data.Stage || data.Client) {
-                formattedCampaigns = [formatCampaign(data)];
-              } else {
-                // Try to process all keys as potential campaigns
-                Object.entries(data).forEach(([key, value]) => {
-                  if (value && typeof value === 'object') {
-                    formattedCampaigns.push(formatCampaign(value));
-                  }
-                });
-              }
-            }
-          } catch (e) {
-            // If JSON parsing fails, try to extract data from text
-            formattedCampaigns = extractCampaignsFromText(text);
-          }
-          
-          setCampaigns(formattedCampaigns);
-        } catch (error) {
-          console.error('Error fetching campaigns:', error);
-          setError(error.message);
-          setCampaigns([]);
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      // Extract campaigns from non-JSON text
-      const extractCampaignsFromText = (text) => {
-        const campaigns = [];
+<body>
+    <div class="container">
+        <header>
+            <h1>CONTENT CALENDAR CREATION</h1>
+        </header>
         
-        // Try to split on record boundaries
-        const sections = text.split(/id:[\s]*/g).filter(Boolean);
-        
-        for (const section of sections) {
-          try {
-            // Extract all key-value pairs
-            const lines = section.split('\n');
-            const campaign = { id: '', Notes: '', Tasks: '', Stage: '', Client: '', 'Campaign Type': [], 'Send Date': '' };
-            
-            // First line should be the ID
-            campaign.id = lines[0].trim();
-            
-            // Process remaining lines for fields
-            for (let i = 1; i < lines.length; i++) {
-              const line = lines[i].trim();
-              if (line && line.includes(':')) {
-                const [key, ...valueParts] = line.split(':');
-                const value = valueParts.join(':').trim();
-                
-                // Map to your field names
-                if (key.trim() === 'Notes') {
-                  campaign.Notes = value;
-                } else if (key.trim() === 'Tasks') {
-                  campaign.Tasks = value;
-                } else if (key.trim() === 'Stage') {
-                  campaign.Stage = value;
-                } else if (key.trim() === 'Client') {
-                  campaign.Client = value;
-                } else if (key.trim() === 'Campaign Type') {
-                  campaign['Campaign Type'] = value;
-                } else if (key.trim() === 'Send Date') {
-                  campaign['Send Date'] = value;
-                }
-              }
-            }
-            
-            // Only add if we have at least an ID and one field
-            if (campaign.id && (campaign.Tasks || campaign.Notes)) {
-              campaigns.push(formatCampaign(campaign));
-            }
-          } catch (e) {
-            console.error('Error parsing campaign section:', e);
-          }
-        }
-        
-        return campaigns;
-      };
-      
-      // Format a campaign into a standard structure
-      const formatCampaign = (data) => {
-        // Create campaign object based on your data structure
-        return {
-          id: data.id || 'unknown-' + Math.random().toString(36).substr(2, 9),
-          title: data.Tasks || 'Untitled Campaign',
-          type: data['Campaign Type'] && Array.isArray(data['Campaign Type']) && 
-                data['Campaign Type'].includes('sms') ? 'sms' : 'email',
-          start: new Date(data['Send Date'] || new Date()),
-          end: new Date(data['Send Date'] || new Date()),
-          description: data.Notes || '',
-          status: data.Stage || 'pending',
-          clientId: data.Client || '',
-          feedback: data.Notes || '',
-          rawData: data // Keep the raw data for reference
-        };
-      };
-
-      const handleSelectCampaign = (campaign) => {
-        setSelectedCampaign(campaign);
-        setFeedback(campaign.feedback || '');
-        setUpdateStatus(null);
-        setShowModal(true);
-      };
-
-      const handleApproval = async (approved) => {
-        try {
-          setUpdateStatus({ loading: true, error: null });
-          const response = await fetch(updateCampaignUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              campaignId: selectedCampaign.id,
-              approved: approved,
-              feedback: feedback
-            })
-          });
-          
-          if (!response.ok) throw new Error('Failed to update campaign status');
-          
-          // Update local state
-          setCampaigns(campaigns.map(campaign => 
-            campaign.id === selectedCampaign.id 
-              ? { 
-                  ...campaign, 
-                  status: approved ? 'Approved' : 'Needs Revision', 
-                  feedback 
-                } 
-              : campaign
-          ));
-          
-          setUpdateStatus({ 
-            loading: false, 
-            success: true, 
-            message: `Campaign ${approved ? 'approved' : 'sent for revision'} successfully!` 
-          });
-          
-          // Clear selected campaign after a delay to show success message
-          setTimeout(() => {
-            setSelectedCampaign(null);
-            setFeedback('');
-            setUpdateStatus(null);
-            setShowModal(false);
-          }, 2000);
-          
-        } catch (error) {
-          console.error('Error updating approval status:', error);
-          setUpdateStatus({ 
-            loading: false, 
-            error: true, 
-            message: error.message || 'Error updating campaign status' 
-          });
-        }
-      };
-
-      const getCampaignTypeClass = (type) => {
-        return type === 'sms' ? 'campaign-sms' : 'campaign-email';
-      };
-
-      // Calendar navigation
-      const prevMonth = () => {
-        setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
-      };
-
-      const nextMonth = () => {
-        setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
-      };
-
-      // Generate calendar days
-      const getDaysInMonth = (date) => {
-        const year = date.getFullYear();
-        const month = date.getMonth();
-        const firstDay = new Date(year, month, 1);
-        const lastDay = new Date(year, month + 1, 0);
-        
-        // Get day of week of first day (0 = Sunday)
-        const firstDayOfWeek = firstDay.getDay();
-        
-        // Array for all days to display
-        const days = [];
-        
-        // Add empty slots for days before first of month
-        for (let i = 0; i < firstDayOfWeek; i++) {
-          days.push({ date: null, isCurrentMonth: false });
-        }
-        
-        // Add all days in month
-        for (let i = 1; i <= lastDay.getDate(); i++) {
-          days.push({ 
-            date: new Date(year, month, i),
-            isCurrentMonth: true 
-          });
-        }
-        
-        return days;
-      };
-
-      const days = getDaysInMonth(currentMonth);
-      
-      // Group campaigns by date for calendar display
-      const campaignsByDate = _.groupBy(campaigns, campaign => 
-        campaign.start.toDateString()
-      );
-
-      // Get day name headers
-      const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-      // Format date for display
-      const formatDate = (date) => {
-        if (!date) return '';
-        return date.toLocaleDateString('en-US', { 
-          month: 'short', 
-          day: 'numeric',
-          year: 'numeric'
-        });
-      };
-
-      return (
-        <div className="container mx-auto p-4">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="calendar-container flex-grow">
-            <div className="p-6 bg-transparent text-white header-container">
-              <h1 className="text-2xl font-bold text-center">CONTENT CALENDAR</h1>
-            </div>
-            
-            {error && (
-              <div className="p-4 bg-red-800 text-white">
-                <p className="font-bold">Error:</p>
-                <p>{error}</p>
-              </div>
-            )}
-            
-            {loading && (
-              <div className="flex justify-center items-center py-4 bg-gray-900 text-white">
-                <p>Loading campaigns...</p>
-              </div>
-            )}
-            
-            <div className="p-6 bg-gray-900 bg-opacity-70">
-              <div className="flex justify-between items-center mb-4 text-white">
-                <button onClick={prevMonth} className="px-4 py-2 bg-gray-800 rounded hover:bg-gray-700">
-                  &lt; Previous
-                </button>
-                <h2 className="text-xl font-semibold">
-                  {currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
-                </h2>
-                <div className="flex space-x-2">
-                  <button onClick={nextMonth} className="px-4 py-2 bg-gray-800 rounded hover:bg-gray-700">
-                    Next &gt;
-                  </button>
+        <div class="form-container">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="website-url">Website URL</label>
+                    <input type="text" id="website-url" placeholder="https://example.com">
                 </div>
-              </div>
-              
-              {/* Calendar grid */}
-              <div className="grid grid-cols-7 gap-1 rounded-lg overflow-hidden">
-                {/* Weekday headers */}
-                {weekdays.map(day => (
-                  <div key={day} className="p-2 bg-gray-800 text-center font-semibold text-white">
-                    {day}
-                  </div>
-                ))}
                 
-                {/* Calendar days */}
-                {days.map((day, index) => {
-                  // Get campaigns for this day - show ALL campaigns
-                  const dayCampaigns = day.date ? 
-                    (campaignsByDate[day.date.toDateString()] || []) : [];
-                  
-                  return (
-                    <div 
-                      key={index}
-                      className={`min-h-28 p-1 calendar-cell ${
-                        day.isCurrentMonth ? 'bg-opacity-30 bg-gray-800' : 'bg-transparent bg-opacity-20'
-                      } ${
-                        selectedDate && day.date && selectedDate.toDateString() === day.date.toDateString() 
-                          ? 'ring-1 ring-white ring-opacity-20' 
-                          : ''
-                      } text-white`}
-                      onClick={() => day.date && setSelectedDate(day.date)}
-                    >
-                      {day.date && (
-                        <>
-                          <div className="text-right text-sm p-1">
-                            {day.date.getDate()}
-                          </div>
-                          <div className="mt-1">
-                            {dayCampaigns.map(campaign => (
-                              <div 
-                                key={campaign.id}
-                                className={`mb-1 py-1 px-2 text-xs text-white rounded cursor-pointer ${getCampaignTypeClass(campaign.type)}`}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleSelectCampaign(campaign);
-                                }}
-                              >
-                                <div className="flex flex-col">
-                                  <span className="font-semibold truncate">{campaign.title}</span>
-                                  <span className="mt-1 text-xs px-1 py-0.5 rounded inline-block w-fit status-badge">
-                                    {campaign.status || 'Pending'}
-                                  </span>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+                <div class="form-group">
+                    <label for="campaigns-per-week">Email Campaigns Per Week</label>
+                    <select id="campaigns-per-week">
+                        <option value="1">1 email campaign per week</option>
+                        <option value="2">2 email campaigns per week</option>
+                        <option value="3">3 email campaigns per week</option>
+                        <option value="4">4 email campaigns per week</option>
+                        <option value="5">5 email campaigns per week</option>
+                    </select>
+                </div>
             </div>
             
-            {/* Right Sidebar for Client Approval Campaigns */}
-            <div className="sidebar-container w-full md:w-64">
-              <div className="p-4 bg-transparent text-white header-container">
-                <h2 className="text-lg font-bold text-center">PENDING APPROVALS</h2>
-              </div>
-              <div className="p-4">
-                {campaigns.filter(camp => isClientApprovalStatus(camp.status)).length > 0 ? (
-                  campaigns
-                    .filter(camp => isClientApprovalStatus(camp.status))
-                    .map(campaign => (
-                      <div 
-                        key={campaign.id}
-                        className={`mb-3 p-3 rounded cursor-pointer hover:bg-opacity-50 transition-all ${getCampaignTypeClass(campaign.type)}`}
-                        onClick={() => handleSelectCampaign(campaign)}
-                      >
-                        <div className="flex flex-col">
-                          <span className="font-semibold text-white">{campaign.title}</span>
-                          <span className="text-xs mt-1 text-white opacity-80">{formatDate(campaign.start)}</span>
-                          <span className="mt-2 text-xs px-2 py-1 rounded inline-block w-fit status-badge">
-                            {campaign.status}
-                          </span>
-                        </div>
-                      </div>
-                    ))
-                ) : (
-                  <div className="text-center py-8 text-gray-400">
-                    <p>No campaigns pending approval</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-          
-          {showModal && selectedCampaign && (
-            <div className="modal-overlay" onClick={() => setShowModal(false)}>
-              <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                <div className="flex flex-col md:flex-row">
-                  {/* Main content area - now 50% width */}
-                  <div className="p-4 w-full md:w-1/2">
-                    <div className="flex justify-between items-center mb-4">
-                      <h2 className="text-xl font-semibold text-white">{selectedCampaign.title}</h2>
-                      <button 
-                        className="text-gray-400 hover:text-white text-xl font-bold"
-                        onClick={() => setShowModal(false)}
-                      >
-                        ×
-                      </button>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      <div>
-                        <p className="mb-2 text-white">
-                          <span className="font-semibold text-gray-400">Date:</span>{' '}
-                          {formatDate(selectedCampaign.start)}
-                        </p>
-                        <p className="mb-2 text-white">
-                          <span className="font-semibold text-gray-400">Status:</span>{' '}
-                          <span className="ml-2 px-2 py-1 rounded text-white status-badge">
-                            {selectedCampaign.status || 'Pending'}
-                          </span>
-                        </p>
-                      </div>
-                      <div>
-                        <p className="mb-2 text-white">
-                          <span className="font-semibold text-gray-400">Type:</span>{' '}
-                          <span className={`ml-2 px-2 py-1 rounded text-white ${getCampaignTypeClass(selectedCampaign.type)}`}>
-                            {selectedCampaign.type === 'sms' ? 'SMS' : 'Email'}
-                          </span>
-                        </p>
-                        <p className="mb-2 text-white">
-                          <span className="font-semibold text-gray-400">Client:</span>{' '}
-                          {selectedCampaign.clientId}
-                        </p>
-                      </div>
-                    </div>
-                    
-                    {/* Always show campaign info regardless of status */}
-                    <div className="mb-4">
-                      <p className="font-semibold text-gray-400 mb-1">Campaign Details:</p>
-                      <p className="p-3 bg-gray-800 bg-opacity-50 border border-gray-700 rounded text-white">
-                        {selectedCampaign.description || "No campaign details available."}
-                      </p>
-                    </div>
-                    
-                    {selectedCampaign.feedback && (
-                      <div className="mb-4">
-                        <p className="font-semibold text-gray-400 mb-1">Previous Feedback:</p>
-                        <p className="p-3 bg-gray-800 bg-opacity-50 border border-gray-700 rounded text-white">{selectedCampaign.feedback}</p>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Client Review section - now 50% width */}
-                  <div className="w-full md:w-1/2 p-4 border-t md:border-t-0 md:border-l border-gray-700 bg-gray-800 bg-opacity-30">
-                    <h3 className="text-lg font-semibold mb-4 text-white">Client Review</h3>
-                    
-                    {updateStatus?.loading ? (
-                      <div className="flex justify-center py-6">
-                        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-white"></div>
-                      </div>
-                    ) : updateStatus?.success ? (
-                      <div className="bg-green-900 border border-green-700 text-green-200 px-4 py-3 rounded mb-4">
-                        {updateStatus.message}
-                      </div>
-                    ) : updateStatus?.error ? (
-                      <div className="bg-red-900 border border-red-700 text-red-200 px-4 py-3 rounded mb-4">
-                        {updateStatus.message}
-                      </div>
-                    ) : (
-                      <>
-                        <div className="mb-4">
-                          <label className="block font-semibold mb-2 text-white">Client Notes:</label>
-                          <textarea
-                            className="w-full p-3 rounded bg-gray-800 border border-gray-700 text-white"
-                            rows={6}
-                            value={feedback}
-                            onChange={(e) => setFeedback(e.target.value)}
-                            placeholder="Enter your feedback or revision requests here..."
-                            disabled={!isClientApprovalStatus(selectedCampaign.status)}
-                          />
-                        </div>
-                        
-                        {isClientApprovalStatus(selectedCampaign.status) ? (
-                          <div className="space-y-3 mt-4">
-                            <button
-                              onClick={() => handleApproval(true)}
-                              className="w-full py-3 bg-green-700 text-white rounded hover:bg-green-600"
-                            >
-                              Approve Campaign
-                            </button>
-                            <button
-                              onClick={() => handleApproval(false)}
-                              className="w-full py-3 bg-yellow-700 text-white rounded hover:bg-yellow-600"
-                            >
-                              Request Revisions
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="bg-gray-800 border border-gray-600 text-gray-300 p-3 rounded mt-4">
-                            <p>This campaign is not ready for client approval.</p>
-                            <p className="mt-2 text-sm">Current status: <span className="font-semibold">{selectedCampaign.status || 'Pending'}</span></p>
-                            <p className="mt-2 text-sm">Only campaigns with "Client Approval" status can be approved or revised.</p>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="sms-count">SMS Count This Month</label>
+                    <input type="number" id="sms-count" placeholder="Number of SMS messages" min="0">
                 </div>
-              </div>
+                
+                <div class="form-group">
+                    <label for="custom-requests">Custom Client Requests</label>
+                    <input type="text" id="custom-requests" placeholder="Special requests or notes">
+                </div>
             </div>
-          )}
+            
+            <div class="button-container" style="display: flex; gap: 10px; margin-top: 15px;">
+                <button id="populate-btn" class="submit-btn" style="flex: 1;">Generate Calendar</button>
+                <button id="export-btn" class="submit-btn" style="flex: 1; background-color: #2ecc71;">Export to Airtable</button>
+            </div>
         </div>
-      );
-      
-      // Helper function for client approval status
-      function isClientApprovalStatus(status) {
-        if (!status) return false;
-        return status.toLowerCase().includes('client approval');
-      }
-    };
-
-    // Render the app
-    ReactDOM.render(
-      <CampaignCalendar />,
-      document.getElementById('root')
-    );
-  </script>
+        
+        <!-- Calendar always visible -->
+        <div class="calendar-container">
+            <div class="month-header">
+                <h2 id="month-title" class="month-title">April 2025</h2>
+                <div class="calendar-controls">
+                    <button class="calendar-control-btn" id="prev-month">&lt; Previous</button>
+                    <button class="calendar-control-btn" id="next-month">Next &gt;</button>
+                    <button class="calendar-control-btn" id="add-camp">+ Add</button>
+                </div>
+            </div>
+            
+            <div class="days-header">
+                <div>Sun</div>
+                <div>Mon</div>
+                <div>Tue</div>
+                <div>Wed</div>
+                <div>Thu</div>
+                <div>Fri</div>
+                <div>Sat</div>
+            </div>
+            
+            <div id="calendar-grid" class="calendar-grid">
+                <!-- Calendar days will be generated here -->
+            </div>
+        </div>
+        
+        <div id="status-message" class="status-message"></div>
+    </div>
+    
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="loading-spinner"></div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            let currentDate = new Date();
+            let currentMonth = currentDate.getMonth();
+            let currentYear = currentDate.getFullYear();
+            
+            // Initial calendar render
+            renderCalendar(currentMonth, currentYear);
+            
+            // Previous month button
+            document.getElementById('prev-month').addEventListener('click', function() {
+                currentMonth--;
+                if (currentMonth < 0) {
+                    currentMonth = 11;
+                    currentYear--;
+                }
+                renderCalendar(currentMonth, currentYear);
+            });
+            
+            // Next month button
+            document.getElementById('next-month').addEventListener('click', function() {
+                currentMonth++;
+                if (currentMonth > 11) {
+                    currentMonth = 0;
+                    currentYear++;
+                }
+                renderCalendar(currentMonth, currentYear);
+            });
+            
+            // Add campaign button
+            document.getElementById('add-camp').addEventListener('click', createNewCampaign);
+            
+            // Populate button
+            document.getElementById('populate-btn').addEventListener('click', function() {
+                populateCalendar(currentMonth, currentYear);
+            });
+            
+            // Export to Airtable button
+            document.getElementById('export-btn').addEventListener('click', exportToAirtable);
+        });
+        
+        function renderCalendar(month, year) {
+            const calendarGrid = document.getElementById('calendar-grid');
+            calendarGrid.innerHTML = '';
+            
+            const monthTitle = document.getElementById('month-title');
+            const months = [
+                'January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December'
+            ];
+            monthTitle.textContent = `${months[month]} ${year}`;
+            
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const daysInMonth = lastDay.getDate();
+            
+            // Fill in empty days from previous month
+            const firstDayOfWeek = firstDay.getDay();
+            for (let i = 0; i < firstDayOfWeek; i++) {
+                const emptyDay = document.createElement('div');
+                emptyDay.className = 'calendar-day empty-day';
+                calendarGrid.appendChild(emptyDay);
+            }
+            
+            // Fill in days of the month
+            for (let day = 1; day <= daysInMonth; day++) {
+                const currentDate = new Date(year, month, day);
+                const dayOfWeek = currentDate.getDay();
+                
+                const dayDiv = document.createElement('div');
+                dayDiv.className = 'calendar-day';
+                dayDiv.setAttribute('data-date', `${year}-${month+1}-${day}`);
+                
+                const dateNumber = document.createElement('div');
+                dateNumber.className = 'date-number';
+                dateNumber.textContent = day;
+                dayDiv.appendChild(dateNumber);
+                
+                // For mobile, add day of week
+                const mobileDayName = document.createElement('div');
+                mobileDayName.className = 'mobile-day';
+                mobileDayName.textContent = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][dayOfWeek];
+                if (window.innerWidth <= 768) {
+                    dayDiv.appendChild(mobileDayName);
+                }
+                
+                calendarGrid.appendChild(dayDiv);
+            }
+            
+            // Fill in empty days for next month to complete the grid
+            const lastDayOfWeek = lastDay.getDay();
+            if (lastDayOfWeek < 6) {
+                for (let i = lastDayOfWeek + 1; i <= 6; i++) {
+                    const emptyDay = document.createElement('div');
+                    emptyDay.className = 'calendar-day empty-day';
+                    calendarGrid.appendChild(emptyDay);
+                }
+            }
+        }
+        
+        async function populateCalendar(month, year) {
+            const websiteUrl = document.getElementById('website-url').value;
+            const campaignsPerWeek = document.getElementById('campaigns-per-week').value;
+            const smsCount = document.getElementById('sms-count').value;
+            const customRequests = document.getElementById('custom-requests').value;
+            
+            if (!websiteUrl) {
+                showStatusMessage('Please enter your website URL', 'error');
+                return;
+            }
+            
+            document.getElementById('loading-overlay').style.display = 'flex';
+            
+            try {
+                const webhookData = {
+                    websiteUrl,
+                    campaignsPerWeek: parseInt(campaignsPerWeek) || 3,
+                    smsCount: parseInt(smsCount) || 0,
+                    customRequests,
+                    month: month + 1,
+                    year,
+                    campaignType: 'email' // Default campaign type
+                };
+                
+                // Get webhook URL
+                const webhookUrl = 'https://hook.us2.make.com/dj8zoi4i6hvhr7liqtveco34h07bo3e9';
+                
+                console.log('Sending data to webhook:', webhookData);
+                
+                // Make sure to wait for the fetch to complete
+                const response = await fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(webhookData)
+                });
+                
+                console.log('Response status:', response.status);
+                
+                // Clear any existing campaigns
+                clearExistingCampaigns();
+                
+                // Try to get response content
+                const responseText = await response.text();
+                console.log('Raw response text:', responseText);
+                
+                // For debugging - show exact response in console
+                console.log('Response text length:', responseText.length);
+                console.log('Response text first 100 chars:', responseText.substring(0, 100));
+                
+                // Handle empty response
+                if (!responseText || !responseText.trim()) {
+                    console.warn('Empty response from webhook');
+                    showStatusMessage('Empty response received from webhook', 'error');
+                    return;
+                }
+                
+                // Try parsing the response as JSON
+                let campaignData;
+                try {
+                    // Try parsing with extra safety
+                    const cleanedResponse = responseText.trim();
+                    console.log('Cleaned response first 100 chars:', cleanedResponse.substring(0, 100));
+                    
+                    // Check if response starts with markdown code block and extract JSON
+                    if (cleanedResponse.startsWith('```json')) {
+                        const jsonContent = cleanedResponse.replace(/^```json/, '').replace(/```$/, '').trim();
+                        console.log('Extracted JSON from markdown:', jsonContent.substring(0, 100));
+                        campaignData = JSON.parse(jsonContent);
+                    } else {
+                        // Regular JSON parsing
+                        campaignData = JSON.parse(cleanedResponse);
+                    }
+                    
+                    console.log('Parsed campaign data:', campaignData);
+                    
+                    // Validate that it's an array
+                    if (!Array.isArray(campaignData)) {
+                        console.warn('Webhook response is not an array:', campaignData);
+                        
+                        // Check if it might be wrapped in another object
+                        if (campaignData && typeof campaignData === 'object') {
+                            // Look for array properties
+                            const possibleArrays = Object.values(campaignData).filter(val => Array.isArray(val));
+                            if (possibleArrays.length > 0) {
+                                campaignData = possibleArrays[0];
+                                console.log('Found array inside response object:', campaignData);
+                            } else {
+                                showStatusMessage('Webhook response format is incorrect (not an array)', 'error');
+                                return;
+                            }
+                        } else {
+                            showStatusMessage('Webhook response format is incorrect (not an array)', 'error');
+                            return;
+                        }
+                    }
+                    
+                    // Ensure campaigns have campaignType set
+                    campaignData = campaignData.map(campaign => {
+                        if (!campaign.campaignType) {
+                            // Set default type based on name
+                            campaign.campaignType = (campaign.campaignName || '').toLowerCase().includes('sms') ? 'sms' : 'email';
+                        }
+                        return campaign;
+                    });
+                } catch (e) {
+                    console.error('Failed to parse response as JSON:', e);
+                    showStatusMessage('Cannot parse webhook response as JSON', 'error');
+                    
+                    // If webhook fails, generate sample data based on campaignsPerWeek
+                    console.log('Using generated sample data');
+                    campaignData = generateSampleCampaigns(parseInt(campaignsPerWeek) || 2, month, year);
+                }
+                
+                // Check for empty array
+                if (campaignData.length === 0) {
+                    console.warn('Webhook returned empty array');
+                    showStatusMessage('No campaigns in webhook response', 'error');
+                    return;
+                }
+                
+                // Add campaigns to calendar
+                addCampaignsToCalendar(campaignData);
+                
+                // Enable draggable functionality
+                enableDraggable();
+                
+                showStatusMessage(`Calendar populated with ${campaignData.length} campaigns`, 'success');
+            } catch (error) {
+                console.error('Error connecting to webhook:', error);
+                showStatusMessage('Error connecting to webhook', 'error');
+            } finally {
+                // Hide loading overlay
+                document.getElementById('loading-overlay').style.display = 'none';
+                
+                // Enable export button if we have campaigns
+                if (document.querySelectorAll('.campaign').length > 0) {
+                    document.getElementById('export-btn').removeAttribute('disabled');
+                } else {
+                    document.getElementById('export-btn').setAttribute('disabled', 'disabled');
+                }
+            }
+        }
+        
+        // Export to Airtable function
+        async function exportToAirtable() {
+            document.getElementById('loading-overlay').style.display = 'flex';
+            
+            try {
+                // Collect all campaigns from the calendar
+                const campaignElements = document.querySelectorAll('.campaign');
+                const campaigns = [];
+                
+                campaignElements.forEach(campaignEl => {
+                    // Get campaign data from the data attribute
+                    let campaignData;
+                    try {
+                        campaignData = JSON.parse(campaignEl.getAttribute('data-campaign'));
+                        
+                        // Get the date from the parent calendar day
+                        const calendarDay = campaignEl.closest('.calendar-day');
+                        if (calendarDay) {
+                            const dateStr = calendarDay.getAttribute('data-date');
+                            if (dateStr && dateStr !== campaignData.date) {
+                                campaignData.date = dateStr;
+                            }
+                        }
+                        
+                        campaigns.push(campaignData);
+                    } catch (e) {
+                        console.error('Error parsing campaign data:', e);
+                    }
+                });
+                
+                if (campaigns.length === 0) {
+                    showStatusMessage('No campaigns to export', 'error');
+                    document.getElementById('loading-overlay').style.display = 'none';
+                    return;
+                }
+                
+                // Send to Airtable webhook
+                const webhookUrl = 'https://hook.us2.make.com/iybaaa3op04dakasknke6nygxe5oezjn';
+                
+                const response = await fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(campaigns)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showStatusMessage(result.message || 'Export successful!', 'success');
+                } else {
+                    showStatusMessage(result.message || 'Export failed', 'error');
+                }
+            } catch (error) {
+                console.error('Error exporting to Airtable:', error);
+                showStatusMessage('Error connecting to Airtable webhook', 'error');
+            } finally {
+                document.getElementById('loading-overlay').style.display = 'none';
+            }
+        }
+        
+        // Make campaign items draggable
+        function enableDraggable() {
+            const campaignItems = document.querySelectorAll('.campaign');
+            
+            campaignItems.forEach(item => {
+                // Add draggable attribute
+                item.setAttribute('draggable', 'true');
+                
+                // Add draggable styling
+                item.style.cursor = 'grab';
+                
+                // Add drag start event
+                item.addEventListener('dragstart', function(e) {
+                    e.dataTransfer.setData('text/plain', item.getAttribute('data-campaign'));
+                    e.dataTransfer.setData('sourceId', item.id || Date.now().toString());
+                    setTimeout(() => {
+                        item.style.opacity = '0.4';
+                    }, 0);
+                });
+                
+                // Add drag end event
+                item.addEventListener('dragend', function() {
+                    item.style.opacity = '1';
+                });
+            });
+            
+            // Make calendar days accept drops
+            const calendarDays = document.querySelectorAll('.calendar-day:not(.empty-day)');
+            
+            calendarDays.forEach(day => {
+                // Allow drop
+                day.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    day.style.backgroundColor = 'rgba(80, 80, 120, 0.7)';
+                });
+                
+                // Reset highlight on drag leave
+                day.addEventListener('dragleave', function() {
+                    day.style.backgroundColor = 'rgba(48, 47, 66, 0.5)';
+                });
+                
+                // Handle drop
+                day.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    day.style.backgroundColor = 'rgba(48, 47, 66, 0.5)';
+                    
+                    // Get dropped campaign data
+                    const campaignData = e.dataTransfer.getData('text/plain');
+                    const sourceId = e.dataTransfer.getData('sourceId');
+                    
+                    // Find source element to remove it
+                    const sourceElement = document.getElementById(sourceId);
+                    if (sourceElement) {
+                        sourceElement.remove();
+                    } else {
+                        // If ID wasn't set, find by data attribute (less reliable)
+                        const possibleSources = document.querySelectorAll('.campaign');
+                        possibleSources.forEach(source => {
+                            if (source.getAttribute('data-campaign') === campaignData) {
+                                source.remove();
+                            }
+                        });
+                    }
+                    
+                    // Create new campaign element
+                    const campaignDiv = document.createElement('div');
+                    campaignDiv.className = 'campaign';
+                    campaignDiv.id = 'campaign-' + Date.now();
+                    
+                    let campaign;
+                    try {
+                        campaign = JSON.parse(campaignData);
+                    } catch (e) {
+                        console.error('Error parsing campaign data:', e);
+                        return;
+                    }
+                    
+                    // Check if it's an SMS campaign
+                    const isSMS = (campaign.campaignType === 'sms' || e.dataTransfer.getData('text/plain').toLowerCase().includes('"campaignType":"sms"'));
+                    if (isSMS) {
+                        campaignDiv.classList.add('sms');
+                    }
+                    
+                    const titleDiv = document.createElement('div');
+                    titleDiv.className = 'campaign-title';
+                    titleDiv.textContent = campaign.title || campaign.campaignName || 'Campaign';
+                    campaignDiv.appendChild(titleDiv);
+                    
+                    if (campaign.offer) {
+                        const offerDiv = document.createElement('div');
+                        offerDiv.className = 'campaign-offer';
+                        offerDiv.textContent = campaign.offer;
+                        campaignDiv.appendChild(offerDiv);
+                    }
+                    
+                    // Set data attribute for future moves
+                    campaignDiv.setAttribute('data-campaign', campaignData);
+                    
+                    // Add click event to show campaign details
+                    campaignDiv.addEventListener('click', function(e) {
+                        // Don't open details if clicking on editable content
+                        if (e.target.contentEditable === 'true') {
+                            return;
+                        }
+                        
+                        // Get updated campaign data
+                        const campaignData = JSON.parse(campaignDiv.getAttribute('data-campaign'));
+                        
+                        // Show dialog with all campaign details
+                        showCampaignDetails(campaignData, campaignDiv);
+                    });
+                    
+                    // Add to target day
+                    day.appendChild(campaignDiv);
+                    
+                    // Re-enable draggable on the new element
+                    campaignDiv.setAttribute('draggable', 'true');
+                    campaignDiv.style.cursor = 'grab';
+                    
+                    campaignDiv.addEventListener('dragstart', function(e) {
+                        e.dataTransfer.setData('text/plain', campaignDiv.getAttribute('data-campaign'));
+                        e.dataTransfer.setData('sourceId', campaignDiv.id);
+                        setTimeout(() => {
+                            campaignDiv.style.opacity = '0.4';
+                        }, 0);
+                    });
+                    
+                    campaignDiv.addEventListener('dragend', function() {
+                        campaignDiv.style.opacity = '1';
+                    });
+                });
+            });
+        }
+        
+        function clearExistingCampaigns() {
+            const campaigns = document.querySelectorAll('.campaign');
+            campaigns.forEach(campaign => campaign.remove());
+        }
+        
+        function addCampaignsToCalendar(campaignData) {
+            campaignData.forEach((campaign, index) => {
+                const dateStr = campaign.date; // Expected format: "YYYY-MM-DD" or "YYYY-M-D"
+                if (!dateStr) {
+                    console.error('Campaign missing date:', campaign);
+                    return;
+                }
+                
+                const dateParts = dateStr.split('-');
+                if (dateParts.length !== 3) {
+                    console.error('Invalid date format:', dateStr);
+                    return;
+                }
+                
+                const year = parseInt(dateParts[0]);
+                const month = parseInt(dateParts[1]);
+                const day = parseInt(dateParts[2]);
+                
+                // Find the day element
+                const dayElement = document.querySelector(`.calendar-day[data-date="${year}-${month}-${day}"]`);
+                
+                if (dayElement) {
+                    const campaignDiv = document.createElement('div');
+                    campaignDiv.className = 'campaign';
+                    campaignDiv.id = `campaign-${index}-${Date.now()}`;
+                    
+                    // Check if it's an SMS campaign and add appropriate class
+                    const isSMS = (campaign.campaignType === 'sms' || (campaign.title || campaign.campaignName || '').toLowerCase().includes('sms'));
+                    if (isSMS) {
+                        campaignDiv.classList.add('sms');
+                    }
+                    
+                    // Map legacy fields to new fields if needed
+                    if (campaign.campaignIdea && !campaign.campaignInfo) campaign.campaignInfo = campaign.campaignIdea;
+                    if (campaign.websiteLink && !campaign.relevantLinks) campaign.relevantLinks = campaign.websiteLink;
+                    if (!campaign.abTest) campaign.abTest = "";
+                    if (!campaign.website) campaign.website = document.getElementById('website-url').value || '';
+                    
+                    // Make title editable
+                    const titleDiv = document.createElement('div');
+                    titleDiv.className = 'campaign-title';
+                    titleDiv.contentEditable = true;
+                    titleDiv.textContent = campaign.title || campaign.campaignName || 'Campaign';
+                    titleDiv.addEventListener('blur', function() {
+                        // Update the data attribute when edited
+                        const campaignData = JSON.parse(campaignDiv.getAttribute('data-campaign'));
+                        campaignData.campaignName = titleDiv.textContent;
+                        campaignData.title = titleDiv.textContent;
+                        campaignDiv.setAttribute('data-campaign', JSON.stringify(campaignData));
+                    });
+                    campaignDiv.appendChild(titleDiv);
+                    
+                    // Make offer editable
+                    if (campaign.offer || campaign.offer === null) {
+                        const offerDiv = document.createElement('div');
+                        offerDiv.className = 'campaign-offer';
+                        offerDiv.contentEditable = true;
+                        offerDiv.textContent = campaign.offer || 'Add offer details';
+                        offerDiv.addEventListener('blur', function() {
+                            // Update the data attribute when edited
+                            const campaignData = JSON.parse(campaignDiv.getAttribute('data-campaign'));
+                            campaignData.offer = offerDiv.textContent;
+                            campaignDiv.setAttribute('data-campaign', JSON.stringify(campaignData));
+                        });
+                        campaignDiv.appendChild(offerDiv);
+                    }
+                    
+                    // Add delete button
+                    const deleteButton = document.createElement('span');
+                    deleteButton.className = 'delete-button';
+                    deleteButton.innerHTML = '&times;';
+                    deleteButton.title = 'Delete this campaign';
+                    deleteButton.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        if (confirm('Delete this campaign?')) {
+                            campaignDiv.remove();
+                        }
+                    });
+                    campaignDiv.appendChild(deleteButton);
+                    
+                    // Add data attribute with all campaign details
+                    campaignDiv.setAttribute('data-campaign', JSON.stringify(campaign));
+                    
+                    // Add click event to show more details
+                    campaignDiv.addEventListener('click', function(e) {
+                        // Don't open details if clicking on editable content
+                        if (e.target.contentEditable === 'true') {
+                            return;
+                        }
+                        
+                        // Get updated campaign data
+                        const campaignData = JSON.parse(campaignDiv.getAttribute('data-campaign'));
+                        
+                        // Show dialog with all campaign details
+                        showCampaignDetails(campaignData, campaignDiv);
+                    });
+                    
+                    dayElement.appendChild(campaignDiv);
+                } else {
+                    console.warn(`Day element not found for date: ${dateStr}`);
+                }
+            });
+        }
+        
+        // Show campaign details in a popup
+        // Create a new campaign
+        function createNewCampaign() {
+            const campaign = {
+                title: "New Campaign",
+                campaignName: "New Campaign",
+                campaignInfo: "",         // New field (replacing campaignIdea)
+                offer: "",
+                abTest: "",              // New field
+                relevantLinks: "",       // New field (replacing websiteLink)
+                website: document.getElementById('website-url').value || "", // New field
+                campaignType: "email"    // Explicitly set
+            };
+            
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            
+            const modal = document.createElement('div');
+            modal.className = 'modal-content';
+            
+            const closeBtn = document.createElement('span');
+            closeBtn.className = 'modal-close';
+            closeBtn.innerHTML = '&times;';
+            closeBtn.onclick = () => document.body.removeChild(overlay);
+            
+            // Date picker
+            const dateGroup = document.createElement('div');
+            dateGroup.className = 'form-group';
+            
+            const dateLabel = document.createElement('label');
+            dateLabel.textContent = 'Date:';
+            
+            const dateInput = document.createElement('input');
+            dateInput.type = 'date';
+            
+            // Default date
+            const title = document.getElementById('month-title').textContent;
+            const [monthName, year] = title.split(' ');
+            const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            const monthIndex = months.indexOf(monthName);
+            dateInput.value = new Date(parseInt(year), monthIndex, 1).toISOString().split('T')[0];
+            
+            dateGroup.appendChild(dateLabel);
+            dateGroup.appendChild(dateInput);
+            
+            // Campaign Type
+            const typeGroup = document.createElement('div');
+            typeGroup.className = 'form-group';
+            
+            const typeLabel = document.createElement('label');
+            typeLabel.textContent = 'Campaign Type:';
+            
+            const typeSelect = document.createElement('select');
+            const emailOption = document.createElement('option');
+            emailOption.value = 'email';
+            emailOption.textContent = 'Email Campaign';
+            
+            const smsOption = document.createElement('option');
+            smsOption.value = 'sms';
+            smsOption.textContent = 'SMS Campaign';
+            
+            typeSelect.appendChild(emailOption);
+            typeSelect.appendChild(smsOption);
+            
+            typeGroup.appendChild(typeLabel);
+            typeGroup.appendChild(typeSelect);
+            
+            const btn = document.createElement('button');
+            btn.className = 'submit-btn';
+            btn.textContent = 'Continue';
+            btn.onclick = function() {
+                const date = new Date(dateInput.value);
+                // Add a day to fix the off-by-one date issue
+                date.setDate(date.getDate() + 1);
+                campaign.date = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+                campaign.campaignType = typeSelect.value;
+                
+                document.body.removeChild(overlay);
+                showCampaignDetails(campaign, null, true);
+            };
+            
+            modal.appendChild(closeBtn);
+            modal.appendChild(dateGroup);
+            modal.appendChild(typeGroup);
+            modal.appendChild(btn);
+            
+            overlay.appendChild(modal);
+            document.body.appendChild(overlay);
+        }
+        
+        function showCampaignDetails(campaign, campaignElement, isNew = false) {
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            
+            const modal = document.createElement('div');
+            modal.className = 'modal-content';
+            
+            const closeButton = document.createElement('span');
+            closeButton.className = 'modal-close';
+            closeButton.innerHTML = '&times;';
+            closeButton.onclick = () => document.body.removeChild(overlay);
+            
+            // Create form for campaign details
+            const form = document.createElement('div');
+            form.className = 'campaign-details-form';
+            
+            // Title
+            const titleGroup = document.createElement('div');
+            titleGroup.className = 'form-group';
+            const titleLabel = document.createElement('label');
+            titleLabel.textContent = 'Campaign Name:';
+            const titleInput = document.createElement('input');
+            titleInput.type = 'text';
+            titleInput.value = campaign.title || campaign.campaignName || '';
+            titleGroup.appendChild(titleLabel);
+            titleGroup.appendChild(titleInput);
+            
+            // Campaign Type
+            const typeGroup = document.createElement('div');
+            typeGroup.className = 'form-group';
+            const typeLabel = document.createElement('label');
+            typeLabel.textContent = 'Campaign Type:';
+            const typeSelect = document.createElement('select');
+            
+            const emailOption = document.createElement('option');
+            emailOption.value = 'email';
+            emailOption.textContent = 'Email Campaign';
+            emailOption.selected = (campaign.campaignType === 'email');
+            
+            const smsOption = document.createElement('option');
+            smsOption.value = 'sms';
+            smsOption.textContent = 'SMS Campaign';
+            smsOption.selected = (campaign.campaignType === 'sms');
+            
+            typeSelect.appendChild(emailOption);
+            typeSelect.appendChild(smsOption);
+            typeGroup.appendChild(typeLabel);
+            typeGroup.appendChild(typeSelect);
+            
+            // Campaign Info (replacing Campaign Idea)
+            const infoGroup = document.createElement('div');
+            infoGroup.className = 'form-group';
+            const infoLabel = document.createElement('label');
+            infoLabel.textContent = 'Campaign Information:';
+            const infoTextarea = document.createElement('textarea');
+            infoTextarea.value = campaign.campaignInfo || campaign.campaignIdea || '';
+            infoGroup.appendChild(infoLabel);
+            infoGroup.appendChild(infoTextarea);
+            
+            // Offer
+            const offerGroup = document.createElement('div');
+            offerGroup.className = 'form-group';
+            const offerLabel = document.createElement('label');
+            offerLabel.textContent = 'Offer:';
+            const offerInput = document.createElement('input');
+            offerInput.type = 'text';
+            offerInput.value = campaign.offer || '';
+            offerGroup.appendChild(offerLabel);
+            offerGroup.appendChild(offerInput);
+            
+            // A/B Test (new field)
+            const abGroup = document.createElement('div');
+            abGroup.className = 'form-group';
+            const abLabel = document.createElement('label');
+            abLabel.textContent = 'A/B Test Details:';
+            const abInput = document.createElement('input');
+            abInput.type = 'text';
+            abInput.value = campaign.abTest || '';
+            abGroup.appendChild(abLabel);
+            abGroup.appendChild(abInput);
+            
+            // Relevant Links (replacing Website Link)
+            const linksGroup = document.createElement('div');
+            linksGroup.className = 'form-group';
+            const linksLabel = document.createElement('label');
+            linksLabel.textContent = 'Relevant Links:';
+            const linksInput = document.createElement('input');
+            linksInput.type = 'text';
+            linksInput.value = campaign.relevantLinks || campaign.websiteLink || '';
+            linksGroup.appendChild(linksLabel);
+            linksGroup.appendChild(linksInput);
+            
+            // Website (new field)
+            const websiteGroup = document.createElement('div');
+            websiteGroup.className = 'form-group';
+            const websiteLabel = document.createElement('label');
+            websiteLabel.textContent = 'Website:';
+            const websiteInput = document.createElement('input');
+            websiteInput.type = 'text';
+            websiteInput.value = campaign.website || document.getElementById('website-url').value || '';
+            websiteGroup.appendChild(websiteLabel);
+            websiteGroup.appendChild(websiteInput);
+            
+            // Save button
+            const saveButton = document.createElement('button');
+            saveButton.className = 'submit-btn';
+            saveButton.textContent = isNew ? 'Create Campaign' : 'Save Changes';
+            saveButton.onclick = function() {
+                // Update campaign data with new fields
+                campaign.campaignName = titleInput.value;
+                campaign.title = titleInput.value;
+                campaign.campaignType = typeSelect.value;
+                campaign.campaignInfo = infoTextarea.value;
+                campaign.offer = offerInput.value;
+                campaign.abTest = abInput.value;
+                campaign.relevantLinks = linksInput.value;
+                campaign.website = websiteInput.value;
+                
+                if (isNew) {
+                    // Create new campaign
+                    const [year, month, day] = campaign.date.split('-').map(Number);
+                    const dayEl = document.querySelector(`.calendar-day[data-date="${year}-${month}-${day}"]`);
+                    
+                    if (dayEl) {
+                        // Create element
+                        const newCamp = document.createElement('div');
+                        newCamp.className = 'campaign';
+                        // Check if it's an SMS campaign
+                        if (campaign.campaignType === 'sms') {
+                            newCamp.classList.add('sms');
+                        }
+                        
+                        const title = document.createElement('div');
+                        title.className = 'campaign-title';
+                        title.contentEditable = true;
+                        title.textContent = campaign.campaignName;
+                        
+                        const offer = document.createElement('div');
+                        offer.className = 'campaign-offer';
+                        offer.contentEditable = true;
+                        offer.textContent = campaign.offer || 'Add offer';
+                        
+                        // Set data and events
+                        newCamp.setAttribute('data-campaign', JSON.stringify(campaign));
+                        newCamp.setAttribute('draggable', 'true');
+                        
+                        newCamp.addEventListener('click', e => {
+                            if (e.target.contentEditable !== 'true') {
+                                showCampaignDetails(JSON.parse(newCamp.getAttribute('data-campaign')), newCamp);
+                            }
+                        });
+                        
+                        newCamp.addEventListener('dragstart', e => {
+                            e.dataTransfer.setData('text/plain', newCamp.getAttribute('data-campaign'));
+                            e.dataTransfer.setData('sourceId', newCamp.id);
+                            setTimeout(() => newCamp.style.opacity = '0.4', 0);
+                        });
+                        
+                        newCamp.addEventListener('dragend', () => newCamp.style.opacity = '1');
+                        
+                        // Append elements
+                        newCamp.appendChild(title);
+                        newCamp.appendChild(offer);
+                        dayEl.appendChild(newCamp);
+                        
+                        showStatusMessage('Campaign created', 'success');
+                    } else {
+                        showStatusMessage('Date not in view', 'error');
+                    }
+                } else {
+                    // Update existing campaign
+                    campaignElement.setAttribute('data-campaign', JSON.stringify(campaign));
+                    
+                    // Update visible content
+                    const titleEl = campaignElement.querySelector('.campaign-title');
+                    if (titleEl) titleEl.textContent = campaign.campaignName;
+                    
+                    const offerEl = campaignElement.querySelector('.campaign-offer');
+                    if (offerEl) offerEl.textContent = campaign.offer;
+                    
+                    if (campaign.campaignType === 'sms') {
+                        campaignElement.classList.add('sms');
+                    } else {
+                        campaignElement.classList.remove('sms');
+                    }
+                }
+                
+                document.body.removeChild(overlay);
+            };
+            
+            // Add all elements to form
+            form.appendChild(titleGroup);
+            form.appendChild(typeGroup);
+            form.appendChild(infoGroup);
+            form.appendChild(offerGroup);
+            form.appendChild(abGroup);
+            form.appendChild(linksGroup);
+            form.appendChild(websiteGroup);
+            form.appendChild(saveButton);
+            
+            // Add elements to modal
+            modal.appendChild(closeButton);
+            modal.appendChild(form);
+            
+            // Add modal to overlay and overlay to body
+            overlay.appendChild(modal);
+            document.body.appendChild(overlay);
+        }
+        
+        function showStatusMessage(message, type) {
+            const statusElement = document.getElementById('status-message');
+            statusElement.textContent = message;
+            statusElement.className = `status-message ${type === 'error' ? 'error-message' : 'success-message'}`;
+            statusElement.style.display = 'block';
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                statusElement.style.display = 'none';
+            }, 5000);
+        }
+        
+        function generateSampleCampaigns(campaignsPerWeek, month, year) {
+            // Get number of days in the displayed month
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            
+            // Simply multiply by 4 to get total monthly campaigns as requested
+            const totalCampaigns = campaignsPerWeek * 4;
+            
+            // Create evenly spaced days for campaigns
+            const campaigns = [];
+            
+            // Campaign types
+            const campaignTypes = [
+                "Email Newsletter", "Product Announcement", "Promotional Email", 
+                "Blog Post", "Social Media Campaign", "Seasonal Promotion", 
+                "Event Announcement", "Customer Spotlight", "Educational Content"
+            ];
+            
+            // Website URL
+            const websiteUrl = document.getElementById('website-url').value || 'https://example.com';
+            
+            // Distribute campaigns evenly throughout the month
+            for (let i = 0; i < totalCampaigns; i++) {
+                // Calculate day position (1 to daysInMonth)
+                // This spreads campaigns evenly across the month
+                const day = Math.floor(1 + (i * daysInMonth / totalCampaigns));
+                const typeIndex = i % campaignTypes.length;
+                
+                campaigns.push({
+                    date: `${year}-${month + 1}-${day}`,
+                    campaignName: campaignTypes[typeIndex],
+                    title: campaignTypes[typeIndex],
+                    campaignType: 'email',
+                    campaignInfo: `${campaignTypes[typeIndex]} featuring newest products and customer testimonials`,
+                    offer: typeIndex % 3 === 0 ? "15% discount" : typeIndex % 3 === 1 ? "Free shipping" : "Buy one get one free",
+                    abTest: typeIndex % 2 === 0 ? "Subject line A vs Subject line B" : "",
+                    relevantLinks: `${websiteUrl}/${campaignTypes[typeIndex].toLowerCase().replace(/\s+/g, '-')}`,
+                    website: websiteUrl
+                });
+            }
+            
+            // Add SMS campaigns if specified
+            const smsCount = document.getElementById('sms-count').value;
+            if (smsCount && parseInt(smsCount) > 0) {
+                for (let i = 0; i < parseInt(smsCount); i++) {
+                    // Offset SMS campaigns slightly from regular campaigns
+                    const day = Math.floor(3 + (i * daysInMonth / parseInt(smsCount)));
+                    
+                    campaigns.push({
+                        date: `${year}-${month + 1}-${Math.min(day, daysInMonth)}`,
+                        campaignName: "SMS Campaign",
+                        title: "SMS Campaign",
+                        campaignType: 'sms',
+                        campaignInfo: "Short-term flash sale announcement via SMS",
+                        offer: "SMS-exclusive offer",
+                        abTest: i % 2 === 0 ? "Message variant A/B test" : "",
+                        relevantLinks: `${websiteUrl}/sms-promo`,
+                        website: websiteUrl
+                    });
+                }
+            }
+            
+            return campaigns;
+        }
+    </script>
 </body>
 </html>
