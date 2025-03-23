@@ -991,34 +991,6 @@
             nameGroup.appendChild(nameLabel);
             nameGroup.appendChild(nameInput);
             
-            // Campaign Type
-            const typeGroup = document.createElement('div');
-            typeGroup.className = 'form-group';
-            const typeLabel = document.createElement('label');
-            typeLabel.textContent = 'Type:';
-            const typeSelect = document.createElement('select');
-            const emailOption = document.createElement('option');
-            emailOption.value = 'email';
-            emailOption.textContent = 'Email';
-            const smsOption = document.createElement('option');
-            smsOption.value = 'sms';
-            smsOption.textContent = 'SMS';
-            typeSelect.appendChild(emailOption);
-            typeSelect.appendChild(smsOption);
-            typeSelect.value = campaign.campaignType || 'email';
-            typeGroup.appendChild(typeLabel);
-            typeGroup.appendChild(typeSelect);
-            
-            // Campaign Info
-            const infoGroup = document.createElement('div');
-            infoGroup.className = 'form-group';
-            const infoLabel = document.createElement('label');
-            infoLabel.textContent = 'Campaign Info:';
-            const infoTextarea = document.createElement('textarea');
-            infoTextarea.value = campaign.campaignInfo || '';
-            infoGroup.appendChild(infoLabel);
-            infoGroup.appendChild(infoTextarea);
-            
             // Offer
             const offerGroup = document.createElement('div');
             offerGroup.className = 'form-group';
@@ -1030,51 +1002,43 @@
             offerGroup.appendChild(offerLabel);
             offerGroup.appendChild(offerInput);
             
-            // A/B Test
-            const abGroup = document.createElement('div');
-            abGroup.className = 'form-group';
-            const abLabel = document.createElement('label');
-            abLabel.textContent = 'A/B Test:';
-            const abInput = document.createElement('input');
-            abInput.type = 'text';
-            abInput.value = campaign.abTest || '';
-            abGroup.appendChild(abLabel);
-            abGroup.appendChild(abInput);
+            // Campaign Idea
+            const ideaGroup = document.createElement('div');
+            ideaGroup.className = 'form-group';
+            const ideaLabel = document.createElement('label');
+            ideaLabel.textContent = 'Campaign Idea:';
+            const ideaTextarea = document.createElement('textarea');
+            ideaTextarea.value = campaign.campaignInfo || '';
+            ideaGroup.appendChild(ideaLabel);
+            ideaGroup.appendChild(ideaTextarea);
             
-            // Relevant Links
-            const linksGroup = document.createElement('div');
-            linksGroup.className = 'form-group';
-            const linksLabel = document.createElement('label');
-            linksLabel.textContent = 'Relevant Links:';
-            const linksTextarea = document.createElement('textarea');
-            linksTextarea.value = campaign.relevantLinks || '';
-            linksGroup.appendChild(linksLabel);
-            linksGroup.appendChild(linksTextarea);
-            
-            // Website
-            const websiteGroup = document.createElement('div');
-            websiteGroup.className = 'form-group';
-            const websiteLabel = document.createElement('label');
-            websiteLabel.textContent = 'Website:';
-            const websiteInput = document.createElement('input');
-            websiteInput.type = 'text';
-            websiteInput.value = campaign.website || '';
-            websiteGroup.appendChild(websiteLabel);
-            websiteGroup.appendChild(websiteInput);
+            // Website Link
+            const linkGroup = document.createElement('div');
+            linkGroup.className = 'form-group';
+            const linkLabel = document.createElement('label');
+            linkLabel.textContent = 'Website Link:';
+            const linkInput = document.createElement('input');
+            linkInput.type = 'text';
+            linkInput.value = campaign.website || '';
+            linkGroup.appendChild(linkLabel);
+            linkGroup.appendChild(linkInput);
             
             // Save button
             const saveButton = document.createElement('button');
             saveButton.className = 'submit-btn';
-            saveButton.textContent = isNew ? 'Create Campaign' : 'Save Changes';
+            saveButton.textContent = 'Save Changes';
+            saveButton.style.marginTop = '20px'; 
             saveButton.onclick = function() {
                 // Update campaign data
                 campaign.campaignName = nameInput.value;
-                campaign.campaignType = typeSelect.value;
-                campaign.campaignInfo = infoTextarea.value;
                 campaign.offer = offerInput.value;
-                campaign.abTest = abInput.value;
-                campaign.relevantLinks = linksTextarea.value;
-                campaign.website = websiteInput.value;
+                campaign.campaignInfo = ideaTextarea.value;
+                campaign.website = linkInput.value;
+                
+                // Store type data (not shown in modal but preserve it)
+                if (!campaign.campaignType) {
+                    campaign.campaignType = campaign.campaignName.toLowerCase().includes('sms') ? 'sms' : 'email';
+                }
                 
                 if (isNew) {
                     // Create new campaign
@@ -1171,12 +1135,9 @@
             
             // Add all elements to form
             form.appendChild(nameGroup);
-            form.appendChild(typeGroup);
-            form.appendChild(infoGroup);
             form.appendChild(offerGroup);
-            form.appendChild(abGroup);
-            form.appendChild(linksGroup);
-            form.appendChild(websiteGroup);
+            form.appendChild(ideaGroup);
+            form.appendChild(linkGroup);
             form.appendChild(saveButton);
             
             // Add elements to modal
@@ -1206,7 +1167,17 @@
                         campaign.date = dayElement.getAttribute('data-date');
                     }
                     
-                    campaigns.push(campaign);
+                    // Make sure we have the essential fields, even if empty
+                    const exportCampaign = {
+                        campaignName: campaign.campaignName || '',
+                        campaignType: campaign.campaignType || 'email',
+                        campaignInfo: campaign.campaignInfo || '',
+                        offer: campaign.offer || '',
+                        website: campaign.website || '',
+                        date: campaign.date || ''
+                    };
+                    
+                    campaigns.push(exportCampaign);
                 });
                 
                 if (campaigns.length === 0) {
@@ -1224,10 +1195,20 @@
                     body: JSON.stringify(campaigns)
                 });
                 
+                // Get response text
+                const responseText = await response.text();
+                
                 if (response.ok) {
-                    showStatusMessage('Successfully exported to Airtable', 'success');
+                    // Show success message from webhook or default
+                    const successMessage = responseText || 'Successfully exported to Airtable';
+                    showStatusMessage(successMessage, 'success');
+                    
+                    // For testing - simulate a webhook success response if none is returned
+                    if (!responseText) {
+                        console.log('No response from webhook, simulating success');
+                    }
                 } else {
-                    showStatusMessage('Failed to export to Airtable: ' + response.statusText, 'error');
+                    showStatusMessage('Failed to export to Airtable: ' + (responseText || response.statusText), 'error');
                 }
             } catch (error) {
                 console.error('Error exporting to Airtable:', error);
@@ -1278,8 +1259,6 @@
                     campaignName: campaignTypes[typeIndex],
                     campaignInfo: `${campaignTypes[typeIndex]} featuring newest products and customer testimonials`,
                     offer: typeIndex % 3 === 0 ? "15% discount" : typeIndex % 3 === 1 ? "Free shipping" : "Buy one get one free",
-                    abTest: i % 2 === 0 ? "Subject line A/B test" : "",
-                    relevantLinks: "https://example.com/blog\nhttps://example.com/resources",
                     website: "https://example.com",
                     campaignType: 'email'
                 });
@@ -1297,8 +1276,6 @@
                         campaignName: "SMS Campaign",
                         campaignInfo: "Short-term flash sale announcement via SMS",
                         offer: "SMS-exclusive offer",
-                        abTest: "",
-                        relevantLinks: "https://example.com/sms-landing",
                         website: "https://example.com",
                         campaignType: 'sms'
                     });
