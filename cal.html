@@ -26,15 +26,18 @@
     }
   </style>
 </head>
-<body>
+<body class="bg-gray-900">
   <div id="root" class="min-h-screen py-8"></div>
 
   <script type="text/babel">
+    // Import React hooks
+    const { useState, useEffect } = React;
+    
     const CampaignCalendar = () => {
       const [campaigns, setCampaigns] = useState([]);
       const [selectedCampaign, setSelectedCampaign] = useState(null);
       const [feedback, setFeedback] = useState('');
-      const [loading, setLoading] = useState(true);
+      const [loading, setLoading] = useState(false); // Start with loading false
       const [currentMonth, setCurrentMonth] = useState(new Date());
       const [selectedDate, setSelectedDate] = useState(null);
       const [updateStatus, setUpdateStatus] = useState(null);
@@ -252,7 +255,7 @@
                 {days.map((day, index) => {
                   // Get campaigns for this day
                   const dayCampaigns = day.date ? 
-                    campaignsByDate[day.date.toDateString()] || [] : [];
+                    (campaignsByDate[day.date.toDateString()] || []) : [];
                   
                   return (
                     <div 
@@ -386,9 +389,6 @@
         </div>
       );
     };
-
-    // Import React hooks
-    const { useState, useEffect } = React;
 
     // Render the app
     ReactDOM.render(
