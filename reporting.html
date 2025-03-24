@@ -1,4 +1,4 @@
-// Dual Charts for List Growth - REMOVED TO FIX ERROR<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -42,8 +42,8 @@
     
     /* Status badge styling */
     .status-badge {
-      background-color: rgba(136, 84, 208, 0.15) !important;
-      border: 1px solid rgba(136, 84, 208, 0.4) !important;
+      background-color: rgba(255, 255, 255, 0.15) !important;
+      border: 1px solid rgba(255, 255, 255, 0.5) !important;
       color: white !important;
       font-weight: 500;
       padding: 2px 8px;
@@ -163,13 +163,6 @@
       100% { transform: rotate(360deg); }
     }
     
-    /* Revenue gradient styles */
-    .revenue-cell {
-      background: linear-gradient(90deg, rgba(136, 84, 208, 0.2) 0%, rgba(136, 84, 208, 0) 100%);
-      border-radius: 4px;
-      padding: 4px 8px;
-      font-weight: 500;
-    }
     /* Error state */
     .error-container {
       background-color: rgba(220, 38, 38, 0.2);
@@ -178,6 +171,8 @@
       padding: 1rem;
       margin: 1rem 0;
     }
+  </style>
+</head>
 <body class="bg-transparent">
   <div id="root" class="min-h-screen py-8"></div>
 
@@ -445,7 +440,7 @@
                     <td>{formatPercentage(campaign.open_rate)}</td>
                     <td>{formatPercentage(campaign.click_rate)}</td>
                     <td>{formatCurrency(campaign.revenue_per_recipient)}</td>
-                    <td className="revenue-cell">{formatCurrency(campaign.conversion_value)}</td>
+                    <td>{formatCurrency(campaign.conversion_value)}</td>
                   </tr>
                 ))
               ) : (
@@ -462,7 +457,7 @@
     };
     
     // Flow Table component with grouping by flow name
-    const FlowTable = ({ data, showOnlyFlowGroups = false }) => {
+    const FlowTable = ({ data }) => {
       const [sortField, setSortField] = useState('conversion_value');
       const [sortDirection, setSortDirection] = useState('desc');
       const [sortedData, setSortedData] = useState([]);
@@ -489,7 +484,7 @@
         const newExpandedGroups = {...expandedGroups};
         Object.keys(grouped).forEach(groupName => {
           if (newExpandedGroups[groupName] === undefined) {
-            newExpandedGroups[groupName] = !showOnlyFlowGroups; // Default to collapsed if showing only flow groups
+            newExpandedGroups[groupName] = true; // Default to expanded
           }
         });
         setExpandedGroups(newExpandedGroups);
@@ -507,14 +502,8 @@
         });
         
         setGroupedData(grouped);
-        
-        // If we're only showing top flow groups, limit to 5
-        if (showOnlyFlowGroups) {
-          setSortedData(sortedGroupNames.slice(0, 5));
-        } else {
-          setSortedData(sortedGroupNames);
-        }
-      }, [data, sortField, sortDirection, showOnlyFlowGroups]);
+        setSortedData(sortedGroupNames);
+      }, [data, sortField, sortDirection]);
       
       const handleSort = (field) => {
         if (field === sortField) {
@@ -603,7 +592,7 @@
                       <td className="font-medium">{formatNumber(totalRecipients)}</td>
                       <td className="font-medium">{formatPercentage(avgClickRate)}</td>
                       <td className="font-medium">{formatCurrency(avgRevenuePerRecipient)}</td>
-                      <td className="font-medium revenue-cell">{formatCurrency(totalRevenue)}</td>
+                      <td className="font-medium">{formatCurrency(totalRevenue)}</td>
                     </tr>
                   );
                   
@@ -639,7 +628,7 @@
       );
     };
     
-    // Revenue Metrics component with pie chart visualization
+    // Revenue Metrics component with more creative visualization
     const RevenueMetrics = ({ data }) => {
       // Check if SMS data exists
       const hasSmsData = () => {
@@ -685,89 +674,12 @@
         return result.sort((a, b) => b.value - a.value);
       };
       
-      const chartRef = useRef(null);
-      const chartInstance = useRef(null);
-      
-      useEffect(() => {
-        if (!data) return;
-        
-        const ctx = chartRef.current.getContext('2d');
-        const pieData = calculateRevenueData();
-        
-        // Destroy existing chart
-        if (chartInstance.current) {
-          chartInstance.current.destroy();
-        }
-        
-        // Create new chart with improved styling
-        chartInstance.current = new Chart(ctx, {
-          type: 'doughnut',
-          data: {
-            labels: pieData.map(item => item.label),
-            datasets: [{
-              data: pieData.map(item => item.value),
-              backgroundColor: [
-                'rgba(255, 255, 255, 0.9)',
-                'rgba(255, 255, 255, 0.7)',
-                'rgba(255, 255, 255, 0.5)',
-                'rgba(255, 255, 255, 0.3)'
-              ],
-              borderColor: 'rgba(36, 35, 49, 0.8)',
-              borderWidth: 2,
-              hoverBorderColor: 'white',
-              hoverBorderWidth: 3
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            cutout: '75%',
-            plugins: {
-              legend: {
-                position: 'right',
-                labels: {
-                  color: 'rgba(255, 255, 255, 0.9)',
-                  font: {
-                    size: 12,
-                    weight: 'bold'
-                  },
-                  padding: 15,
-                  usePointStyle: true,
-                  pointStyle: 'circle'
-                }
-              },
-              tooltip: {
-                callbacks: {
-                  label: (context) => {
-                    const label = context.label;
-                    const value = formatCurrency(context.raw);
-                    const percentage = ((context.raw / pieData.reduce((sum, item) => sum + item.value, 0)) * 100).toFixed(1);
-                    return `${label}: ${value} (${percentage}%)`;
-                  }
-                },
-                backgroundColor: 'rgba(36, 35, 49, 0.95)',
-                titleColor: 'white',
-                bodyColor: 'white',
-                bodyFont: {
-                  size: 14
-                },
-                borderColor: 'rgba(255, 255, 255, 0.2)',
-                borderWidth: 1,
-                padding: 12,
-                boxPadding: 6
-              }
-            }
-          }
-        });
-        
-        return () => {
-          if (chartInstance.current) {
-            chartInstance.current.destroy();
-          }
-        };
-      }, [data]);
+      const revData = calculateRevenueData();
       
       if (!data) return <div className="text-gray-400 p-4">No revenue data available</div>;
+      
+      // Determine if email attribution should be displayed (only if SMS exists)
+      const showEmailAttribution = hasSmsData();
       
       return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -787,10 +699,12 @@
                   <div className="metric-label">SMS Revenue</div>
                 </div>
               )}
-              <div className="metric-card">
-                <div className="metric-value text-white">{formatPercentage((data.email_rev || 0) / (data.total_rev || 1) * 100)}</div>
-                <div className="metric-label">Email Attribution</div>
-              </div>
+              {showEmailAttribution && (
+                <div className="metric-card">
+                  <div className="metric-value text-white">{formatPercentage((data.email_rev || 0) / (data.total_rev || 1) * 100)}</div>
+                  <div className="metric-label">Email Attribution</div>
+                </div>
+              )}
               <div className="metric-card">
                 <div className="metric-value text-white">{formatCurrency(data.flow_email_rev || 0)}</div>
                 <div className="metric-label">Flow Email Revenue</div>
@@ -801,8 +715,34 @@
               </div>
             </div>
           </div>
-          <div className="chart-container p-4">
-            <canvas ref={chartRef}></canvas>
+          
+          {/* Waterfall/Tree visualization instead of pie chart */}
+          <div className="p-4 bg-opacity-20 bg-white rounded-lg">
+            <h3 className="text-white text-lg font-medium mb-3">Revenue Distribution</h3>
+            <div className="space-y-3 mt-4">
+              {revData.map((item, index) => (
+                <div key={index} className="relative">
+                  <div className="flex justify-between text-sm text-white mb-1">
+                    <span>{item.label}</span>
+                    <span className="font-semibold">{formatCurrency(item.value)} ({item.percentage}%)</span>
+                  </div>
+                  <div className="w-full h-6 bg-gray-700 bg-opacity-40 rounded overflow-hidden">
+                    <div 
+                      className={`h-full rounded ${
+                        item.label.includes('Campaign Email') ? 'bg-gradient-to-r from-white to-white/70' :
+                        item.label.includes('Campaign SMS') ? 'bg-gradient-to-r from-white/80 to-white/50' :
+                        item.label.includes('Flow Email') ? 'bg-gradient-to-r from-white/60 to-white/40' :
+                        'bg-gradient-to-r from-white/40 to-white/20'
+                      }`}
+                      style={{ width: `${item.percentage}%` }}
+                    ></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-6 text-xs text-white/60 italic text-right">
+              Based on last 30 days of revenue data
+            </div>
           </div>
         </div>
       );
@@ -1144,11 +1084,11 @@
                       </div>
                     </div>
                     
-                    {/* Top Flows with flow grouping */}
+                    {/* Top Flows */}
                     <div className="dashboard-card dashboard-widget">
                       <div className="p-4">
                         <h2 className="text-xl font-semibold text-white mb-4">Top Performing Flows</h2>
-                        <FlowTable data={flowData} showOnlyFlowGroups={true} />
+                        <FlowTable data={flowData.slice(0, 5)} />
                       </div>
                     </div>
                   </div>
