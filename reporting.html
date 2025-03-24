@@ -185,197 +185,7 @@
         style: 'currency',
         currency: 'USD',
         minimumFractionDigits: 2
-      };
-      
-      return (
-        <div className="container mx-auto p-4">
-          <div className="dashboard-container">
-            <div className="p-6 bg-transparent text-white header-container">
-              <div className="flex justify-between items-center">
-                <h1 className="text-2xl font-bold">MARKETING ANALYTICS DASHBOARD</h1>
-                <div className="flex flex-col items-end">
-                  <div className="flex items-center text-sm text-gray-400">
-                    <span>Last Updated: {lastUpdated ? lastUpdated.toLocaleString() : 'N/A'}</span>
-                    <button 
-                      onClick={handleRefresh}
-                      className="ml-3 dashboard-button p-1 rounded"
-                      disabled={loading}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                      </svg>
-                    </button>
-                  </div>
-                  <div className="flex space-x-2 mt-2">
-                    <button 
-                      onClick={() => setActiveTab('overview')} 
-                      className={`px-4 py-2 rounded transition-all ${activeTab === 'overview' ? 'border-b-2 border-purple-500 bg-transparent' : 'bg-transparent'}`}
-                    >
-                      Overview
-                    </button>
-                    <button 
-                      onClick={() => setActiveTab('campaigns')} 
-                      className={`px-4 py-2 rounded transition-all ${activeTab === 'campaigns' ? 'border-b-2 border-purple-500 bg-transparent' : 'bg-transparent'}`}
-                    >
-                      Campaigns
-                    </button>
-                    <button 
-                      onClick={() => setActiveTab('flows')} 
-                      className={`px-4 py-2 rounded transition-all ${activeTab === 'flows' ? 'border-b-2 border-purple-500 bg-transparent' : 'bg-transparent'}`}
-                    >
-                      Flows
-                    </button>
-                    <button 
-                      onClick={() => setActiveTab('list')} 
-                      className={`px-4 py-2 rounded transition-all ${activeTab === 'list' ? 'border-b-2 border-purple-500 bg-transparent' : 'bg-transparent'}`}
-                    >
-                      List Growth
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            {error && (
-              <div className="error-container mx-6 text-white">
-                <div className="flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                  <p className="font-bold">Error: {error}</p>
-                </div>
-                <p className="mt-1 ml-8">Using cached or mock data instead. Click refresh to try again.</p>
-              </div>
-            )}
-            
-            <div className="relative">
-              {loading && (
-                <div className="loading-overlay">
-                  <div className="spinner"></div>
-                </div>
-              )}
-              
-              {/* Overview Tab */}
-              {activeTab === 'overview' && (
-                <div className="p-6 bg-transparent">
-                  <div className="grid grid-cols-1 gap-6">
-                    {/* Store Revenue Overview */}
-                    <div className="dashboard-card dashboard-widget">
-                      <div className="p-4">
-                        <h2 className="text-xl font-semibold text-white mb-4">Store Revenue Overview (Last 30 Days)</h2>
-                        <RevenueMetrics data={revenueData} />
-                      </div>
-                    </div>
-                    
-                    {/* List Growth Chart */}
-                    <div className="dashboard-card dashboard-widget">
-                      <div className="p-4">
-                        <h2 className="text-xl font-semibold text-white mb-4">List Growth (Last 30 Days)</h2>
-                        <ListGrowthChart data={listGrowthData} />
-                      </div>
-                    </div>
-                    
-                    {/* Top Campaigns */}
-                    <div className="dashboard-card dashboard-widget">
-                      <div className="p-4">
-                        <h2 className="text-xl font-semibold text-white mb-4">Top Performing Campaigns</h2>
-                        <CampaignTable data={campaignData.slice(0, 5)} />
-                      </div>
-                    </div>
-                    
-                    {/* Top Flows */}
-                    <div className="dashboard-card dashboard-widget">
-                      <div className="p-4">
-                        <h2 className="text-xl font-semibold text-white mb-4">Top Performing Flows</h2>
-                        <FlowTable data={flowData.slice(0, 5)} />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {/* Campaigns Tab */}
-              {activeTab === 'campaigns' && (
-                <div className="p-6 bg-transparent">
-                  <h2 className="text-xl font-semibold text-white mb-4">Campaign Performance (Last 30 Days)</h2>
-                  <div className="dashboard-card">
-                    <div className="p-4">
-                      <CampaignTable data={campaignData} />
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {/* Flows Tab */}
-              {activeTab === 'flows' && (
-                <div className="p-6 bg-transparent">
-                  <h2 className="text-xl font-semibold text-white mb-4">Flow Performance (Last 30 Days)</h2>
-                  <div className="dashboard-card">
-                    <div className="p-4">
-                      <FlowTable data={flowData} />
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {/* List Growth Tab */}
-              {activeTab === 'list' && (
-                <div className="p-6 bg-transparent">
-                  <h2 className="text-xl font-semibold text-white mb-4">List Growth Analytics (Last 30 Days)</h2>
-                  <div className="dashboard-card dashboard-widget">
-                    <div className="p-4">
-                      <ListGrowthChart data={listGrowthData} />
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
-                        <div className="metric-card">
-                          <div className="metric-value text-white">
-                            {formatNumber(listGrowthData.length > 0 ? listGrowthData[listGrowthData.length - 1].total_members : 0)}
-                          </div>
-                          <div className="metric-label">Current Subscribers</div>
-                        </div>
-                        
-                        <div className="metric-card">
-                          <div className="metric-value text-white">
-                            {listGrowthData.length > 0 ? (
-                              formatNumber(listGrowthData.reduce((sum, item) => sum + Number(item.members_added), 0))
-                            ) : 0}
-                          </div>
-                          <div className="metric-label">Total New Subscribers</div>
-                        </div>
-                        
-                        <div className="metric-card">
-                          <div className="metric-value text-white">
-                            {listGrowthData.length > 0 ? (
-                              formatNumber(listGrowthData.reduce((sum, item) => sum + Number(item.members_removed), 0))
-                            ) : 0}
-                          </div>
-                          <div className="metric-label">Total Unsubscribes</div>
-                        </div>
-                        
-                        <div className="metric-card">
-                          <div className="metric-value text-white">
-                            {listGrowthData.length > 0 ? (
-                              (() => {
-                                const netChange = listGrowthData.reduce((sum, item) => sum + Number(item.net_members_changed), 0);
-                                return netChange > 0 ? '+' + formatNumber(netChange) : formatNumber(netChange);
-                              })()
-                            ) : 0}
-                          </div>
-                          <div className="metric-label">Net Growth</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-          
-          <div className="mt-4 p-2 text-center text-gray-500 text-xs">
-            Data refreshes automatically at 9:00 AM EST daily
-          </div>
-        </div>
-      );).format(value);
+      }).format(value);
     };
     
     const formatPercentage = (value) => {
@@ -460,7 +270,7 @@
                 borderWidth: 2,
                 pointRadius: 3,
                 pointBackgroundColor: 'rgba(136, 84, 208, 1)'
-              }, []);
+              },
               {
                 label: 'Members Added',
                 data: membersAdded,
@@ -894,13 +704,8 @@
       const [lastUpdated, setLastUpdated] = useState(null);
       const [activeTab, setActiveTab] = useState('overview');
       
-      // API endpoint URL - Updated to your actual API endpoint
-      const apiEndpoint = '/api';
-      
-      // Manual refresh button handler
-      const handleRefresh = () => {
-        fetchDashboardData();
-      };
+      // API endpoint URL - replace with your deployed serverless function URL
+      const apiEndpoint = '/api/dashboard-data';
       
       // Function to fetch data from the API
       const fetchDashboardData = async () => {
@@ -1013,58 +818,317 @@
         }, 60 * 60 * 1000); // Every hour
         
         return () => clearInterval(hourlyRefresh); // Clean up on unmount
-      },return () => clearInterval(hourlyRefresh); // Clean up on unmount
-}, []);
-
-// Generate mock data function...
-// [All the mock data generation code is here]
-
-// Manual refresh button handler
-const handleRefresh = () => {
-  fetchDashboardData();
-};
-
-return (
-  <div className="container mx-auto p-4">
-    <div className="dashboard-container">
-      {/* Header */}
-      <div className="p-6 bg-transparent text-white header-container">
-        {/* Header content */}
-      </div>
+      }, []);
       
-      {/* Error message */}
-      {error && (
-        <div className="error-container mx-6 text-white">
-          {/* Error content */}
-        </div>
-      )}
-      
-      {/* Dashboard content */}
-      <div className="relative">
-        {/* Loading overlay */}
-        {loading && (
-          <div className="loading-overlay">
-            <div className="spinner"></div>
-          </div>
-        )}
+      // Fallback to generate mock data if API fails
+      const generateMockData = () => {
+        console.log("Generating mock data as fallback");
         
-        {/* Tab content */}
-        {/* Overview, Campaigns, Flows, and List Growth tabs */}
-      </div>
-    </div>
+        // Generate mock list growth data
+        const mockListGrowth = Array.from({ length: 30 }, (_, i) => {
+          const date = new Date();
+          date.setDate(date.getDate() - (29 - i));
+          
+          const baseMembers = 10000;
+          const dailyGrowth = Math.floor(Math.random() * 200) - 50; // Between -50 and 150
+          const dailyAdded = Math.max(0, Math.floor(Math.random() * 150) + 50); // Between 50 and 200
+          const dailyRemoved = Math.max(0, dailyAdded - dailyGrowth); // Ensures net change matches
+          
+          return {
+            date: date,
+            total_members: baseMembers + (i * 50) + dailyGrowth,
+            net_members_changed: dailyGrowth,
+            members_added: dailyAdded,
+            members_removed: dailyRemoved
+          };
+        });
+        
+        setListGrowthData(mockListGrowth);
+        
+        // Generate mock campaign data
+        const channels = ['email', 'sms'];
+        const mockCampaigns = Array.from({ length: 10 }, (_, i) => {
+          const date = new Date();
+          date.setDate(date.getDate() - Math.floor(Math.random() * 30));
+          
+          const channel = channels[Math.floor(Math.random() * channels.length)];
+          const recipients = Math.floor(Math.random() * 5000) + 1000;
+          const openRate = Math.random() * 40 + 10; // 10-50%
+          const clickRate = Math.random() * 15 + 5; // 5-20%
+          const convRate = Math.random() * 5 + 1; // 1-6%
+          const avgOrderValue = Math.random() * 70 + 30; // $30-$100
+          
+          return {
+            id: `campaign-${i}`,
+            campaignname: `${channel === 'email' ? 'Email' : 'SMS'} Campaign ${i + 1}`,
+            send_time: date,
+            subject: `Special offer ${i + 1}`,
+            channel: channel,
+            recipients: recipients,
+            open_rate: openRate,
+            click_rate: clickRate,
+            conversion_rate: convRate,
+            average_order_value: avgOrderValue,
+            conversion_value: (recipients * convRate / 100 * avgOrderValue),
+            revenue_per_recipient: ((recipients * convRate / 100 * avgOrderValue) / recipients)
+          };
+        });
+        
+        setCampaignData(mockCampaigns);
+        
+        // Generate mock flow data
+        const flowTypes = ['Welcome', 'Abandoned Cart', 'Browse Abandonment', 'Post-Purchase', 'Winback'];
+        const statuses = ['Active', 'Paused', 'Draft'];
+        
+        const mockFlows = Array.from({ length: 8 }, (_, i) => {
+          const flowType = flowTypes[Math.floor(Math.random() * flowTypes.length)];
+          const recipients = Math.floor(Math.random() * 3000) + 500;
+          const clickRate = Math.random() * 20 + 10; // 10-30%
+          const convRate = Math.random() * 8 + 2; // 2-10%
+          const avgOrderValue = Math.random() * 70 + 30; // $30-$100
+          
+          return {
+            id: `flow-${i}`,
+            flow_name: `${flowType} Flow`,
+            email_name: `${flowType} Email ${i + 1}`,
+            subject: `${flowType} Follow-up`,
+            status: statuses[Math.floor(Math.random() * statuses.length)],
+            recipients: recipients,
+            click_rate: clickRate,
+            conversion_rate: convRate,
+            conversion_value: (recipients * convRate / 100 * avgOrderValue),
+            revenue_per_recipient: ((recipients * convRate / 100 * avgOrderValue) / recipients)
+          };
+        });
+        
+        setFlowData(mockFlows);
+        
+        // Generate mock revenue data
+        const totalRev = Math.random() * 50000 + 30000; // $30k-$80k
+        const emailRev = totalRev * (Math.random() * 0.3 + 0.5); // 50-80% of total
+        const smsRev = totalRev - emailRev;
+        
+        const flowEmailRev = emailRev * (Math.random() * 0.3 + 0.35); // 35-65% of email revenue
+        const campaignEmailRev = emailRev - flowEmailRev;
+        
+        const flowSmsRev = smsRev * (Math.random() * 0.3 + 0.35); // 35-65% of sms revenue
+        const campaignSmsRev = smsRev - flowSmsRev;
+        
+        const mockRevenue = {
+          total_rev: totalRev,
+          email_rev: emailRev,
+          sms_rev: smsRev,
+          flow_email_rev: flowEmailRev,
+          flow_sms_rev: flowSmsRev,
+          campaign_email_rev: campaignEmailRev,
+          campaign_sms_rev: campaignSmsRev
+        };
+        
+        setRevenueData(mockRevenue);
+        setLastUpdated(new Date());
+      };
+      
+      // Manual refresh button handler
+      const handleRefresh = () => {
+        fetchDashboardData();
+      };
+      
+      return (
+        <div className="container mx-auto p-4">
+          <div className="dashboard-container">
+            <div className="p-6 bg-transparent text-white header-container">
+              <div className="flex justify-between items-center">
+                <h1 className="text-2xl font-bold">MARKETING ANALYTICS DASHBOARD</h1>
+                <div className="flex flex-col items-end">
+                  <div className="flex items-center text-sm text-gray-400">
+                    <span>Last Updated: {lastUpdated ? lastUpdated.toLocaleString() : 'N/A'}</span>
+                    <button 
+                      onClick={handleRefresh}
+                      className="ml-3 dashboard-button p-1 rounded"
+                      disabled={loading}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div className="flex space-x-2 mt-2">
+                    <button 
+                      onClick={() => setActiveTab('overview')} 
+                      className={`px-4 py-2 rounded transition-all ${activeTab === 'overview' ? 'border-b-2 border-purple-500 bg-transparent' : 'bg-transparent'}`}
+                    >
+                      Overview
+                    </button>
+                    <button 
+                      onClick={() => setActiveTab('campaigns')} 
+                      className={`px-4 py-2 rounded transition-all ${activeTab === 'campaigns' ? 'border-b-2 border-purple-500 bg-transparent' : 'bg-transparent'}`}
+                    >
+                      Campaigns
+                    </button>
+                    <button 
+                      onClick={() => setActiveTab('flows')} 
+                      className={`px-4 py-2 rounded transition-all ${activeTab === 'flows' ? 'border-b-2 border-purple-500 bg-transparent' : 'bg-transparent'}`}
+                    >
+                      Flows
+                    </button>
+                    <button 
+                      onClick={() => setActiveTab('list')} 
+                      className={`px-4 py-2 rounded transition-all ${activeTab === 'list' ? 'border-b-2 border-purple-500 bg-transparent' : 'bg-transparent'}`}
+                    >
+                      List Growth
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {error && (
+              <div className="error-container mx-6 text-white">
+                <div className="flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <p className="font-bold">Error: {error}</p>
+                </div>
+                <p className="mt-1 ml-8">Using cached or mock data instead. Click refresh to try again.</p>
+              </div>
+            )}
+            
+            <div className="relative">
+              {loading && (
+                <div className="loading-overlay">
+                  <div className="spinner"></div>
+                </div>
+              )}
+              
+              {/* Overview Tab */}
+              {activeTab === 'overview' && (
+                <div className="p-6 bg-transparent">
+                  <div className="grid grid-cols-1 gap-6">
+                    {/* Store Revenue Overview */}
+                    <div className="dashboard-card dashboard-widget">
+                      <div className="p-4">
+                        <h2 className="text-xl font-semibold text-white mb-4">Store Revenue Overview (Last 30 Days)</h2>
+                        <RevenueMetrics data={revenueData} />
+                      </div>
+                    </div>
+                    
+                    {/* List Growth Chart */}
+                    <div className="dashboard-card dashboard-widget">
+                      <div className="p-4">
+                        <h2 className="text-xl font-semibold text-white mb-4">List Growth (Last 30 Days)</h2>
+                        <ListGrowthChart data={listGrowthData} />
+                      </div>
+                    </div>
+                    
+                    {/* Top Campaigns */}
+                    <div className="dashboard-card dashboard-widget">
+                      <div className="p-4">
+                        <h2 className="text-xl font-semibold text-white mb-4">Top Performing Campaigns</h2>
+                        <CampaignTable data={campaignData.slice(0, 5)} />
+                      </div>
+                    </div>
+                    
+                    {/* Top Flows */}
+                    <div className="dashboard-card dashboard-widget">
+                      <div className="p-4">
+                        <h2 className="text-xl font-semibold text-white mb-4">Top Performing Flows</h2>
+                        <FlowTable data={flowData.slice(0, 5)} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Campaigns Tab */}
+              {activeTab === 'campaigns' && (
+                <div className="p-6 bg-transparent">
+                  <h2 className="text-xl font-semibold text-white mb-4">Campaign Performance (Last 30 Days)</h2>
+                  <div className="dashboard-card">
+                    <div className="p-4">
+                      <CampaignTable data={campaignData} />
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Flows Tab */}
+              {activeTab === 'flows' && (
+                <div className="p-6 bg-transparent">
+                  <h2 className="text-xl font-semibold text-white mb-4">Flow Performance (Last 30 Days)</h2>
+                  <div className="dashboard-card">
+                    <div className="p-4">
+                      <FlowTable data={flowData} />
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* List Growth Tab */}
+              {activeTab === 'list' && (
+                <div className="p-6 bg-transparent">
+                  <h2 className="text-xl font-semibold text-white mb-4">List Growth Analytics (Last 30 Days)</h2>
+                  <div className="dashboard-card dashboard-widget">
+                    <div className="p-4">
+                      <ListGrowthChart data={listGrowthData} />
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
+                        <div className="metric-card">
+                          <div className="metric-value text-white">
+                            {formatNumber(listGrowthData.length > 0 ? listGrowthData[listGrowthData.length - 1].total_members : 0)}
+                          </div>
+                          <div className="metric-label">Current Subscribers</div>
+                        </div>
+                        
+                        <div className="metric-card">
+                          <div className="metric-value text-white">
+                            {listGrowthData.length > 0 ? (
+                              formatNumber(listGrowthData.reduce((sum, item) => sum + Number(item.members_added), 0))
+                            ) : 0}
+                          </div>
+                          <div className="metric-label">Total New Subscribers</div>
+                        </div>
+                        
+                        <div className="metric-card">
+                          <div className="metric-value text-white">
+                            {listGrowthData.length > 0 ? (
+                              formatNumber(listGrowthData.reduce((sum, item) => sum + Number(item.members_removed), 0))
+                            ) : 0}
+                          </div>
+                          <div className="metric-label">Total Unsubscribes</div>
+                        </div>
+                        
+                        <div className="metric-card">
+                          <div className="metric-value text-white">
+                            {listGrowthData.length > 0 ? (
+                              (() => {
+                                const netChange = listGrowthData.reduce((sum, item) => sum + Number(item.net_members_changed), 0);
+                                return netChange > 0 ? '+' + formatNumber(netChange) : formatNumber(netChange);
+                              })()
+                            ) : 0}
+                          </div>
+                          <div className="metric-label">Net Growth</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <div className="mt-4 p-2 text-center text-gray-500 text-xs">
+            Data refreshes automatically at 9:00 AM EST daily
+          </div>
+        </div>
+      );
+    };
     
-    <div className="mt-4 p-2 text-center text-gray-500 text-xs">
-      Data refreshes automatically at 9:00 AM EST daily
-    </div>
-  </div>
-);
-};
-
-// Initialize by rendering the dashboard component
-ReactDOM.render(
-  <MarketingDashboard />,
-  document.getElementById('root')
-);
-</script>
+    // Initialize by rendering the dashboard component
+    ReactDOM.render(
+      <MarketingDashboard />,
+      document.getElementById('root')
+    );
+  </script>
 </body>
 </html>
