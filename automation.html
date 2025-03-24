@@ -218,6 +218,7 @@
               Client: '', 
               'Campaign Type': [], 
               'Send Date': '',
+              'Offer': '',
               File: []
             };
             
@@ -261,6 +262,8 @@
                   flow['Send Date'] = value;
                 } else if (trimmedKey === 'Client Revisions') {
                   flow.ClientRevisions = value;
+                } else if (trimmedKey === 'Offer') {
+                  flow.Offer = value;
                 }
               }
             }
