@@ -371,7 +371,82 @@
       }, [data]);
       
       return (
-        <div className="chart-container">
+                          <div className="dashboard-card">
+                    <div className="p-4">
+                      <FlowTable data={flowData} />
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* List Growth Tab */}
+              {activeTab === 'list' && (
+                <div className="p-6 bg-transparent">
+                  <h2 className="text-xl font-semibold text-white mb-4">List Growth Analytics (Last 30 Days)</h2>
+                  <div className="dashboard-card dashboard-widget">
+                    <div className="p-4">
+                      <ListGrowthChart data={listGrowthData} />
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
+                        <div className="metric-card">
+                          <div className="metric-value text-white">
+                            {formatNumber(listGrowthData.length > 0 ? listGrowthData[listGrowthData.length - 1].total_members : 0)}
+                          </div>
+                          <div className="metric-label">Current Subscribers</div>
+                        </div>
+                        
+                        <div className="metric-card">
+                          <div className="metric-value text-white">
+                            {listGrowthData.length > 0 ? (
+                              formatNumber(listGrowthData.reduce((sum, item) => sum + Number(item.members_added), 0))
+                            ) : 0}
+                          </div>
+                          <div className="metric-label">Total New Subscribers</div>
+                        </div>
+                        
+                        <div className="metric-card">
+                          <div className="metric-value text-white">
+                            {listGrowthData.length > 0 ? (
+                              formatNumber(listGrowthData.reduce((sum, item) => sum + Number(item.members_removed), 0))
+                            ) : 0}
+                          </div>
+                          <div className="metric-label">Total Unsubscribes</div>
+                        </div>
+                        
+                        <div className="metric-card">
+                          <div className="metric-value text-white">
+                            {listGrowthData.length > 0 ? (
+                              (() => {
+                                const netChange = listGrowthData.reduce((sum, item) => sum + Number(item.net_members_changed), 0);
+                                return netChange > 0 ? '+' + formatNumber(netChange) : formatNumber(netChange);
+                              })()
+                            ) : 0}
+                          </div>
+                          <div className="metric-label">Net Growth</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <div className="mt-4 p-2 text-center text-white text-opacity-50 text-xs">
+            Data refreshes automatically at 9:00 AM EST daily | Made with ♥ | v2.0
+          </div>
+        </div>
+      );
+    };
+    
+    // Initialize by rendering the dashboard component
+    ReactDOM.render(
+      <MarketingDashboard />,
+      document.getElementById('root')
+    );
+  </script>
+</body>
+</html>="chart-container">
           <canvas ref={chartRef}></canvas>
         </div>
       );
@@ -467,89 +542,6 @@
                   </td>
                 </tr>
               )}
-              
-              {/* Campaigns Tab */}
-              {activeTab === 'campaigns' && (
-                <div className="p-6 bg-transparent">
-                  <h2 className="text-xl font-semibold text-white mb-4">Campaign Performance (Last 30 Days)</h2>
-                  <div className="dashboard-card">
-                    <div className="p-4">
-                      <CampaignTable data={campaignData} />
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {/* Flows Tab - Grouped by flow name */}
-              {activeTab === 'flows' && (
-                <div className="p-6 bg-transparent">
-                  <h2 className="text-xl font-semibold text-white mb-4">Flow Performance (Last 30 Days)</h2>
-                  <div className="dashboard-card">
-                    <div className="p-4">
-                      <FlowTable data={flowData} />
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {/* List Growth Tab */}
-              {activeTab === 'list' && (
-                <div className="p-6 bg-transparent">
-                  <h2 className="text-xl font-semibold text-white mb-4">List Growth Analytics (Last 30 Days)</h2>
-                  <div className="dashboard-card dashboard-widget">
-                    <div className="p-4">
-                      <ListGrowthChart data={listGrowthData} />
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
-                        <div className="metric-card">
-                          <div className="metric-value text-white">
-                            {formatNumber(listGrowthData.length > 0 ? listGrowthData[listGrowthData.length - 1].total_members : 0)}
-                          </div>
-                          <div className="metric-label">Current Subscribers</div>
-                        </div>
-                        
-                        <div className="metric-card">
-                          <div className="metric-value text-white">
-                            {listGrowthData.length > 0 ? (
-                              formatNumber(listGrowthData.reduce((sum, item) => sum + Number(item.members_added), 0))
-                            ) : 0}
-                          </div>
-                          <div className="metric-label">Total New Subscribers</div>
-                        </div>
-                        
-                        <div className="metric-card">
-                          <div className="metric-value text-white">
-                            {listGrowthData.length > 0 ? (
-                              formatNumber(listGrowthData.reduce((sum, item) => sum + Number(item.members_removed), 0))
-                            ) : 0}
-                          </div>
-                          <div className="metric-label">Total Unsubscribes</div>
-                        </div>
-                        
-                        <div className="metric-card">
-                          <div className="metric-value text-white">
-                            {listGrowthData.length > 0 ? (
-                              (() => {
-                                const netChange = listGrowthData.reduce((sum, item) => sum + Number(item.net_members_changed), 0);
-                                return netChange > 0 ? '+' + formatNumber(netChange) : formatNumber(netChange);
-                              })()
-                            ) : 0}
-                          </div>
-                          <div className="metric-label">Net Growth</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-          
-          <div className="mt-4 p-2 text-center text-white text-opacity-50 text-xs">
-            Data refreshes automatically at 9:00 AM EST daily | Made with ♥ | v2.0
-          </div>
-        </div>
-      );
             </tbody>
           </table>
         </div>
@@ -830,264 +822,22 @@
                 <div className="metric-value text-white">{formatCurrency(data.campaign_email_rev || 0)}</div>
                 <div className="metric-label">Campaign Email Revenue</div>
               </div>
-              {/* Conditionally include SMS metrics only if SMS data exists */}
-              {hasSmsData() && (
-                <>
-                  <div className="metric-card">
-                    <div className="metric-value text-white">{formatCurrency(data.sms_rev || 0)}</div>
-                    <div className="metric-label">SMS Revenue</div>
-                  </div>
-                  <div className="metric-card">
-                    <div className="metric-value text-white">{formatPercentage((data.email_rev || 0) / (data.total_rev || 1) * 100)}</div>
-                    <div className="metric-label">Email Attribution</div>
-                  </div>
-                </>
-              )}
+              {/*)}
             </div>
           </div>
-          <div className="chart-container p-4">
-            <canvas ref={chartRef}></canvas>
+          
+          <div className="mt-4 p-2 text-center text-white text-opacity-50 text-xs">
+            Data refreshes automatically at 9:00 AM EST daily | Made with ♥ | v2.0
           </div>
         </div>
       );
     };
     
-    // Main Dashboard Component
-    const MarketingDashboard = () => {
-      const [listGrowthData, setListGrowthData] = useState([]);
-      const [campaignData, setCampaignData] = useState([]);
-      const [flowData, setFlowData] = useState([]);
-      const [revenueData, setRevenueData] = useState(null);
-      const [loading, setLoading] = useState(true);
-      const [error, setError] = useState(null);
-      const [lastUpdated, setLastUpdated] = useState(null);
-      const [activeTab, setActiveTab] = useState('overview');
-      
-      // API endpoint URL - Updated to use your Vercel deployment
-      const apiEndpoint = 'https://vite-react-rho-orcin-25.vercel.app/api';
-      
-      // Function to fetch data from the API
-      const fetchDashboardData = async () => {
-        try {
-          setLoading(true);
-          
-          // Fetch data from serverless function
-          const response = await fetch(apiEndpoint);
-          
-          if (!response.ok) {
-            throw new Error(`API error: ${response.status}`);
-          }
-          
-          // Parse response data
-          const data = await response.json();
-          
-          // Process list growth data
-          if (data.listGrowth && Array.isArray(data.listGrowth)) {
-            const formattedListGrowth = data.listGrowth.map(item => ({
-              ...item,
-              date: new Date(item.date),
-              total_members: Number(item.total_members || 0),
-              net_members_changed: Number(item.net_members_changed || 0),
-              members_added: Number(item.members_added || 0),
-              members_removed: Number(item.members_removed || 0)
-            }));
-            setListGrowthData(formattedListGrowth);
-          }
-          
-          // Process campaign data
-          if (data.campaigns && Array.isArray(data.campaigns)) {
-            const formattedCampaigns = data.campaigns.map(campaign => ({
-              ...campaign,
-              send_time: new Date(campaign.send_time),
-              recipients: Number(campaign.recipients || 0),
-              open_rate: Number(campaign.open_rate || 0),
-              click_rate: Number(campaign.click_rate || 0),
-              conversion_rate: Number(campaign.conversion_rate || 0),
-              conversion_value: Number(campaign.conversion_value || 0),
-              revenue_per_recipient: Number(campaign.revenue_per_recipient || 0)
-            }));
-            setCampaignData(formattedCampaigns);
-          }
-          
-          // Process flow data
-          if (data.flows && Array.isArray(data.flows)) {
-            const formattedFlows = data.flows.map(flow => ({
-              ...flow,
-              recipients: Number(flow.recipients || 0),
-              open_rate: Number(flow.open_rate || 0), // Add open rate
-              click_rate: Number(flow.click_rate || 0),
-              conversion_rate: Number(flow.conversion_rate || 0),
-              conversion_value: Number(flow.conversion_value || 0),
-              revenue_per_recipient: Number(flow.revenue_per_recipient || 0)
-            }));
-            setFlowData(formattedFlows);
-          }
-          
-          // Process revenue data
-          if (data.revenue) {
-            setRevenueData(data.revenue);
-          }
-          
-          // Update last updated timestamp
-          setLastUpdated(data.lastUpdated ? new Date(data.lastUpdated) : new Date());
-          setError(null);
-        } catch (error) {
-          console.error('Error fetching dashboard data:', error);
-          setError(error.message);
-          
-          // If this is the first load and no data exists, generate mock data
-          if (listGrowthData.length === 0 && campaignData.length === 0 && 
-              flowData.length === 0 && !revenueData) {
-            generateMockData();
-          }
-        } finally {
-          setLoading(false);
-        }
-      };
-      
-      // Initial data load
-      useEffect(() => {
-        fetchDashboardData();
-        
-        // Schedule daily refresh at 9am EST
-        const scheduleRefresh = () => {
-          const now = new Date();
-          const estOffset = -4 * 60; // EST is UTC-4 (in minutes)
-          const utcMinutes = now.getUTCHours() * 60 + now.getUTCMinutes();
-          const estMinutes = (utcMinutes + estOffset + 24 * 60) % (24 * 60);
-          
-          const targetMinutes = 9 * 60; // 9am = 9 * 60 minutes
-          let minutesUntilTarget = targetMinutes - estMinutes;
-          if (minutesUntilTarget <= 0) {
-            minutesUntilTarget += 24 * 60; // Add a day if target is in the past
-          }
-          
-          const msUntilTarget = minutesUntilTarget * 60 * 1000;
-          
-          setTimeout(() => {
-            fetchDashboardData();
-            scheduleRefresh(); // Schedule the next day's refresh
-          }, msUntilTarget);
-        };
-        
-        scheduleRefresh();
-        
-        // Add hourly refresh for more up-to-date data
-        const hourlyRefresh = setInterval(() => {
-          fetchDashboardData();
-        }, 60 * 60 * 1000); // Every hour
-        
-        return () => clearInterval(hourlyRefresh); // Clean up on unmount
-      }, []);
-      
-      // Fallback to generate mock data if API fails
-      const generateMockData = () => {
-        console.log("Generating mock data as fallback");
-        
-        // Generate mock list growth data
-        const mockListGrowth = Array.from({ length: 30 }, (_, i) => {
-          const date = new Date();
-          date.setDate(date.getDate() - (29 - i));
-          
-          const baseMembers = 10000;
-          const dailyGrowth = Math.floor(Math.random() * 200) - 50; // Between -50 and 150
-          const dailyAdded = Math.max(0, Math.floor(Math.random() * 150) + 50); // Between 50 and 200
-          const dailyRemoved = Math.max(0, dailyAdded - dailyGrowth); // Ensures net change matches
-          
-          return {
-            date: date,
-            total_members: baseMembers + (i * 50) + dailyGrowth,
-            net_members_changed: dailyGrowth,
-            members_added: dailyAdded,
-            members_removed: dailyRemoved
-          };
-        });
-        
-        setListGrowthData(mockListGrowth);
-        
-        // Generate mock campaign data - email only, no SMS
-        const mockCampaigns = Array.from({ length: 10 }, (_, i) => {
-          const date = new Date();
-          date.setDate(date.getDate() - Math.floor(Math.random() * 30));
-          
-          const recipients = Math.floor(Math.random() * 5000) + 1000;
-          const openRate = Math.random() * 40 + 10; // 10-50%
-          const clickRate = Math.random() * 15 + 5; // 5-20%
-          const convRate = Math.random() * 5 + 1; // 1-6%
-          const avgOrderValue = Math.random() * 70 + 30; // $30-$100
-          const conversionValue = (recipients * convRate / 100 * avgOrderValue);
-          
-          return {
-            id: `campaign-${i}`,
-            campaignname: `Email Campaign ${i + 1}`,
-            send_time: date,
-            subject: `Special offer ${i + 1}`,
-            channel: 'email',
-            recipients: recipients,
-            open_rate: openRate,
-            click_rate: clickRate,
-            conversion_rate: convRate,
-            average_order_value: avgOrderValue,
-            conversion_value: conversionValue,
-            revenue_per_recipient: (conversionValue / recipients)
-          };
-        });
-        
-        setCampaignData(mockCampaigns);
-        
-        // Generate mock flow data - group multiple emails per flow
-        const flowTypes = ['Welcome', 'Abandoned Cart', 'Browse Abandonment', 'Post-Purchase', 'Winback'];
-        const statuses = ['Active', 'Paused', 'Draft'];
-        const emailTypes = ['Initial', 'Reminder', 'Last Chance', 'Follow Up', 'Confirmation'];
-        
-        // Create 3-5 emails for each flow type
-        const mockFlows = [];
-        
-        flowTypes.forEach(flowType => {
-          // Decide how many emails for this flow (2-4)
-          const emailCount = Math.floor(Math.random() * 3) + 2;
-          
-          for (let i = 0; i < emailCount; i++) {
-            const recipients = Math.floor(Math.random() * 3000) + 500;
-            const openRate = Math.random() * 50 + 20; // 20-70%
-            const clickRate = Math.random() * 20 + 5; // 5-25%
-            const convRate = Math.random() * 8 + 1; // 1-9%
-            const avgOrderValue = Math.random() * 70 + 30; // $30-$100
-            const conversionValue = (recipients * convRate / 100 * avgOrderValue);
-            
-            mockFlows.push({
-              id: `flow-${flowType}-${i}`,
-              flow_name: `${flowType} Flow`,
-              email_name: `${emailTypes[i % emailTypes.length]}`,
-              subject: `${flowType} ${emailTypes[i % emailTypes.length]}`,
-              status: i === 0 ? 'Active' : statuses[Math.floor(Math.random() * statuses.length)],
-              recipients: recipients,
-              open_rate: openRate,
-              click_rate: clickRate,
-              conversion_rate: convRate,
-              conversion_value: conversionValue,
-              revenue_per_recipient: (conversionValue / recipients)
-            });
-          }
-        });
-        
-        setFlowData(mockFlows);
-        
-        // Generate mock revenue data - email only (no SMS)
-        const totalRev = Math.random() * 50000 + 30000; // $30k-$80k
-        const emailRev = totalRev; // 100% email since we're removing SMS
-        
-        const flowEmailRev = emailRev * (Math.random() * 0.3 + 0.35); // 35-65% of email revenue
-        const campaignEmailRev = emailRev - flowEmailRev;
-        
-        const mockRevenue = {
-          total_rev: totalRev,
-          email_rev: emailRev,
-          flow_email_rev: flowEmailRev,
-          campaign_email_rev: campaignEmailRev
-          // SMS fields removed
-        };
-        
-        setRevenueData(mockRevenue);
-        setLastUpdated(new Date());
-      };
+    // Initialize by rendering the dashboard component
+    ReactDOM.render(
+      <MarketingDashboard />,
+      document.getElementById('root')
+    );
+  </script>
+</body>
+</html>
