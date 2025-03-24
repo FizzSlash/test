@@ -23,8 +23,8 @@
     
     /* Container styling with transparent white stroke */
     .dashboard-container {
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
       background-color: rgba(20, 19, 28, 0.3);
       backdrop-filter: blur(10px);
       border-radius: 8px;
@@ -33,7 +33,7 @@
     
     .dashboard-widget {
       background-color: rgba(36, 35, 49, 0.5);
-      border-left: 3px solid rgba(136, 84, 208, 0.8);
+      border-left: 3px solid rgba(255, 255, 255, 0.6);
     }
     
     .dashboard-widget:hover {
@@ -42,9 +42,9 @@
     
     /* Status badge styling */
     .status-badge {
-      background-color: white !important;
-      border: 1px solid rgba(136, 84, 208, 0.4) !important;
-      color: rgb(136, 84, 208) !important;
+      background-color: rgba(255, 255, 255, 0.15) !important;
+      border: 1px solid rgba(255, 255, 255, 0.5) !important;
+      color: white !important;
       font-weight: 500;
       padding: 2px 8px;
       white-space: normal;
@@ -52,6 +52,7 @@
       max-width: 100%;
       overflow: hidden;
       text-overflow: ellipsis;
+      border-radius: 4px;
     }
     
     /* Header styling for consistency */
@@ -189,11 +190,7 @@
     };
     
     const formatPercentage = (value) => {
-      return new Intl.NumberFormat('en-US', {
-        style: 'percent',
-        minimumFractionDigits: 1,
-        maximumFractionDigits: 1
-      }).format(value / 100);
+      return value.toFixed(2) + '%';
     };
     
     const formatNumber = (value) => {
@@ -263,35 +260,37 @@
               {
                 label: 'Total Members',
                 data: totalMembers,
-                borderColor: 'rgba(136, 84, 208, 1)',
-                backgroundColor: 'rgba(136, 84, 208, 0.1)',
+                borderColor: 'rgba(255, 255, 255, 0.9)',
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
                 fill: true,
                 tension: 0.3,
                 borderWidth: 2,
-                pointRadius: 3,
-                pointBackgroundColor: 'rgba(136, 84, 208, 1)'
+                pointRadius: 4,
+                pointBackgroundColor: 'rgba(255, 255, 255, 1)',
+                pointBorderColor: 'rgba(36, 35, 49, 0.8)',
+                pointBorderWidth: 2
               },
               {
                 label: 'Members Added',
                 data: membersAdded,
-                borderColor: 'rgba(136, 84, 208, 0.7)',
-                backgroundColor: 'rgba(136, 84, 208, 0.05)',
+                borderColor: 'rgba(100, 255, 100, 0.8)',
+                backgroundColor: 'rgba(100, 255, 100, 0.1)',
                 borderWidth: 2,
-                borderDash: [5, 5],
-                fill: false,
+                fill: true,
                 tension: 0.3,
-                pointRadius: 2
+                pointRadius: 3,
+                pointBackgroundColor: 'rgba(100, 255, 100, 1)'
               },
               {
                 label: 'Members Removed',
                 data: membersRemoved,
-                borderColor: 'rgba(255, 255, 255, 0.5)',
-                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                borderColor: 'rgba(255, 100, 100, 0.8)',
+                backgroundColor: 'rgba(255, 100, 100, 0.1)',
                 borderWidth: 2,
-                borderDash: [5, 5],
-                fill: false,
+                fill: true,
                 tension: 0.3,
-                pointRadius: 2
+                pointRadius: 3,
+                pointBackgroundColor: 'rgba(255, 100, 100, 1)'
               }
             ]
           },
@@ -418,8 +417,8 @@
                 <th onClick={() => handleSort('click_rate')}>
                   Click Rate {renderSortArrow('click_rate')}
                 </th>
-                <th onClick={() => handleSort('conversion_rate')}>
-                  Conv Rate {renderSortArrow('conversion_rate')}
+                <th onClick={() => handleSort('revenue_per_recipient')}>
+                  Revenue/Recipient {renderSortArrow('revenue_per_recipient')}
                 </th>
                 <th onClick={() => handleSort('conversion_value')}>
                   Revenue {renderSortArrow('conversion_value')}
@@ -440,7 +439,7 @@
                     <td>{formatNumber(campaign.recipients)}</td>
                     <td>{formatPercentage(campaign.open_rate)}</td>
                     <td>{formatPercentage(campaign.click_rate)}</td>
-                    <td>{formatPercentage(campaign.conversion_rate)}</td>
+                    <td>{formatCurrency(campaign.revenue_per_recipient)}</td>
                     <td>{formatCurrency(campaign.conversion_value)}</td>
                   </tr>
                 ))
@@ -457,20 +456,53 @@
       );
     };
     
-    // Flow Table component
+    // Flow Table component with grouping by flow name
     const FlowTable = ({ data }) => {
       const [sortField, setSortField] = useState('conversion_value');
       const [sortDirection, setSortDirection] = useState('desc');
       const [sortedData, setSortedData] = useState([]);
+      const [groupedData, setGroupedData] = useState({});
+      const [expandedGroups, setExpandedGroups] = useState({});
       
       useEffect(() => {
         if (!data || data.length === 0) {
           setSortedData([]);
+          setGroupedData({});
           return;
         }
         
-        const sorted = sortData(data, sortField, sortDirection);
-        setSortedData(sorted);
+        // First group data by flow_name
+        const grouped = data.reduce((acc, flow) => {
+          if (!acc[flow.flow_name]) {
+            acc[flow.flow_name] = [];
+          }
+          acc[flow.flow_name].push(flow);
+          return acc;
+        }, {});
+        
+        // Initialize expanded state for new groups
+        const newExpandedGroups = {...expandedGroups};
+        Object.keys(grouped).forEach(groupName => {
+          if (newExpandedGroups[groupName] === undefined) {
+            newExpandedGroups[groupName] = true; // Default to expanded
+          }
+        });
+        setExpandedGroups(newExpandedGroups);
+        
+        // Sort the groups based on their total conversion value or selected field
+        const sortedGroupNames = Object.keys(grouped).sort((a, b) => {
+          const valueA = grouped[a].reduce((sum, item) => sum + Number(item[sortField] || 0), 0);
+          const valueB = grouped[b].reduce((sum, item) => sum + Number(item[sortField] || 0), 0);
+          return sortDirection === 'asc' ? valueA - valueB : valueB - valueA;
+        });
+        
+        // Sort emails within each group
+        sortedGroupNames.forEach(groupName => {
+          grouped[groupName] = sortData(grouped[groupName], sortField, sortDirection);
+        });
+        
+        setGroupedData(grouped);
+        setSortedData(sortedGroupNames);
       }, [data, sortField, sortDirection]);
       
       const handleSort = (field) => {
@@ -480,6 +512,13 @@
           setSortField(field);
           setSortDirection('desc');
         }
+      };
+      
+      const toggleGroup = (groupName) => {
+        setExpandedGroups({
+          ...expandedGroups,
+          [groupName]: !expandedGroups[groupName]
+        });
       };
       
       const renderSortArrow = (field) => {
@@ -511,38 +550,74 @@
                 <th onClick={() => handleSort('click_rate')}>
                   Click Rate {renderSortArrow('click_rate')}
                 </th>
-                <th onClick={() => handleSort('conversion_rate')}>
-                  Conv Rate {renderSortArrow('conversion_rate')}
+                <th onClick={() => handleSort('revenue_per_recipient')}>
+                  Revenue/Recipient {renderSortArrow('revenue_per_recipient')}
                 </th>
                 <th onClick={() => handleSort('conversion_value')}>
                   Revenue {renderSortArrow('conversion_value')}
-                </th>
-                <th onClick={() => handleSort('revenue_per_recipient')}>
-                  Revenue/Recipient {renderSortArrow('revenue_per_recipient')}
                 </th>
               </tr>
             </thead>
             <tbody>
               {sortedData.length > 0 ? (
-                sortedData.map((flow, index) => (
-                  <tr key={index} className="text-white">
-                    <td className="font-medium">{flow.flow_name}</td>
-                    <td>{flow.email_name}</td>
-                    <td>
-                      <span className="status-badge">
-                        {flow.status}
-                      </span>
-                    </td>
-                    <td>{formatNumber(flow.recipients)}</td>
-                    <td>{formatPercentage(flow.click_rate)}</td>
-                    <td>{formatPercentage(flow.conversion_rate)}</td>
-                    <td>{formatCurrency(flow.conversion_value)}</td>
-                    <td>{formatCurrency(flow.revenue_per_recipient)}</td>
-                  </tr>
-                ))
+                sortedData.flatMap((flowName, groupIndex) => {
+                  const flowGroup = groupedData[flowName];
+                  const isExpanded = expandedGroups[flowName];
+                  
+                  // Calculate group totals
+                  const totalRecipients = flowGroup.reduce((sum, flow) => sum + Number(flow.recipients || 0), 0);
+                  const totalRevenue = flowGroup.reduce((sum, flow) => sum + Number(flow.conversion_value || 0), 0);
+                  const avgClickRate = flowGroup.reduce((sum, flow) => sum + Number(flow.click_rate || 0), 0) / flowGroup.length;
+                  const avgRevenuePerRecipient = totalRevenue / totalRecipients;
+                  
+                  // Group header row
+                  const headerRow = (
+                    <tr 
+                      key={`group-${groupIndex}`} 
+                      className="text-white bg-opacity-30 bg-white cursor-pointer"
+                      onClick={() => toggleGroup(flowName)}
+                    >
+                      <td className="font-bold">
+                        <div className="flex items-center">
+                          <span className="mr-2">{isExpanded ? '▼' : '►'}</span>
+                          {flowName}
+                        </div>
+                      </td>
+                      <td className="font-medium">{flowGroup.length} emails</td>
+                      <td className="font-medium">
+                        <span className="status-badge">
+                          {flowGroup[0].status}
+                        </span>
+                      </td>
+                      <td className="font-medium">{formatNumber(totalRecipients)}</td>
+                      <td className="font-medium">{formatPercentage(avgClickRate)}</td>
+                      <td className="font-medium">{formatCurrency(avgRevenuePerRecipient)}</td>
+                      <td className="font-medium">{formatCurrency(totalRevenue)}</td>
+                    </tr>
+                  );
+                  
+                  // Email detail rows (only show if expanded)
+                  const detailRows = isExpanded ? flowGroup.map((flow, flowIndex) => (
+                    <tr key={`flow-${groupIndex}-${flowIndex}`} className="text-white bg-opacity-10 bg-white">
+                      <td className="pl-8"></td>
+                      <td>{flow.email_name}</td>
+                      <td>
+                        <span className="status-badge">
+                          {flow.status}
+                        </span>
+                      </td>
+                      <td>{formatNumber(flow.recipients)}</td>
+                      <td>{formatPercentage(flow.click_rate)}</td>
+                      <td>{formatCurrency(flow.revenue_per_recipient)}</td>
+                      <td>{formatCurrency(flow.conversion_value)}</td>
+                    </tr>
+                  )) : [];
+                  
+                  return [headerRow, ...detailRows];
+                })
               ) : (
                 <tr>
-                  <td colSpan="8" className="text-center text-gray-400 py-4">
+                  <td colSpan="7" className="text-center text-gray-400 py-4">
                     No flow data available
                   </td>
                 </tr>
@@ -553,108 +628,58 @@
       );
     };
     
-    // Revenue Metrics component
+    // Revenue Metrics component with more creative visualization
     const RevenueMetrics = ({ data }) => {
-      // Calculate percentages for the donut chart
-      const calculatePercentages = () => {
+      // Check if SMS data exists
+      const hasSmsData = () => {
+        if (!data) return false;
+        return (parseFloat(data.flow_sms_rev) > 0 || parseFloat(data.campaign_sms_rev) > 0);
+      };
+      
+      // Calculate revenue breakdown
+      const calculateRevenueData = () => {
         if (!data) return [];
         
         const totalRev = parseFloat(data.total_rev) || 0;
         if (totalRev === 0) return [];
         
-        return [
+        const result = [
           {
             label: 'Campaign Email',
-            value: parseFloat(data.campaign_email_rev) || 0
-          },
-          {
-            label: 'Campaign SMS',
-            value: parseFloat(data.campaign_sms_rev) || 0
+            value: parseFloat(data.campaign_email_rev) || 0,
+            percentage: ((parseFloat(data.campaign_email_rev) || 0) / totalRev * 100).toFixed(1)
           },
           {
             label: 'Flow Email',
-            value: parseFloat(data.flow_email_rev) || 0
-          },
-          {
-            label: 'Flow SMS',
-            value: parseFloat(data.flow_sms_rev) || 0
+            value: parseFloat(data.flow_email_rev) || 0,
+            percentage: ((parseFloat(data.flow_email_rev) || 0) / totalRev * 100).toFixed(1)
           }
         ];
-      };
-      
-      const chartRef = useRef(null);
-      const chartInstance = useRef(null);
-      
-      useEffect(() => {
-        if (!data) return;
         
-        const ctx = chartRef.current.getContext('2d');
-        const percentageData = calculatePercentages();
-        
-        // Destroy existing chart
-        if (chartInstance.current) {
-          chartInstance.current.destroy();
+        if (hasSmsData()) {
+          result.push(
+            {
+              label: 'Campaign SMS',
+              value: parseFloat(data.campaign_sms_rev) || 0,
+              percentage: ((parseFloat(data.campaign_sms_rev) || 0) / totalRev * 100).toFixed(1)
+            },
+            {
+              label: 'Flow SMS',
+              value: parseFloat(data.flow_sms_rev) || 0,
+              percentage: ((parseFloat(data.flow_sms_rev) || 0) / totalRev * 100).toFixed(1)
+            }
+          );
         }
         
-        // Create new chart with purple theme
-        chartInstance.current = new Chart(ctx, {
-          type: 'doughnut',
-          data: {
-            labels: percentageData.map(item => item.label),
-            datasets: [{
-              data: percentageData.map(item => item.value),
-              backgroundColor: [
-                'rgba(136, 84, 208, 0.8)',
-                'rgba(136, 84, 208, 0.6)',
-                'rgba(136, 84, 208, 0.4)',
-                'rgba(136, 84, 208, 0.2)'
-              ],
-              borderColor: 'rgba(36, 35, 49, 0.5)',
-              borderWidth: 1
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            cutout: '70%',
-            plugins: {
-              legend: {
-                position: 'right',
-                labels: {
-                  color: 'rgba(255, 255, 255, 0.8)',
-                  font: {
-                    size: 11
-                  },
-                  padding: 15
-                }
-              },
-              tooltip: {
-                callbacks: {
-                  label: (context) => {
-                    const label = context.label;
-                    const value = formatCurrency(context.raw);
-                    const percentage = ((context.raw / percentageData.reduce((sum, item) => sum + item.value, 0)) * 100).toFixed(1);
-                    return `${label}: ${value} (${percentage}%)`;
-                  }
-                },
-                backgroundColor: 'rgba(36, 35, 49, 0.9)',
-                titleColor: 'white',
-                bodyColor: 'white',
-                borderColor: 'rgba(255, 255, 255, 0.1)',
-                borderWidth: 1
-              }
-            }
-          }
-        });
-        
-        return () => {
-          if (chartInstance.current) {
-            chartInstance.current.destroy();
-          }
-        };
-      }, [data]);
+        return result.sort((a, b) => b.value - a.value);
+      };
+      
+      const revData = calculateRevenueData();
       
       if (!data) return <div className="text-gray-400 p-4">No revenue data available</div>;
+      
+      // Determine if email attribution should be displayed (only if SMS exists)
+      const showEmailAttribution = hasSmsData();
       
       return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -668,14 +693,18 @@
                 <div className="metric-value text-white">{formatCurrency(data.email_rev || 0)}</div>
                 <div className="metric-label">Email Revenue</div>
               </div>
-              <div className="metric-card">
-                <div className="metric-value text-white">{formatCurrency(data.sms_rev || 0)}</div>
-                <div className="metric-label">SMS Revenue</div>
-              </div>
-              <div className="metric-card">
-                <div className="metric-value text-white">{formatPercentage((data.email_rev || 0) / (data.total_rev || 1) * 100)}</div>
-                <div className="metric-label">Email Attribution</div>
-              </div>
+              {hasSmsData() && (
+                <div className="metric-card">
+                  <div className="metric-value text-white">{formatCurrency(data.sms_rev || 0)}</div>
+                  <div className="metric-label">SMS Revenue</div>
+                </div>
+              )}
+              {showEmailAttribution && (
+                <div className="metric-card">
+                  <div className="metric-value text-white">{formatPercentage((data.email_rev || 0) / (data.total_rev || 1) * 100)}</div>
+                  <div className="metric-label">Email Attribution</div>
+                </div>
+              )}
               <div className="metric-card">
                 <div className="metric-value text-white">{formatCurrency(data.flow_email_rev || 0)}</div>
                 <div className="metric-label">Flow Email Revenue</div>
@@ -686,8 +715,34 @@
               </div>
             </div>
           </div>
-          <div className="chart-container p-4">
-            <canvas ref={chartRef}></canvas>
+          
+          {/* Waterfall/Tree visualization instead of pie chart */}
+          <div className="p-4 bg-opacity-20 bg-white rounded-lg">
+            <h3 className="text-white text-lg font-medium mb-3">Revenue Distribution</h3>
+            <div className="space-y-3 mt-4">
+              {revData.map((item, index) => (
+                <div key={index} className="relative">
+                  <div className="flex justify-between text-sm text-white mb-1">
+                    <span>{item.label}</span>
+                    <span className="font-semibold">{formatCurrency(item.value)} ({item.percentage}%)</span>
+                  </div>
+                  <div className="w-full h-6 bg-gray-700 bg-opacity-40 rounded overflow-hidden">
+                    <div 
+                      className={`h-full rounded ${
+                        item.label.includes('Campaign Email') ? 'bg-gradient-to-r from-white to-white/70' :
+                        item.label.includes('Campaign SMS') ? 'bg-gradient-to-r from-white/80 to-white/50' :
+                        item.label.includes('Flow Email') ? 'bg-gradient-to-r from-white/60 to-white/40' :
+                        'bg-gradient-to-r from-white/40 to-white/20'
+                      }`}
+                      style={{ width: `${item.percentage}%` }}
+                    ></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-6 text-xs text-white/60 italic text-right">
+              Based on last 30 days of revenue data
+            </div>
           </div>
         </div>
       );
