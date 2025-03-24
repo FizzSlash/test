@@ -1013,4 +1013,58 @@
         }, 60 * 60 * 1000); // Every hour
         
         return () => clearInterval(hourlyRefresh); // Clean up on unmount
-      },
+      },return () => clearInterval(hourlyRefresh); // Clean up on unmount
+}, []);
+
+// Generate mock data function...
+// [All the mock data generation code is here]
+
+// Manual refresh button handler
+const handleRefresh = () => {
+  fetchDashboardData();
+};
+
+return (
+  <div className="container mx-auto p-4">
+    <div className="dashboard-container">
+      {/* Header */}
+      <div className="p-6 bg-transparent text-white header-container">
+        {/* Header content */}
+      </div>
+      
+      {/* Error message */}
+      {error && (
+        <div className="error-container mx-6 text-white">
+          {/* Error content */}
+        </div>
+      )}
+      
+      {/* Dashboard content */}
+      <div className="relative">
+        {/* Loading overlay */}
+        {loading && (
+          <div className="loading-overlay">
+            <div className="spinner"></div>
+          </div>
+        )}
+        
+        {/* Tab content */}
+        {/* Overview, Campaigns, Flows, and List Growth tabs */}
+      </div>
+    </div>
+    
+    <div className="mt-4 p-2 text-center text-gray-500 text-xs">
+      Data refreshes automatically at 9:00 AM EST daily
+    </div>
+  </div>
+);
+};
+
+// Initialize by rendering the dashboard component
+ReactDOM.render(
+  <MarketingDashboard />,
+  document.getElementById('root')
+);
+</script>
+</body>
+</html>
