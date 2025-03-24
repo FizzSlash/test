@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Marketing Analytics Dashboard</title>
   <!-- Include React and ReactDOM -->
-  <script src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
   <!-- Include Babel for JSX -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <!-- Include Tailwind CSS -->
@@ -704,8 +704,13 @@
       const [lastUpdated, setLastUpdated] = useState(null);
       const [activeTab, setActiveTab] = useState('overview');
       
-      // API endpoint URL - replace with your deployed serverless function URL
-      const apiEndpoint = '/api/dashboard-data';
+      // API endpoint URL - Updated to your actual API endpoint
+      const apiEndpoint = '/api';
+      
+      // Manual refresh button handler
+      const handleRefresh = () => {
+        fetchDashboardData();
+      };
       
       // Function to fetch data from the API
       const fetchDashboardData = async () => {
@@ -778,6 +783,7 @@
           // If this is the first load and no data exists, generate mock data
           if (listGrowthData.length === 0 && campaignData.length === 0 && 
               flowData.length === 0 && !revenueData) {
+            console.log("Generating mock data as fallback");
             generateMockData();
           }
         } finally {
@@ -820,10 +826,8 @@
         return () => clearInterval(hourlyRefresh); // Clean up on unmount
       }, []);
       
-      // Fallback to generate mock data if API fails
+      // Fallback to generate mock data// Fallback to generate mock data if API fails
       const generateMockData = () => {
-        console.log("Generating mock data as fallback");
-        
         // Generate mock list growth data
         const mockListGrowth = Array.from({ length: 30 }, (_, i) => {
           const date = new Date();
@@ -926,11 +930,6 @@
         
         setRevenueData(mockRevenue);
         setLastUpdated(new Date());
-      };
-      
-      // Manual refresh button handler
-      const handleRefresh = () => {
-        fetchDashboardData();
       };
       
       return (
