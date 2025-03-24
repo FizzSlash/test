@@ -141,9 +141,9 @@
       const [showModal, setShowModal] = useState(false);
       const [activeTab, setActiveTab] = useState('queue');
 
-      // Your webhook URLs
-      const fetchFlowsUrl = 'https://hook.us2.make.com/dlcqdia9qozi8lca39jytiu27xrf1t1l';
-      const updateFlowUrl = 'https://hook.us2.make.com/wem64vvx9irk7tys6itjpyt27bqorbvg';
+      // Updated webhook URLs
+      const fetchFlowsUrl = 'https://hook.us2.make.com/fea9nqybtes8svegp5grgd1wedgyo7a0';
+      const updateFlowUrl = 'https://hook.us2.make.com/6q5113g65xtrwkcorpwx43krfeaqi6f6';
 
       useEffect(() => {
         fetchFlows();
@@ -313,8 +313,6 @@
           clientId: data.Client || '',
           clientRevisions: data.ClientRevisions || '',
           previewUrl: previewUrl,  // URL for preview
-          steps: Math.floor(Math.random() * 6) + 2, // Mock data for steps (2-7)
-          progress: Math.floor(Math.random() * 101), // Mock data for progress (0-100)
           rawData: data // Keep the raw data for reference
         };
       };
@@ -466,23 +464,8 @@
                           
                           <p className="text-white text-sm mb-4 line-clamp-2">{flow.description}</p>
                           
-                          <div className="flex justify-between items-center mb-3">
-                            <div className="text-gray-300 text-xs">
-                              <span className="font-semibold">Client:</span> {flow.clientId}
-                            </div>
-                            <div className="text-gray-300 text-xs">
-                              <span className="font-semibold">Steps:</span> {flow.steps}
-                            </div>
-                          </div>
-                          
-                          {/* Progress bar */}
-                          <div className="h-1.5 bg-gray-700 rounded-full mb-4 overflow-hidden">
-                            <div 
-                              className={`h-full rounded-full ${
-                                flow.progress >= 100 ? 'bg-green-500' : 'bg-blue-500'
-                              }`}
-                              style={{ width: `${flow.progress}%` }}
-                            ></div>
+                          <div className="text-gray-300 text-xs mb-4">
+                            <span className="font-semibold">Client:</span> {flow.clientId}
                           </div>
                           
                           <button 
@@ -526,13 +509,8 @@
                           
                           <p className="text-white text-sm mb-4 line-clamp-2">{flow.description}</p>
                           
-                          <div className="flex justify-between items-center mb-3">
-                            <div className="text-gray-300 text-xs">
-                              <span className="font-semibold">Client:</span> {flow.clientId}
-                            </div>
-                            <div className="text-gray-300 text-xs">
-                              <span className="font-semibold">Steps:</span> {flow.steps}
-                            </div>
+                          <div className="text-gray-300 text-xs mb-4">
+                            <span className="font-semibold">Client:</span> {flow.clientId}
                           </div>
                           
                           {/* Ready for approval indicator */}
@@ -612,32 +590,6 @@
                       <p className="p-3 bg-gray-800 bg-opacity-50 border border-gray-700 rounded text-white whitespace-normal break-words">
                         {selectedFlow.description || "No flow details available."}
                       </p>
-                    </div>
-                    
-                    {/* Flow steps visualization */}
-                    <div className="mb-6">
-                      <p className="font-semibold text-gray-400 mb-3">Flow Steps:</p>
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex-1 h-2 bg-gray-700 rounded-full">
-                          <div 
-                            className="h-full bg-blue-500 rounded-full" 
-                            style={{ width: `${selectedFlow.progress}%` }}
-                          ></div>
-                        </div>
-                        <span className="ml-3 text-white text-sm font-medium">
-                          {selectedFlow.progress}%
-                        </span>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        {Array.from({ length: selectedFlow.steps }).map((_, i) => (
-                          <div 
-                            key={i} 
-                            className={`flex-1 p-2 ${i < selectedFlow.steps * (selectedFlow.progress/100) ? 'bg-blue-900' : 'bg-gray-800'} border border-gray-700 rounded-sm text-xs text-center text-white`}
-                          >
-                            Step {i+1}
-                          </div>
-                        ))}
-                      </div>
                     </div>
                     
                     {/* Flow preview button */}
