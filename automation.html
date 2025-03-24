@@ -315,6 +315,7 @@
           status: data.Stage || 'Pending',
           clientId: data.Client || '',
           clientRevisions: data.ClientRevisions || '',
+          offer: data.Offer || '',
           previewUrl: previewUrl,  // URL for preview
           rawData: data // Keep the raw data for reference
         };
@@ -394,6 +395,15 @@
         return status.toLowerCase().includes('client approval');
       }
       
+      // Check if status indicates flow is in client-related stages
+      function isClientRelatedStatus(status) {
+        if (!status) return false;
+        const lowerStatus = status.toLowerCase();
+        return lowerStatus.includes('client approval') || 
+               lowerStatus.includes('client revisions') || 
+               lowerStatus.includes('ready for schedule');
+      }
+      
       // Get count of flows pending approval
       const pendingApprovalCount = flows.filter(flow => isClientApprovalStatus(flow.status)).length;
       
@@ -467,8 +477,15 @@
                           
                           <p className="text-white text-sm mb-4 line-clamp-2">{flow.description}</p>
                           
-                          <div className="text-gray-300 text-xs mb-4">
-                            <span className="font-semibold">Client:</span> {flow.clientId}
+                          <div className="flex flex-col gap-2 text-gray-300 text-xs mb-4">
+                            <div>
+                              <span className="font-semibold">Client:</span> {flow.clientId}
+                            </div>
+                            {flow.offer && (
+                              <div>
+                                <span className="font-semibold">Offer:</span> {flow.offer}
+                              </div>
+                            )}
                           </div>
                           
                           <button 
@@ -512,8 +529,15 @@
                           
                           <p className="text-white text-sm mb-4 line-clamp-2">{flow.description}</p>
                           
-                          <div className="text-gray-300 text-xs mb-4">
-                            <span className="font-semibold">Client:</span> {flow.clientId}
+                          <div className="flex flex-col gap-2 text-gray-300 text-xs mb-4">
+                            <div>
+                              <span className="font-semibold">Client:</span> {flow.clientId}
+                            </div>
+                            {flow.offer && (
+                              <div>
+                                <span className="font-semibold">Offer:</span> {flow.offer}
+                              </div>
+                            )}
                           </div>
                           
                           {/* Ready for approval indicator */}
@@ -584,6 +608,12 @@
                           <span className="font-semibold text-gray-400">Client:</span>{' '}
                           {selectedFlow.clientId}
                         </p>
+                        {selectedFlow.offer && (
+                          <p className="mb-2 text-white whitespace-normal break-words">
+                            <span className="font-semibold text-gray-400">Offer:</span>{' '}
+                            {selectedFlow.offer}
+                          </p>
+                        )}
                       </div>
                     </div>
                     
@@ -595,23 +625,7 @@
                       </p>
                     </div>
                     
-                    {/* Flow preview button */}
-                    {selectedFlow.previewUrl && (
-                      <div className="mt-6 mb-4">
-                        <a 
-                          href={selectedFlow.previewUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block w-full py-3 px-4 bg-transparent text-white text-center rounded hover:bg-white hover:bg-opacity-10 transition-colors duration-200 flex items-center justify-center border border-white"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                          </svg>
-                          Open Flow Preview
-                        </a>
-                      </div>
-                    )}
+                    {/* Flow preview button moved to client review section */}
                   </div>
                   
                   {/* Client Review section - now 50% width */}
@@ -642,6 +656,24 @@
                             placeholder="Enter your revision requests here..."
                             disabled={!isClientApprovalStatus(selectedFlow.status)}
                           /></div>
+                        
+                        {/* Flow preview button (available in all statuses) */}
+                        {selectedFlow.previewUrl && (
+                          <div className="mb-4">
+                            <a 
+                              href={selectedFlow.previewUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="block w-full py-3 px-4 bg-transparent text-white text-center rounded hover:bg-white hover:bg-opacity-10 transition-colors duration-200 flex items-center justify-center border border-white"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                              </svg>
+                              Open Flow Preview
+                            </a>
+                          </div>
+                        )}
                         
                         {isClientApprovalStatus(selectedFlow.status) ? (
                           <div className="space-y-3 mt-4">
