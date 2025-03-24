@@ -1,73 +1,4 @@
-// Simple Modal Component
-    const DetailModal = ({ isOpen, onClose, item, type }) => {
-      if (!isOpen || !item) return null;
-      
-      const handleModalClick = (e) => {
-        e.stopPropagation();
-      };
-      
-      const handleOverlayClick = () => {
-        onClose();
-      };
-      
-      return (
-        <div className="modal-overlay" onClick={handleOverlayClick}>
-          <div className="modal-container" onClick={handleModalClick}>
-            <div className="modal-header">
-              <h2 className="text-xl font-bold">
-                {type === 'campaign' ? item.campaignname : `${item.flow_name} - ${item.email_name}`}
-              </h2>
-              <button className="modal-close-button" onClick={onClose}>×</button>
-            </div>
-            <div className="modal-content">
-              <table className="w-full border-collapse">
-                <tbody>
-                  {Object.keys(item).map(key => {
-                    if (key === 'id') return null;
-                    
-                    let value = item[key];
-                    
-                    // Format the value based on its type or key name
-                    if (key === 'send_time' || key === 'date') {
-                      value = new Date(value).toLocaleString();
-                    } else if (typeof value === 'number') {
-                      if (key.includes('rate')) {
-                        value = formatPercentage(value);
-                      } else if (key.includes('value') || key.includes('revenue') || key.includes('recipient')) {
-                        value = formatCurrency(value);
-                      } else {
-                        value = formatNumber(value);
-                      }
-                    }
-                    
-                    // Format the key for display
-                    const displayKey = key
-                      .replace(/_/g, ' ')
-                      .split(' ')
-                      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                      .join(' ');
-                    
-                    return (
-                      <tr key={key} className="border-b border-gray-700">
-                        <td className="py-2 px-4 font-semibold">{displayKey}</td>
-                        <td className="py-2 px-4">{value}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      );
-    };    /* Error state */
-    .error-container {
-      background-color: rgba(220, 38, 38, 0.2);
-      border: 1px solid rgba(220, 38, 38, 0.5);
-      border-radius: 8px;
-      padding: 1rem;
-      margin: 1rem 0;
-    }<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -232,51 +163,13 @@
       100% { transform: rotate(360deg); }
     }
     
-    /* Modal styling - simplified */
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: rgba(0, 0, 0, 0.7);
-      z-index: 1000;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    
-    .modal-container {
-      background-color: #24232f;
-      border: 1px solid rgba(136, 84, 208, 0.4);
+    /* Error state */
+    .error-container {
+      background-color: rgba(220, 38, 38, 0.2);
+      border: 1px solid rgba(220, 38, 38, 0.5);
       border-radius: 8px;
-      width: 90%;
-      max-width: 800px;
-      max-height: 90vh;
-      overflow-y: auto;
-      color: white;
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
-    }
-    
-    .modal-header {
-      padding: 15px 20px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background-color: rgba(136, 84, 208, 0.2);
-    }
-    
-    .modal-close-button {
-      background: transparent;
-      border: none;
-      color: white;
-      font-size: 24px;
-      cursor: pointer;
-    }
-    
-    .modal-content {
-      padding: 20px;
+      padding: 1rem;
+      margin: 1rem 0;
     }
   </style>
 </head>
@@ -468,187 +361,93 @@
       );
     };
     
-// Campaign Table component
-const CampaignTable = ({ data }) => {
-  const [sortField, setSortField] = useState('conversion_value');
-  const [sortDirection, setSortDirection] = useState('desc');
-  const [sortedData, setSortedData] = useState([]);
-  const [maxRevenue, setMaxRevenue] = useState(0);
-  const [selectedCampaign, setSelectedCampaign] = useState(null);
-  const [modalOpen, setModalOpen] = useState(false);
-  
-  useEffect(() => {
-    if (!data || data.length === 0) {
-      setSortedData([]);
-      setMaxRevenue(0);
-      return;
-    }
-    
-    // Find max revenue for gradient scaling
-    const max = Math.max(...data.map(campaign => Number(campaign.conversion_value || 0)));
-    setMaxRevenue(max);
-    
-    // Default sort by revenue (highest first)
-    const sorted = sortData(data, sortField, sortDirection);
-    setSortedData(sorted);
-  }, [data, sortField, sortDirection]);
-  
-  const handleSort = (field) => {
-    if (field === sortField) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('desc');
-    }
-  };
-  
-  const renderSortArrow = (field) => {
-    if (sortField !== field) return null;
-    return (
-      <span className="ml-1">
-        {sortDirection === 'asc' ? '↑' : '↓'}
-      </span>
-    );
-  };
-  
-  // Function to get gradient style based on performance
-  const getRevenueStyle = (revenue) => {
-    const percentage = Math.min(100, Math.max(10, (revenue / maxRevenue) * 100));
-    
-    return {
-      background: `linear-gradient(90deg, rgba(136, 84, 208, ${percentage / 100}) 0%, rgba(136, 84, 208, ${percentage / 300}) 100%)`,
-      borderRadius: '4px',
-      color: 'white'
-    };
-  };
-  
-  const openModal = (campaign) => {
-    setSelectedCampaign(campaign);
-    setModalOpen(true);
-  };
-  
-  const closeModal = () => {
-    setModalOpen(false);
-  };
-  
-  return (
-    <div className="overflow-x-auto">
-      <table className="dashboard-table w-full">
-        <thead>
-          <tr className="text-white">
-            <th onClick={() => handleSort('campaignname')}>
-              Campaign Name {renderSortArrow('campaignname')}
-            </th>
-            <th onClick={() => handleSort('send_time')}>
-              Send Date {renderSortArrow('send_time')}
-            </th>
-            <th onClick={() => handleSort('channel')}>
-              Channel {renderSortArrow('channel')}
-            </th>
-            <th onClick={() => handleSort('recipients')}>
-              Recipients {renderSortArrow('recipients')}
-            </th>
-            <th onClick={() => handleSort('open_rate')}>
-              Open Rate {renderSortArrow('open_rate')}
-            </th>
-            <th onClick={() => handleSort('click_rate')}>
-              Click Rate {renderSortArrow('click_rate')}
-            </th>
-            <th onClick={() => handleSort('revenue_per_recipient')}>
-              Revenue/Recipient {renderSortArrow('revenue_per_recipient')}
-            </th>
-            <th onClick={() => handleSort('conversion_value')}>
-              Revenue {renderSortArrow('conversion_value')}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {sortedData.length > 0 ? (
-            sortedData.map((campaign, index) => (
-              <tr 
-                key={index} 
-                className="text-white hover:bg-white hover:bg-opacity-10 cursor-pointer"
-                onClick={() => openModal(campaign)}
-              >
-                <td className="font-medium">{campaign.campaignname}</td>
-                <td>{formatDate(campaign.send_time)}</td>
-                <td>
-                  <span className="status-badge">
-                    {campaign.channel}
-                  </span>
-                </td>
-                <td>{formatNumber(campaign.recipients)}</td>
-                <td>{formatPercentage(campaign.open_rate)}</td>
-                <td>{formatPercentage(campaign.click_rate)}</td>
-                <td>{formatCurrency(campaign.revenue_per_recipient)}</td>
-                <td style={getRevenueStyle(campaign.conversion_value)}>
-                  {formatCurrency(campaign.conversion_value)}
-                </td>
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan="8" className="text-center text-gray-400 py-4">
-                No campaign data available
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+    // Campaign Table component
+    const CampaignTable = ({ data }) => {
+      const [sortField, setSortField] = useState('conversion_value');
+      const [sortDirection, setSortDirection] = useState('desc');
+      const [sortedData, setSortedData] = useState([]);
+      const [maxRevenue, setMaxRevenue] = useState(0);
       
-      {modalOpen && selectedCampaign && (
-        <div className="modal-overlay" onClick={closeModal}>
-          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2 className="text-xl font-bold">
-                {selectedCampaign.campaignname}
-              </h2>
-              <button className="modal-close-button" onClick={closeModal}>×</button>
-            </div>
-            <div className="modal-content">
-              <table className="w-full border-collapse">
-                <tbody>
-                  {Object.keys(selectedCampaign).map(key => {
-                    if (key === 'id') return null;
-                    
-                    let value = selectedCampaign[key];
-                    
-                    // Format the value based on its type or key name
-                    if (key === 'send_time' || key === 'date') {
-                      value = new Date(value).toLocaleString();
-                    } else if (typeof value === 'number') {
-                      if (key.includes('rate')) {
-                        value = formatPercentage(value);
-                      } else if (key.includes('value') || key.includes('revenue') || key.includes('recipient')) {
-                        value = formatCurrency(value);
-                      } else {
-                        value = formatNumber(value);
-                      }
-                    }
-                    
-                    // Format the key for display
-                    const displayKey = key
-                      .replace(/_/g, ' ')
-                      .split(' ')
-                      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                      .join(' ');
-                    
-                    return (
-                      <tr key={key} className="border-b border-gray-700">
-                        <td className="py-2 px-4 font-semibold">{displayKey}</td>
-                        <td className="py-2 px-4">{value}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );)}
-                  >
+      useEffect(() => {
+        if (!data || data.length === 0) {
+          setSortedData([]);
+          setMaxRevenue(0);
+          return;
+        }
+        
+        // Find max revenue for gradient scaling
+        const max = Math.max(...data.map(campaign => Number(campaign.conversion_value || 0)));
+        setMaxRevenue(max);
+        
+        // Default sort by revenue (highest first)
+        const sorted = sortData(data, sortField, sortDirection);
+        setSortedData(sorted);
+      }, [data, sortField, sortDirection]);
+      
+      const handleSort = (field) => {
+        if (field === sortField) {
+          setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+        } else {
+          setSortField(field);
+          setSortDirection('desc');
+        }
+      };
+      
+      const renderSortArrow = (field) => {
+        if (sortField !== field) return null;
+        return (
+          <span className="ml-1">
+            {sortDirection === 'asc' ? '↑' : '↓'}
+          </span>
+        );
+      };
+      
+      // Function to get gradient style based on performance
+      const getRevenueStyle = (revenue) => {
+        const percentage = Math.min(100, Math.max(10, (revenue / maxRevenue) * 100));
+        
+        return {
+          background: `linear-gradient(90deg, rgba(136, 84, 208, ${percentage / 100}) 0%, rgba(136, 84, 208, ${percentage / 300}) 100%)`,
+          borderRadius: '4px',
+          color: 'white'
+        };
+      };
+      
+      return (
+        <div className="overflow-x-auto">
+          <table className="dashboard-table w-full">
+            <thead>
+              <tr className="text-white">
+                <th onClick={() => handleSort('campaignname')}>
+                  Campaign Name {renderSortArrow('campaignname')}
+                </th>
+                <th onClick={() => handleSort('send_time')}>
+                  Send Date {renderSortArrow('send_time')}
+                </th>
+                <th onClick={() => handleSort('channel')}>
+                  Channel {renderSortArrow('channel')}
+                </th>
+                <th onClick={() => handleSort('recipients')}>
+                  Recipients {renderSortArrow('recipients')}
+                </th>
+                <th onClick={() => handleSort('open_rate')}>
+                  Open Rate {renderSortArrow('open_rate')}
+                </th>
+                <th onClick={() => handleSort('click_rate')}>
+                  Click Rate {renderSortArrow('click_rate')}
+                </th>
+                <th onClick={() => handleSort('revenue_per_recipient')}>
+                  Revenue/Recipient {renderSortArrow('revenue_per_recipient')}
+                </th>
+                <th onClick={() => handleSort('conversion_value')}>
+                  Revenue {renderSortArrow('conversion_value')}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedData.length > 0 ? (
+                sortedData.map((campaign, index) => (
+                  <tr key={index} className="text-white">
                     <td className="font-medium">{campaign.campaignname}</td>
                     <td>{formatDate(campaign.send_time)}</td>
                     <td>
@@ -674,512 +473,22 @@ const CampaignTable = ({ data }) => {
               )}
             </tbody>
           </table>
-          
-          <DetailModal 
-            isOpen={modalOpen} 
-            onClose={closeModal} 
-            item={selectedCampaign}
-            type="campaign"
-          />
         </div>
       );
     };
     
-// Flow Table component with grouping by flow name
-const FlowTable = ({ data, showTopOnly = false }) => {
-  const [sortField, setSortField] = useState('conversion_value');
-  const [sortDirection, setSortDirection] = useState('desc');
-  const [sortedData, setSortedData] = useState([]);
-  const [groupedData, setGroupedData] = useState({});
-  const [expandedGroups, setExpandedGroups] = useState({});
-  const [maxRevenue, setMaxRevenue] = useState(0);
-  const [selectedFlow, setSelectedFlow] = useState(null);
-  const [modalOpen, setModalOpen] = useState(false);
-  
-  useEffect(() => {
-    // Return early if no data
-    if (!data || data.length === 0) {
-      setSortedData([]);
-      setGroupedData({});
-      setMaxRevenue(0);
-      return;
-    }
-    
-    // First group data by flow_name
-    const grouped = data.reduce((acc, flow) => {
-      if (!acc[flow.flow_name]) {
-        acc[flow.flow_name] = [];
-      }
-      acc[flow.flow_name].push(flow);
-      return acc;
-    }, {});
-    
-    // Initialize expanded state for new groups
-    const newExpandedGroups = {...expandedGroups};
-    Object.keys(grouped).forEach(groupName => {
-      if (newExpandedGroups[groupName] === undefined) {
-        newExpandedGroups[groupName] = false; // Default to collapsed for homepage
-      }
-    });
-    setExpandedGroups(newExpandedGroups);
-    
-    // Calculate max revenue for gradient scaling
-    let max = 0;
-    Object.keys(grouped).forEach(groupName => {
-      const groupTotal = grouped[groupName].reduce((sum, item) => sum + Number(item.conversion_value || 0), 0);
-      if (groupTotal > max) max = groupTotal;
-    });
-    setMaxRevenue(max);
-    
-    // Sort the groups based on their total conversion value or selected field
-    const sortedGroupNames = Object.keys(grouped).sort((a, b) => {
-      const valueA = grouped[a].reduce((sum, item) => sum + Number(item[sortField] || 0), 0);
-      const valueB = grouped[b].reduce((sum, item) => sum + Number(item[sortField] || 0), 0);
-      return sortDirection === 'asc' ? valueA - valueB : valueB - valueA;
-    });
-    
-    // Sort emails within each group - by email number if available, otherwise by selected field
-    sortedGroupNames.forEach(groupName => {
-      grouped[groupName] = grouped[groupName].sort((a, b) => {
-        // Extract numbers from email names for sorting if they exist
-        const aMatch = a.email_name.match(/(\d+)/);
-        const bMatch = b.email_name.match(/(\d+)/);
-        
-        if (aMatch && bMatch) {
-          // If both have numbers, sort by number
-          return parseInt(aMatch[0]) - parseInt(bMatch[0]);
-        } else {
-          // Otherwise fall back to regular sort
-          return sortData([a, b], sortField, sortDirection)[0] === a ? -1 : 1;
-        }
-      });
-    });
-    
-    setGroupedData(grouped);
-    setSortedData(showTopOnly ? sortedGroupNames.slice(0, 5) : sortedGroupNames);
-  }, [data, sortField, sortDirection, showTopOnly]);
-  
-  const handleSort = (field) => {
-    if (field === sortField) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('desc');
-    }
-  };
-  
-  const toggleGroup = (e, groupName) => {
-    e.stopPropagation();
-    setExpandedGroups({
-      ...expandedGroups,
-      [groupName]: !expandedGroups[groupName]
-    });
-  };
-  
-  const renderSortArrow = (field) => {
-    if (sortField !== field) return null;
-    return (
-      <span className="ml-1">
-        {sortDirection === 'asc' ? '↑' : '↓'}
-      </span>
-    );
-  };
-  
-  // Function to get gradient background based on performance
-  const getRevenueStyle = (revenue) => {
-    const percentage = Math.min(100, Math.max(10, (revenue / maxRevenue) * 100));
-    
-    return {
-      background: `linear-gradient(90deg, rgba(136, 84, 208, ${percentage / 100}) 0%, rgba(136, 84, 208, ${percentage / 300}) 100%)`,
-      borderRadius: '4px',
-      color: 'white'
-    };
-  };
-  
-  const openModal = (flow) => {
-    setSelectedFlow(flow);
-    setModalOpen(true);
-  };
-  
-  const closeModal = () => {
-    setModalOpen(false);
-  };
-  
-  return (
-    <div className="overflow-x-auto">
-      <table className="dashboard-table w-full">
-        <thead>
-          <tr className="text-white">
-            <th onClick={() => handleSort('flow_name')}>
-              Flow Name {renderSortArrow('flow_name')}
-            </th>
-            <th onClick={() => handleSort('email_name')}>
-              Email {renderSortArrow('email_name')}
-            </th>
-            <th onClick={() => handleSort('status')}>
-              Status {renderSortArrow('status')}
-            </th>
-            <th onClick={() => handleSort('recipients')}>
-              Recipients {renderSortArrow('recipients')}
-            </th>
-            <th onClick={() => handleSort('click_rate')}>
-              Click Rate {renderSortArrow('click_rate')}
-            </th>
-            <th onClick={() => handleSort('revenue_per_recipient')}>
-              Revenue/Recipient {renderSortArrow('revenue_per_recipient')}
-            </th>
-            <th onClick={() => handleSort('conversion_value')}>
-              Revenue {renderSortArrow('conversion_value')}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {sortedData.length > 0 ? (
-            sortedData.flatMap((flowName, groupIndex) => {
-              const flowGroup = groupedData[flowName];
-              const isExpanded = expandedGroups[flowName];
-              
-              // Calculate group totals
-              const totalRecipients = flowGroup.reduce((sum, flow) => sum + Number(flow.recipients || 0), 0);
-              const totalRevenue = flowGroup.reduce((sum, flow) => sum + Number(flow.conversion_value || 0), 0);
-              const avgClickRate = flowGroup.reduce((sum, flow) => sum + Number(flow.click_rate || 0), 0) / flowGroup.length;
-              const avgRevenuePerRecipient = totalRevenue / totalRecipients;
-              
-              // Group header row
-              const headerRow = (
-                <tr 
-                  key={`group-${groupIndex}`} 
-                  className="text-white bg-gray-700 bg-opacity-40 cursor-pointer hover:bg-opacity-50"
-                >
-                  <td className="font-bold" onClick={(e) => toggleGroup(e, flowName)}>
-                    <div className="flex items-center">
-                      <span className="mr-2">{isExpanded ? '▼' : '►'}</span>
-                      {flowName}
-                    </div>
-                  </td>
-                  <td className="font-medium">{flowGroup.length} emails</td>
-                  <td className="font-medium">
-                    <span className="status-badge">
-                      {flowGroup[0].status}
-                    </span>
-                  </td>
-                  <td className="font-medium">{formatNumber(totalRecipients)}</td>
-                  <td className="font-medium">{formatPercentage(avgClickRate)}</td>
-                  <td className="font-medium">{formatCurrency(avgRevenuePerRecipient)}</td>
-                  <td className="font-medium" style={getRevenueStyle(totalRevenue)}>
-                    {formatCurrency(totalRevenue)}
-                  </td>
-                </tr>
-              );
-              
-              // Email detail rows (only show if expanded)
-              const detailRows = isExpanded ? flowGroup.map((flow, flowIndex) => {
-                return (
-                  <tr 
-                    key={`flow-${groupIndex}-${flowIndex}`} 
-                    className="text-white bg-gray-800 bg-opacity-40 hover:bg-opacity-60 cursor-pointer"
-                    onClick={() => openModal(flow)}
-                  >
-                    <td className="pl-8"></td>
-                    <td>{flow.email_name}</td>
-                    <td>
-                      <span className="status-badge">
-                        {flow.status}
-                      </span>
-                    </td>
-                    <td>{formatNumber(flow.recipients)}</td>
-                    <td>{formatPercentage(flow.click_rate)}</td>
-                    <td>{formatCurrency(flow.revenue_per_recipient)}</td>
-                    <td style={getRevenueStyle(flow.conversion_value)}>
-                      {formatCurrency(flow.conversion_value)}
-                    </td>
-                  </tr>
-                );
-              }) : [];
-              
-              return [headerRow, ...detailRows];
-            })
-          ) : (
-            <tr>
-              <td colSpan="7" className="text-center text-gray-400 py-4">
-                No flow data available
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+    // Flow Table component with grouping by flow name
+    const FlowTable = ({ data, showTopOnly = false }) => {
+      const [sortField, setSortField] = useState('conversion_value');
+      const [sortDirection, setSortDirection] = useState('desc');
+      const [sortedData, setSortedData] = useState([]);
+      const [groupedData, setGroupedData] = useState({});
+      const [expandedGroups, setExpandedGroups] = useState({});
+      const [maxRevenue, setMaxRevenue] = useState(0);
       
-      {modalOpen && selectedFlow && (
-        <div className="modal-overlay" onClick={closeModal}>
-          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2 className="text-xl font-bold">
-                {selectedFlow.flow_name} - {selectedFlow.email_name}
-              </h2>
-              <button className="modal-close-button" onClick={closeModal}>×</button>
-            </div>
-            <div className="modal-content">
-              <table className="w-full border-collapse">
-                <tbody>
-                  {Object.keys(selectedFlow).map(key => {
-                    if (key === 'id') return null;
-                    
-                    let value = selectedFlow[key];
-                    
-                    // Format the value based on its type or key name
-                    if (key === 'send_time' || key === 'date') {
-                      value = new Date(value).toLocaleString();
-                    } else if (typeof value === 'number') {
-                      if (key.includes('rate')) {
-                        value = formatPercentage(value);
-                      } else if (key.includes('value') || key.includes('revenue') || key.includes('recipient')) {
-                        value = formatCurrency(value);
-                      } else {
-                        value = formatNumber(value);
-                      }
-                    }
-                    
-                    // Format the key for display
-                    const displayKey = key
-                      .replace(/_/g, ' ')
-                      .split(' ')
-                      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                      .join(' ');
-                    
-                    return (
-                      <tr key={key} className="border-b border-gray-700">
-                        <td className="py-2 px-4 font-semibold">{displayKey}</td>
-                        <td className="py-2 px-4">{value}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};edData([]);
-          setGroupedData({});
-          setMaxRevenue(0);
-          return;
-        }
-        
-        // First group data by flow_name
-        const grouped = data.reduce((acc, flow) => {
-          if (!acc[flow.flow_name]) {
-            acc[flow.flow_name] = [];
-          }
-          acc[flow.flow_name].push(flow);
-          return acc;
-        }, {});
-        
-        // Initialize expanded state for new groups
-        const newExpandedGroups = {...expandedGroups};
-        Object.keys(grouped).forEach(groupName => {
-          if (newExpandedGroups[groupName] === undefined) {
-            newExpandedGroups[groupName] = false; // Default to collapsed for homepage
-          }
-        });
-        setExpandedGroups(newExpandedGroups);
-        
-        // Calculate max revenue for gradient scaling
-        let max = 0;
-        Object.keys(grouped).forEach(groupName => {
-          const groupTotal = grouped[groupName].reduce((sum, item) => sum + Number(item.conversion_value || 0), 0);
-          if (groupTotal > max) max = groupTotal;
-        });
-        setMaxRevenue(max);
-        
-        // Sort the groups based on their total conversion value or selected field
-        const sortedGroupNames = Object.keys(grouped).sort((a, b) => {
-          const valueA = grouped[a].reduce((sum, item) => sum + Number(item[sortField] || 0), 0);
-          const valueB = grouped[b].reduce((sum, item) => sum + Number(item[sortField] || 0), 0);
-          return sortDirection === 'asc' ? valueA - valueB : valueB - valueA;
-        });
-        
-        // Sort emails within each group - by email number if available, otherwise by selected field
-        sortedGroupNames.forEach(groupName => {
-          grouped[groupName] = grouped[groupName].sort((a, b) => {
-            // Extract numbers from email names for sorting if they exist
-            const aMatch = a.email_name.match(/(\d+)/);
-            const bMatch = b.email_name.match(/(\d+)/);
-            
-            if (aMatch && bMatch) {
-              // If both have numbers, sort by number
-              return parseInt(aMatch[0]) - parseInt(bMatch[0]);
-            } else {
-              // Otherwise fall back to regular sort
-              return sortData([a, b], sortField, sortDirection)[0] === a ? -1 : 1;
-            }
-          });
-        });
-        
-        setGroupedData(grouped);
-        setSortedData(showTopOnly ? sortedGroupNames.slice(0, 5) : sortedGroupNames);
-      }, [data, sortField, sortDirection, showTopOnly]);
-      
-      const handleSort = (field) => {
-        if (field === sortField) {
-          setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-        } else {
-          setSortField(field);
-          setSortDirection('desc');
-        }
-      };
-      
-      const toggleGroup = (e, groupName) => {
-        e.stopPropagation();
-        setExpandedGroups({
-          ...expandedGroups,
-          [groupName]: !expandedGroups[groupName]
-        });
-      };
-      
-      const renderSortArrow = (field) => {
-        if (sortField !== field) return null;
-        return (
-          <span className="ml-1">
-            {sortDirection === 'asc' ? '↑' : '↓'}
-          </span>
-        );
-      };
-      
-      // Function to get gradient background based on performance
-      const getRevenueStyle = (revenue) => {
-        const percentage = Math.min(100, Math.max(10, (revenue / maxRevenue) * 100));
-        
-        return {
-          background: `linear-gradient(90deg, rgba(136, 84, 208, ${percentage / 100}) 0%, rgba(136, 84, 208, ${percentage / 300}) 100%)`,
-          borderRadius: '4px',
-          color: 'white'
-        };
-      };
-      
-      const openModal = (flow) => {
-        setSelectedFlow(flow);
-        setModalOpen(true);
-      };
-      
-      const closeModal = () => {
-        setModalOpen(false);
-      };
-      
-      return (
-        <div className="overflow-x-auto">
-          <table className="dashboard-table w-full">
-            <thead>
-              <tr className="text-white">
-                <th onClick={() => handleSort('flow_name')}>
-                  Flow Name {renderSortArrow('flow_name')}
-                </th>
-                <th onClick={() => handleSort('email_name')}>
-                  Email {renderSortArrow('email_name')}
-                </th>
-                <th onClick={() => handleSort('status')}>
-                  Status {renderSortArrow('status')}
-                </th>
-                <th onClick={() => handleSort('recipients')}>
-                  Recipients {renderSortArrow('recipients')}
-                </th>
-                <th onClick={() => handleSort('click_rate')}>
-                  Click Rate {renderSortArrow('click_rate')}
-                </th>
-                <th onClick={() => handleSort('revenue_per_recipient')}>
-                  Revenue/Recipient {renderSortArrow('revenue_per_recipient')}
-                </th>
-                <th onClick={() => handleSort('conversion_value')}>
-                  Revenue {renderSortArrow('conversion_value')}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedData.length > 0 ? (
-                sortedData.flatMap((flowName, groupIndex) => {
-                  const flowGroup = groupedData[flowName];
-                  const isExpanded = expandedGroups[flowName];
-                  
-                  // Calculate group totals
-                  const totalRecipients = flowGroup.reduce((sum, flow) => sum + Number(flow.recipients || 0), 0);
-                  const totalRevenue = flowGroup.reduce((sum, flow) => sum + Number(flow.conversion_value || 0), 0);
-                  const avgClickRate = flowGroup.reduce((sum, flow) => sum + Number(flow.click_rate || 0), 0) / flowGroup.length;
-                  const avgRevenuePerRecipient = totalRevenue / totalRecipients;
-                  
-                  // Group header row
-                  const headerRow = (
-                    <tr 
-                      key={`group-${groupIndex}`} 
-                      className="text-white bg-gray-700 bg-opacity-40 cursor-pointer hover:bg-opacity-50"
-                    >
-                      <td className="font-bold" onClick={(e) => toggleGroup(e, flowName)}>
-                        <div className="flex items-center">
-                          <span className="mr-2">{isExpanded ? '▼' : '►'}</span>
-                          {flowName}
-                        </div>
-                      </td>
-                      <td className="font-medium">{flowGroup.length} emails</td>
-                      <td className="font-medium">
-                        <span className="status-badge">
-                          {flowGroup[0].status}
-                        </span>
-                      </td>
-                      <td className="font-medium">{formatNumber(totalRecipients)}</td>
-                      <td className="font-medium">{formatPercentage(avgClickRate)}</td>
-                      <td className="font-medium">{formatCurrency(avgRevenuePerRecipient)}</td>
-                      <td className="font-medium" style={getRevenueStyle(totalRevenue)}>
-                        {formatCurrency(totalRevenue)}
-                      </td>
-                    </tr>
-                  );
-                  
-                  // Email detail rows (only show if expanded)
-                  const detailRows = isExpanded ? flowGroup.map((flow, flowIndex) => {
-                    return (
-                      <tr 
-                        key={`flow-${groupIndex}-${flowIndex}`} 
-                        className="text-white bg-gray-800 bg-opacity-40 hover:bg-opacity-60 cursor-pointer"
-                        onClick={() => openModal(flow)}
-                      >
-                        <td className="pl-8"></td>
-                        <td>{flow.email_name}</td>
-                        <td>
-                          <span className="status-badge">
-                            {flow.status}
-                          </span>
-                        </td>
-                        <td>{formatNumber(flow.recipients)}</td>
-                        <td>{formatPercentage(flow.click_rate)}</td>
-                        <td>{formatCurrency(flow.revenue_per_recipient)}</td>
-                        <td style={getRevenueStyle(flow.conversion_value)}>
-                          {formatCurrency(flow.conversion_value)}
-                        </td>
-                      </tr>
-                    );
-                  }) : [];
-                  
-                  return [headerRow, ...detailRows];
-                })
-              ) : (
-                <tr>
-                  <td colSpan="7" className="text-center text-gray-400 py-4">
-                    No flow data available
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-          
-          <DetailModal 
-            isOpen={modalOpen} 
-            onClose={closeModal} 
-            item={selectedFlow}
-            type="flow"
-          />
-        </div>
-      );
-    };edData([]);
+      useEffect(() => {
+        if (!data || data.length === 0) {
+          setSortedData([]);
           setGroupedData({});
           setMaxRevenue(0);
           return;
