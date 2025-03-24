@@ -15,9 +15,8 @@
   <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
   <!-- Include Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
-  <!-- Include date-fns -->
-  <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/index.min.js"></script>
   <style>
+    /* Include all your styles here - same as before */
     body {
       background-color: rgba(20, 19, 28, 0.7);
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
@@ -181,30 +180,13 @@
     // Import React hooks
     const { useState, useEffect, useRef } = React;
     
-    // For testing purposes - to simulate API responses during development
-    // In production, comment out this mock data
-    const MOCK_API_RESPONSE = {
-      url: "/api/dashboard-data",
-      method: "GET",
-      status: 200,
-      response: {
-        listGrowth: [],
-        campaigns: [],
-        flows: [],
-        revenue: {
-          total_rev: 0,
-          email_rev: 0,
-          sms_rev: 0,
-          flow_email_rev: 0,
-          flow_sms_rev: 0,
-          campaign_email_rev: 0,
-          campaign_sms_rev: 0
-        },
-        lastUpdated: new Date()
-      }
-    };
+    // Neon API configuration
+    const NEON_API_KEY = 'napi_xai0wdd9ir8ry0wdz2uhy68u8dmwewg6uun4eem8hbdwzm81h4hu0vf51s1qw08u';
+    const NEON_PROJECT_ID = 'ep-frosty-river-a5nxmr1x-pooler';
+    const NEON_DATABASE = 'neondb';
     
-    // Utility functions
+    // Utility functions (formatCurrency, formatPercentage, etc.) 
+    // ...same as your original code...
     const formatCurrency = (value) => {
       return new Intl.NumberFormat('en-US', {
         style: 'currency',
@@ -258,464 +240,31 @@
       });
     };
     
-    // List Growth Chart component
-    const ListGrowthChart = ({ data }) => {
-      const chartRef = useRef(null);
-      const chartInstance = useRef(null);
-      
-      useEffect(() => {
-        if (!data || data.length === 0) return;
-        
-        const ctx = chartRef.current.getContext('2d');
-        
-        // Destroy existing chart
-        if (chartInstance.current) {
-          chartInstance.current.destroy();
-        }
-        
-        // Prepare chart data
-        const dates = data.map(item => formatDate(item.date));
-        const totalMembers = data.map(item => Number(item.total_members));
-        const membersAdded = data.map(item => Number(item.members_added));
-        const membersRemoved = data.map(item => -Number(item.members_removed));
-        
-        // Create new chart
-        chartInstance.current = new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels: dates,
-            datasets: [
-              {
-                label: 'Total Members',
-                data: totalMembers,
-                borderColor: 'rgba(136, 84, 208, 1)',
-                backgroundColor: 'rgba(136, 84, 208, 0.1)',
-                fill: true,
-                tension: 0.3,
-                borderWidth: 2,
-                pointRadius: 3,
-                pointBackgroundColor: 'rgba(136, 84, 208, 1)'
-              },
-              {
-                label: 'Members Added',
-                data: membersAdded,
-                borderColor: 'rgba(136, 84, 208, 0.7)',
-                backgroundColor: 'rgba(136, 84, 208, 0.05)',
-                borderWidth: 2,
-                borderDash: [5, 5],
-                fill: false,
-                tension: 0.3,
-                pointRadius: 2
-              },
-              {
-                label: 'Members Removed',
-                data: membersRemoved,
-                borderColor: 'rgba(255, 255, 255, 0.5)',
-                backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                borderWidth: 2,
-                borderDash: [5, 5],
-                fill: false,
-                tension: 0.3,
-                pointRadius: 2
-              }
-            ]
+    // Function to execute SQL query via Neon API
+    const executeQuery = async (query) => {
+      try {
+        const response = await fetch(`https://console.neon.tech/api/v2/projects/${NEON_PROJECT_ID}/branches/main/query`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${NEON_API_KEY}`
           },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: {
-                position: 'top',
-                labels: {
-                  color: 'rgba(255, 255, 255, 0.8)',
-                  font: {
-                    size: 11
-                  }
-                }
-              },
-              tooltip: {
-                mode: 'index',
-                intersect: false,
-                backgroundColor: 'rgba(36, 35, 49, 0.9)',
-                borderColor: 'rgba(255, 255, 255, 0.1)',
-                borderWidth: 1,
-                padding: 10,
-                titleColor: 'rgba(255, 255, 255, 1)',
-                bodyColor: 'rgba(255, 255, 255, 0.8)',
-                bodyFont: {
-                  size: 12
-                },
-                titleFont: {
-                  size: 14,
-                  weight: 'bold'
-                }
-              }
-            },
-            scales: {
-              x: {
-                grid: {
-                  color: 'rgba(255, 255, 255, 0.05)'
-                },
-                ticks: {
-                  color: 'rgba(255, 255, 255, 0.6)'
-                }
-              },
-              y: {
-                grid: {
-                  color: 'rgba(255, 255, 255, 0.05)'
-                },
-                ticks: {
-                  color: 'rgba(255, 255, 255, 0.6)'
-                }
-              }
-            }
-          }
+          body: JSON.stringify({
+            query: query
+          })
         });
         
-        return () => {
-          if (chartInstance.current) {
-            chartInstance.current.destroy();
-          }
-        };
-      }, [data]);
-      
-      return (
-        <div className="chart-container">
-          <canvas ref={chartRef}></canvas>
-        </div>
-      );
-    };
-    
-    // Campaign Table component
-    const CampaignTable = ({ data }) => {
-      const [sortField, setSortField] = useState('send_time');
-      const [sortDirection, setSortDirection] = useState('desc');
-      const [sortedData, setSortedData] = useState([]);
-      
-      useEffect(() => {
-        if (!data || data.length === 0) {
-          setSortedData([]);
-          return;
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(`Neon API error: ${errorData.message || response.status}`);
         }
         
-        const sorted = sortData(data, sortField, sortDirection);
-        setSortedData(sorted);
-      }, [data, sortField, sortDirection]);
-      
-      const handleSort = (field) => {
-        if (field === sortField) {
-          setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-        } else {
-          setSortField(field);
-          setSortDirection('desc');
-        }
-      };
-      
-      const renderSortArrow = (field) => {
-        if (sortField !== field) return null;
-        return (
-          <span className="ml-1">
-            {sortDirection === 'asc' ? '↑' : '↓'}
-          </span>
-        );
-      };
-      
-      return (
-        <div className="overflow-x-auto">
-          <table className="dashboard-table w-full">
-            <thead>
-              <tr className="text-white">
-                <th onClick={() => handleSort('campaignname')}>
-                  Campaign Name {renderSortArrow('campaignname')}
-                </th>
-                <th onClick={() => handleSort('send_time')}>
-                  Send Date {renderSortArrow('send_time')}
-                </th>
-                <th onClick={() => handleSort('channel')}>
-                  Channel {renderSortArrow('channel')}
-                </th>
-                <th onClick={() => handleSort('recipients')}>
-                  Recipients {renderSortArrow('recipients')}
-                </th>
-                <th onClick={() => handleSort('open_rate')}>
-                  Open Rate {renderSortArrow('open_rate')}
-                </th>
-                <th onClick={() => handleSort('click_rate')}>
-                  Click Rate {renderSortArrow('click_rate')}
-                </th>
-                <th onClick={() => handleSort('conversion_rate')}>
-                  Conv Rate {renderSortArrow('conversion_rate')}
-                </th>
-                <th onClick={() => handleSort('conversion_value')}>
-                  Revenue {renderSortArrow('conversion_value')}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedData.length > 0 ? (
-                sortedData.map((campaign, index) => (
-                  <tr key={index} className="text-white">
-                    <td className="font-medium">{campaign.campaignname}</td>
-                    <td>{formatDate(campaign.send_time)}</td>
-                    <td>
-                      <span className="status-badge">
-                        {campaign.channel}
-                      </span>
-                    </td>
-                    <td>{formatNumber(campaign.recipients)}</td>
-                    <td>{formatPercentage(campaign.open_rate)}</td>
-                    <td>{formatPercentage(campaign.click_rate)}</td>
-                    <td>{formatPercentage(campaign.conversion_rate)}</td>
-                    <td>{formatCurrency(campaign.conversion_value)}</td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="8" className="text-center text-gray-400 py-4">
-                    No campaign data available
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      );
-    };
-    
-    // Flow Table component
-    const FlowTable = ({ data }) => {
-      const [sortField, setSortField] = useState('conversion_value');
-      const [sortDirection, setSortDirection] = useState('desc');
-      const [sortedData, setSortedData] = useState([]);
-      
-      useEffect(() => {
-        if (!data || data.length === 0) {
-          setSortedData([]);
-          return;
-        }
-        
-        const sorted = sortData(data, sortField, sortDirection);
-        setSortedData(sorted);
-      }, [data, sortField, sortDirection]);
-      
-      const handleSort = (field) => {
-        if (field === sortField) {
-          setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-        } else {
-          setSortField(field);
-          setSortDirection('desc');
-        }
-      };
-      
-      const renderSortArrow = (field) => {
-        if (sortField !== field) return null;
-        return (
-          <span className="ml-1">
-            {sortDirection === 'asc' ? '↑' : '↓'}
-          </span>
-        );
-      };
-      
-      return (
-        <div className="overflow-x-auto">
-          <table className="dashboard-table w-full">
-            <thead>
-              <tr className="text-white">
-                <th onClick={() => handleSort('flow_name')}>
-                  Flow Name {renderSortArrow('flow_name')}
-                </th>
-                <th onClick={() => handleSort('email_name')}>
-                  Email {renderSortArrow('email_name')}
-                </th>
-                <th onClick={() => handleSort('status')}>
-                  Status {renderSortArrow('status')}
-                </th>
-                <th onClick={() => handleSort('recipients')}>
-                  Recipients {renderSortArrow('recipients')}
-                </th>
-                <th onClick={() => handleSort('click_rate')}>
-                  Click Rate {renderSortArrow('click_rate')}
-                </th>
-                <th onClick={() => handleSort('conversion_rate')}>
-                  Conv Rate {renderSortArrow('conversion_rate')}
-                </th>
-                <th onClick={() => handleSort('conversion_value')}>
-                  Revenue {renderSortArrow('conversion_value')}
-                </th>
-                <th onClick={() => handleSort('revenue_per_recipient')}>
-                  Revenue/Recipient {renderSortArrow('revenue_per_recipient')}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedData.length > 0 ? (
-                sortedData.map((flow, index) => (
-                  <tr key={index} className="text-white">
-                    <td className="font-medium">{flow.flow_name}</td>
-                    <td>{flow.email_name}</td>
-                    <td>
-                      <span className="status-badge">
-                        {flow.status}
-                      </span>
-                    </td>
-                    <td>{formatNumber(flow.recipients)}</td>
-                    <td>{formatPercentage(flow.click_rate)}</td>
-                    <td>{formatPercentage(flow.conversion_rate)}</td>
-                    <td>{formatCurrency(flow.conversion_value)}</td>
-                    <td>{formatCurrency(flow.revenue_per_recipient)}</td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="8" className="text-center text-gray-400 py-4">
-                    No flow data available
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      );
-    };
-    
-    // Revenue Metrics component
-    const RevenueMetrics = ({ data }) => {
-      // Calculate percentages for the donut chart
-      const calculatePercentages = () => {
-        if (!data) return [];
-        
-        const totalRev = parseFloat(data.total_rev) || 0;
-        if (totalRev === 0) return [];
-        
-        return [
-          {
-            label: 'Campaign Email',
-            value: parseFloat(data.campaign_email_rev) || 0
-          },
-          {
-            label: 'Campaign SMS',
-            value: parseFloat(data.campaign_sms_rev) || 0
-          },
-          {
-            label: 'Flow Email',
-            value: parseFloat(data.flow_email_rev) || 0
-          },
-          {
-            label: 'Flow SMS',
-            value: parseFloat(data.flow_sms_rev) || 0
-          }
-        ];
-      };
-      
-      const chartRef = useRef(null);
-      const chartInstance = useRef(null);
-      
-      useEffect(() => {
-        if (!data) return;
-        
-        const ctx = chartRef.current.getContext('2d');
-        const percentageData = calculatePercentages();
-        
-        // Destroy existing chart
-        if (chartInstance.current) {
-          chartInstance.current.destroy();
-        }
-        
-        // Create new chart with purple theme
-        chartInstance.current = new Chart(ctx, {
-          type: 'doughnut',
-          data: {
-            labels: percentageData.map(item => item.label),
-            datasets: [{
-              data: percentageData.map(item => item.value),
-              backgroundColor: [
-                'rgba(136, 84, 208, 0.8)',
-                'rgba(136, 84, 208, 0.6)',
-                'rgba(136, 84, 208, 0.4)',
-                'rgba(136, 84, 208, 0.2)'
-              ],
-              borderColor: 'rgba(36, 35, 49, 0.5)',
-              borderWidth: 1
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            cutout: '70%',
-            plugins: {
-              legend: {
-                position: 'right',
-                labels: {
-                  color: 'rgba(255, 255, 255, 0.8)',
-                  font: {
-                    size: 11
-                  },
-                  padding: 15
-                }
-              },
-              tooltip: {
-                callbacks: {
-                  label: (context) => {
-                    const label = context.label;
-                    const value = formatCurrency(context.raw);
-                    const percentage = ((context.raw / percentageData.reduce((sum, item) => sum + item.value, 0)) * 100).toFixed(1);
-                    return `${label}: ${value} (${percentage}%)`;
-                  }
-                },
-                backgroundColor: 'rgba(36, 35, 49, 0.9)',
-                titleColor: 'white',
-                bodyColor: 'white',
-                borderColor: 'rgba(255, 255, 255, 0.1)',
-                borderWidth: 1
-              }
-            }
-          }
-        });
-        
-        return () => {
-          if (chartInstance.current) {
-            chartInstance.current.destroy();
-          }
-        };
-      }, [data]);
-      
-      if (!data) return <div className="text-gray-400 p-4">No revenue data available</div>;
-      
-      return (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="p-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="metric-card">
-                <div className="metric-value text-white">{formatCurrency(data.total_rev || 0)}</div>
-                <div className="metric-label">Total Revenue (30d)</div>
-              </div>
-              <div className="metric-card">
-                <div className="metric-value text-white">{formatCurrency(data.email_rev || 0)}</div>
-                <div className="metric-label">Email Revenue</div>
-              </div>
-              <div className="metric-card">
-                <div className="metric-value text-white">{formatCurrency(data.sms_rev || 0)}</div>
-                <div className="metric-label">SMS Revenue</div>
-              </div>
-              <div className="metric-card">
-                <div className="metric-value text-white">{formatPercentage((data.email_rev || 0) / (data.total_rev || 1) * 100)}</div>
-                <div className="metric-label">Email Attribution</div>
-              </div>
-              <div className="metric-card">
-                <div className="metric-value text-white">{formatCurrency(data.flow_email_rev || 0)}</div>
-                <div className="metric-label">Flow Email Revenue</div>
-              </div>
-              <div className="metric-card">
-                <div className="metric-value text-white">{formatCurrency(data.campaign_email_rev || 0)}</div>
-                <div className="metric-label">Campaign Email Revenue</div>
-              </div>
-            </div>
-          </div>
-          <div className="chart-container p-4">
-            <canvas ref={chartRef}></canvas>
-          </div>
-        </div>
-      );
+        const data = await response.json();
+        return data.rows || [];
+      } catch (error) {
+        console.error('Error executing query:', error);
+        throw error;
+      }
     };
     
     // Main Dashboard Component
@@ -729,78 +278,115 @@
       const [lastUpdated, setLastUpdated] = useState(null);
       const [activeTab, setActiveTab] = useState('overview');
       
-      // API endpoint URL - replace with your deployed serverless function URL
-      const apiEndpoint = '/api/dashboard-data';
-      
-      // Function to fetch data from the API
+      // Function to fetch data from Neon
       const fetchDashboardData = async () => {
         try {
           setLoading(true);
-          
-          // Fetch data from serverless function
-          const response = await fetch(apiEndpoint);
-          
-          if (!response.ok) {
-            throw new Error(`API error: ${response.status}`);
-          }
-          
-          // Parse response data
-          const data = await response.json();
-          
-          // Process list growth data
-          if (data.listGrowth && Array.isArray(data.listGrowth)) {
-            const formattedListGrowth = data.listGrowth.map(item => ({
-              ...item,
-              date: new Date(item.date),
-              total_members: Number(item.total_members || 0),
-              net_members_changed: Number(item.net_members_changed || 0),
-              members_added: Number(item.members_added || 0),
-              members_removed: Number(item.members_removed || 0)
-            }));
-            setListGrowthData(formattedListGrowth);
-          }
-          
-          // Process campaign data
-          if (data.campaigns && Array.isArray(data.campaigns)) {
-            const formattedCampaigns = data.campaigns.map(campaign => ({
-              ...campaign,
-              send_time: new Date(campaign.send_time),
-              recipients: Number(campaign.recipients || 0),
-              open_rate: Number(campaign.open_rate || 0),
-              click_rate: Number(campaign.click_rate || 0),
-              conversion_rate: Number(campaign.conversion_rate || 0),
-              conversion_value: Number(campaign.conversion_value || 0),
-              revenue_per_recipient: Number(campaign.revenue_per_recipient || 0)
-            }));
-            setCampaignData(formattedCampaigns);
-          }
-          
-          // Process flow data
-          if (data.flows && Array.isArray(data.flows)) {
-            const formattedFlows = data.flows.map(flow => ({
-              ...flow,
-              recipients: Number(flow.recipients || 0),
-              click_rate: Number(flow.click_rate || 0),
-              conversion_rate: Number(flow.conversion_rate || 0),
-              conversion_value: Number(flow.conversion_value || 0),
-              revenue_per_recipient: Number(flow.revenue_per_recipient || 0)
-            }));
-            setFlowData(formattedFlows);
-          }
-          
-          // Process revenue data
-          if (data.revenue) {
-            setRevenueData(data.revenue);
-          }
-          
-          // Update last updated timestamp
-          setLastUpdated(data.lastUpdated ? new Date(data.lastUpdated) : new Date());
           setError(null);
+          
+          // Query list growth data
+          const listGrowthQuery = `
+            SELECT 
+              id, 
+              date, 
+              net_members_changed, 
+              total_members, 
+              members_removed,
+              members_added
+            FROM listgrowth
+            WHERE date >= NOW() - INTERVAL '30 days'
+            ORDER BY date ASC
+          `;
+          
+          // Query campaign data
+          const campaignsQuery = `
+            SELECT 
+              id, 
+              campaignname, 
+              send_time, 
+              subject, 
+              channel, 
+              average_order_value, 
+              click_rate, 
+              conversion_rate, 
+              conversion_value,
+              open_rate, 
+              recipients, 
+              revenue_per_recipient
+            FROM campaigns
+            WHERE send_time >= NOW() - INTERVAL '30 days'
+            ORDER BY send_time DESC
+          `;
+          
+          // Query flow data
+          const flowsQuery = `
+            SELECT 
+              id, 
+              flow_name, 
+              email_name, 
+              subject,
+              average_order_value, 
+              click_rate, 
+              conversion_rate, 
+              conversion_value,
+              recipients, 
+              revenue_per_recipient, 
+              status
+            FROM flows
+          `;
+          
+          // Query revenue data
+          const revenueQuery = `
+            SELECT 
+              SUM(email_rev::numeric) as email_rev,
+              SUM(sms_rev::numeric) as sms_rev,
+              SUM(total_rev::numeric) as total_rev,
+              SUM(flow_email_rev::numeric) as flow_email_rev,
+              SUM(flow_sms_rev::numeric) as flow_sms_rev,
+              SUM(campaign_email_rev::numeric) as campaign_email_rev,
+              SUM(campaign_sms_rev::numeric) as campaign_sms_rev
+            FROM storedata
+            WHERE date >= NOW() - INTERVAL '30 days'
+          `;
+          
+          // Execute all queries in parallel
+          const [listGrowthResult, campaignsResult, flowsResult, revenueResult] = await Promise.all([
+            executeQuery(listGrowthQuery),
+            executeQuery(campaignsQuery),
+            executeQuery(flowsQuery),
+            executeQuery(revenueQuery)
+          ]);
+          
+          // Process and set data
+          if (listGrowthResult && listGrowthResult.length > 0) {
+            setListGrowthData(listGrowthResult.map(item => ({
+              ...item,
+              date: new Date(item.date)
+            })));
+          }
+          
+          if (campaignsResult && campaignsResult.length > 0) {
+            setCampaignData(campaignsResult.map(item => ({
+              ...item,
+              send_time: new Date(item.send_time)
+            })));
+          }
+          
+          if (flowsResult && flowsResult.length > 0) {
+            setFlowData(flowsResult);
+          }
+          
+          if (revenueResult && revenueResult.length > 0) {
+            setRevenueData(revenueResult[0]);
+          }
+          
+          setLastUpdated(new Date());
+          
         } catch (error) {
           console.error('Error fetching dashboard data:', error);
           setError(error.message);
           
-          // If this is the first load and no data exists, generate mock data
+          // Fallback to mock data if there's an error
           if (listGrowthData.length === 0 && campaignData.length === 0 && 
               flowData.length === 0 && !revenueData) {
             generateMockData();
@@ -810,44 +396,13 @@
         }
       };
       
-      // Initial data load
-      useEffect(() => {
-        fetchDashboardData();
-        
-        // Schedule daily refresh at 9am EST
-        const scheduleRefresh = () => {
-          const now = new Date();
-          const estOffset = -4 * 60; // EST is UTC-4 (in minutes)
-          const utcMinutes = now.getUTCHours() * 60 + now.getUTCMinutes();
-          const estMinutes = (utcMinutes + estOffset + 24 * 60) % (24 * 60);
-          
-          const targetMinutes = 9 * 60; // 9am = 9 * 60 minutes
-          let minutesUntilTarget = targetMinutes - estMinutes;
-          if (minutesUntilTarget <= 0) {
-            minutesUntilTarget += 24 * 60; // Add a day if target is in the past
-          }
-          
-          const msUntilTarget = minutesUntilTarget * 60 * 1000;
-          
-          setTimeout(() => {
-            fetchDashboardData();
-            scheduleRefresh(); // Schedule the next day's refresh
-          }, msUntilTarget);
-        };
-        
-        scheduleRefresh();
-        
-        // Add hourly refresh for more up-to-date data
-        const hourlyRefresh = setInterval(() => {
-          fetchDashboardData();
-        }, 60 * 60 * 1000); // Every hour
-        
-        return () => clearInterval(hourlyRefresh); // Clean up on unmount
-      }, []);
+      // Rest of your code (generateMockData, useEffect, etc.) stays the same
+      // Including the component rendering JSX
+      // ... 
       
-      // Fallback to generate mock data if API fails
+      // Generate mock data as fallback
       const generateMockData = () => {
-        console.log("Generating mock data as fallback");
+        console.log("Generating mock data");
         
         // Generate mock list growth data
         const mockListGrowth = Array.from({ length: 30 }, (_, i) => {
@@ -953,6 +508,41 @@
         setLastUpdated(new Date());
       };
       
+      // Initial data load
+      useEffect(() => {
+        fetchDashboardData();
+        
+        // Schedule daily refresh at 9am EST
+        const scheduleRefresh = () => {
+          const now = new Date();
+          const estOffset = -4 * 60; // EST is UTC-4 (in minutes)
+          const utcMinutes = now.getUTCHours() * 60 + now.getUTCMinutes();
+          const estMinutes = (utcMinutes + estOffset + 24 * 60) % (24 * 60);
+          
+          const targetMinutes = 9 * 60; // 9am = 9 * 60 minutes
+          let minutesUntilTarget = targetMinutes - estMinutes;
+          if (minutesUntilTarget <= 0) {
+            minutesUntilTarget += 24 * 60; // Add a day if target is in the past
+          }
+          
+          const msUntilTarget = minutesUntilTarget * 60 * 1000;
+          
+          setTimeout(() => {
+            fetchDashboardData();
+            scheduleRefresh(); // Schedule the next day's refresh
+          }, msUntilTarget);
+        };
+        
+        scheduleRefresh();
+        
+        // Add hourly refresh for more up-to-date data
+        const hourlyRefresh = setInterval(() => {
+          fetchDashboardData();
+        }, 60 * 60 * 1000); // Every hour
+        
+        return () => clearInterval(hourlyRefresh); // Clean up on unmount
+      }, []);
+      
       // Manual refresh button handler
       const handleRefresh = () => {
         fetchDashboardData();
@@ -1026,124 +616,14 @@
                 </div>
               )}
               
-              {/* Overview Tab */}
-              {activeTab === 'overview' && (
-                <div className="p-6 bg-transparent">
-                  <div className="grid grid-cols-1 gap-6">
-                    {/* Store Revenue Overview */}
-                    <div className="dashboard-card dashboard-widget">
-                      <div className="p-4">
-                        <h2 className="text-xl font-semibold text-white mb-4">Store Revenue Overview (Last 30 Days)</h2>
-                        <RevenueMetrics data={revenueData} />
-                      </div>
-                    </div>
-                    
-                    {/* List Growth Chart */}
-                    <div className="dashboard-card dashboard-widget">
-                      <div className="p-4">
-                        <h2 className="text-xl font-semibold text-white mb-4">List Growth (Last 30 Days)</h2>
-                        <ListGrowthChart data={listGrowthData} />
-                      </div>
-                    </div>
-                    
-                    {/* Top Campaigns */}
-                    <div className="dashboard-card dashboard-widget">
-                      <div className="p-4">
-                        <h2 className="text-xl font-semibold text-white mb-4">Top Performing Campaigns</h2>
-                        <CampaignTable data={campaignData.slice(0, 5)} />
-                      </div>
-                    </div>
-                    
-                    {/* Top Flows */}
-                    <div className="dashboard-card dashboard-widget">
-                      <div className="p-4">
-                        <h2 className="text-xl font-semibold text-white mb-4">Top Performing Flows</h2>
-                        <FlowTable data={flowData.slice(0, 5)} />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {/* Campaigns Tab */}
-              {activeTab === 'campaigns' && (
-                <div className="p-6 bg-transparent">
-                  <h2 className="text-xl font-semibold text-white mb-4">Campaign Performance (Last 30 Days)</h2>
-                  <div className="dashboard-card">
-                    <div className="p-4">
-                      <CampaignTable data={campaignData} />
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {/* Flows Tab */}
-              {activeTab === 'flows' && (
-                <div className="p-6 bg-transparent">
-                  <h2 className="text-xl font-semibold text-white mb-4">Flow Performance (Last 30 Days)</h2>
-                  <div className="dashboard-card">
-                    <div className="p-4">
-                      <FlowTable data={flowData} />
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {/* List Growth Tab */}
-              {activeTab === 'list' && (
-                <div className="p-6 bg-transparent">
-                  <h2 className="text-xl font-semibold text-white mb-4">List Growth Analytics (Last 30 Days)</h2>
-                  <div className="dashboard-card dashboard-widget">
-                    <div className="p-4">
-                      <ListGrowthChart data={listGrowthData} />
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
-                        <div className="metric-card">
-                          <div className="metric-value text-white">
-                            {formatNumber(listGrowthData.length > 0 ? listGrowthData[listGrowthData.length - 1].total_members : 0)}
-                          </div>
-                          <div className="metric-label">Current Subscribers</div>
-                        </div>
-                        
-                        <div className="metric-card">
-                          <div className="metric-value text-white">
-                            {listGrowthData.length > 0 ? (
-                              formatNumber(listGrowthData.reduce((sum, item) => sum + Number(item.members_added), 0))
-                            ) : 0}
-                          </div>
-                          <div className="metric-label">Total New Subscribers</div>
-                        </div>
-                        
-                        <div className="metric-card">
-                          <div className="metric-value text-white">
-                            {listGrowthData.length > 0 ? (
-                              formatNumber(listGrowthData.reduce((sum, item) => sum + Number(item.members_removed), 0))
-                            ) : 0}
-                          </div>
-                          <div className="metric-label">Total Unsubscribes</div>
-                        </div>
-                        
-                        <div className="metric-card">
-                          <div className="metric-value text-white">
-                            {listGrowthData.length > 0 ? (
-                              (() => {
-                                const netChange = listGrowthData.reduce((sum, item) => sum + Number(item.net_members_changed), 0);
-                                return netChange > 0 ? '+' + formatNumber(netChange) : formatNumber(netChange);
-                              })()
-                            ) : 0}
-                          </div>
-                          <div className="metric-label">Net Growth</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
+              {/* Tabs content would go here - same as your original code */}
+              {/* Just reuse all your tab content components from the original dashboard */}
             </div>
           </div>
           
           <div className="mt-4 p-2 text-center text-gray-500 text-xs">
             Data refreshes automatically at 9:00 AM EST daily
+            <div className="mt-1">Using Neon API directly with API key {NEON_API_KEY.substring(0, 10)}...</div>
           </div>
         </div>
       );
