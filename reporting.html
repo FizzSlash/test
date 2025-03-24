@@ -21,11 +21,11 @@
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
     }
     
-    /* Container styling with white stroke */
+    /* Container styling with transparent white stroke */
     .dashboard-container {
-      border: 1px solid rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.1);
       box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
-      background-color: rgba(20, 19, 28, 0.4);
+      background-color: rgba(20, 19, 28, 0.3);
       backdrop-filter: blur(10px);
       border-radius: 8px;
       overflow: hidden;
@@ -33,7 +33,7 @@
     
     .dashboard-widget {
       background-color: rgba(36, 35, 49, 0.5);
-      border-left: 3px solid rgba(255, 255, 255, 0.5);
+      border-left: 3px solid rgba(136, 84, 208, 0.8);
     }
     
     .dashboard-widget:hover {
@@ -42,9 +42,9 @@
     
     /* Status badge styling */
     .status-badge {
-      background-color: rgba(255, 255, 255, 0.15) !important;
-      border: 1px solid rgba(255, 255, 255, 0.3) !important;
-      color: rgb(255, 255, 255) !important;
+      background-color: white !important;
+      border: 1px solid rgba(136, 84, 208, 0.4) !important;
+      color: rgb(136, 84, 208) !important;
       font-weight: 500;
       padding: 2px 8px;
       white-space: normal;
@@ -151,7 +151,7 @@
     .spinner {
       border: 4px solid rgba(255, 255, 255, 0.1);
       border-radius: 50%;
-      border-top: 4px solid rgba(255, 255, 255, 0.8);
+      border-top: 4px solid rgba(136, 84, 208, 0.8);
       width: 30px;
       height: 30px;
       animation: spin 1s linear infinite;
@@ -169,15 +169,6 @@
       border-radius: 8px;
       padding: 1rem;
       margin: 1rem 0;
-    }
-    
-    /* Flow group headers */
-    .flow-group-header {
-      background-color: rgba(255, 255, 255, 0.08);
-      padding: 0.5rem 1rem;
-      font-weight: 600;
-      color: rgba(255, 255, 255, 0.9);
-      border-left: 3px solid rgba(255, 255, 255, 0.5);
     }
   </style>
 </head>
@@ -198,11 +189,10 @@
     };
     
     const formatPercentage = (value) => {
-      // Updated to display percentages correctly (55.55% instead of 0.5%)
       return new Intl.NumberFormat('en-US', {
         style: 'percent',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1
       }).format(value / 100);
     };
     
@@ -243,7 +233,7 @@
       });
     };
     
-    // List Growth Chart component - improved for better readability
+    // List Growth Chart component
     const ListGrowthChart = ({ data }) => {
       const chartRef = useRef(null);
       const chartInstance = useRef(null);
@@ -264,50 +254,44 @@
         const membersAdded = data.map(item => Number(item.members_added));
         const membersRemoved = data.map(item => -Number(item.members_removed));
         
-        // Create a gradient background
-        const gradientFill = ctx.createLinearGradient(0, 0, 0, 300);
-        gradientFill.addColorStop(0, 'rgba(255, 255, 255, 0.2)');
-        gradientFill.addColorStop(1, 'rgba(255, 255, 255, 0.0)');
-        
-        // Create new chart - improved visuals
+        // Create new chart
         chartInstance.current = new Chart(ctx, {
           type: 'line',
           data: {
             labels: dates,
             datasets: [
               {
-                label: 'Total Subscribers',
+                label: 'Total Members',
                 data: totalMembers,
-                borderColor: 'rgba(255, 255, 255, 0.9)',
-                backgroundColor: gradientFill,
+                borderColor: 'rgba(136, 84, 208, 1)',
+                backgroundColor: 'rgba(136, 84, 208, 0.1)',
                 fill: true,
                 tension: 0.3,
-                borderWidth: 3,
-                pointRadius: 4,
-                pointBackgroundColor: 'rgba(255, 255, 255, 0.9)',
-                pointHoverRadius: 6
+                borderWidth: 2,
+                pointRadius: 3,
+                pointBackgroundColor: 'rgba(136, 84, 208, 1)'
               },
               {
-                label: 'New Subscribers',
+                label: 'Members Added',
                 data: membersAdded,
-                borderColor: 'rgba(255, 255, 255, 0.6)',
-                backgroundColor: 'transparent',
+                borderColor: 'rgba(136, 84, 208, 0.7)',
+                backgroundColor: 'rgba(136, 84, 208, 0.05)',
                 borderWidth: 2,
                 borderDash: [5, 5],
                 fill: false,
                 tension: 0.3,
-                pointRadius: 3
+                pointRadius: 2
               },
               {
-                label: 'Unsubscribes',
+                label: 'Members Removed',
                 data: membersRemoved,
-                borderColor: 'rgba(255, 255, 255, 0.4)',
-                backgroundColor: 'transparent',
+                borderColor: 'rgba(255, 255, 255, 0.5)',
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
                 borderWidth: 2,
-                borderDash: [3, 3],
+                borderDash: [5, 5],
                 fill: false,
                 tension: 0.3,
-                pointRadius: 3
+                pointRadius: 2
               }
             ]
           },
@@ -371,7 +355,708 @@
       }, [data]);
       
       return (
-                          <div className="dashboard-card">
+        <div className="chart-container">
+          <canvas ref={chartRef}></canvas>
+        </div>
+      );
+    };
+    
+    // Campaign Table component
+    const CampaignTable = ({ data }) => {
+      const [sortField, setSortField] = useState('send_time');
+      const [sortDirection, setSortDirection] = useState('desc');
+      const [sortedData, setSortedData] = useState([]);
+      
+      useEffect(() => {
+        if (!data || data.length === 0) {
+          setSortedData([]);
+          return;
+        }
+        
+        const sorted = sortData(data, sortField, sortDirection);
+        setSortedData(sorted);
+      }, [data, sortField, sortDirection]);
+      
+      const handleSort = (field) => {
+        if (field === sortField) {
+          setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+        } else {
+          setSortField(field);
+          setSortDirection('desc');
+        }
+      };
+      
+      const renderSortArrow = (field) => {
+        if (sortField !== field) return null;
+        return (
+          <span className="ml-1">
+            {sortDirection === 'asc' ? '↑' : '↓'}
+          </span>
+        );
+      };
+      
+      return (
+        <div className="overflow-x-auto">
+          <table className="dashboard-table w-full">
+            <thead>
+              <tr className="text-white">
+                <th onClick={() => handleSort('campaignname')}>
+                  Campaign Name {renderSortArrow('campaignname')}
+                </th>
+                <th onClick={() => handleSort('send_time')}>
+                  Send Date {renderSortArrow('send_time')}
+                </th>
+                <th onClick={() => handleSort('channel')}>
+                  Channel {renderSortArrow('channel')}
+                </th>
+                <th onClick={() => handleSort('recipients')}>
+                  Recipients {renderSortArrow('recipients')}
+                </th>
+                <th onClick={() => handleSort('open_rate')}>
+                  Open Rate {renderSortArrow('open_rate')}
+                </th>
+                <th onClick={() => handleSort('click_rate')}>
+                  Click Rate {renderSortArrow('click_rate')}
+                </th>
+                <th onClick={() => handleSort('conversion_rate')}>
+                  Conv Rate {renderSortArrow('conversion_rate')}
+                </th>
+                <th onClick={() => handleSort('conversion_value')}>
+                  Revenue {renderSortArrow('conversion_value')}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedData.length > 0 ? (
+                sortedData.map((campaign, index) => (
+                  <tr key={index} className="text-white">
+                    <td className="font-medium">{campaign.campaignname}</td>
+                    <td>{formatDate(campaign.send_time)}</td>
+                    <td>
+                      <span className="status-badge">
+                        {campaign.channel}
+                      </span>
+                    </td>
+                    <td>{formatNumber(campaign.recipients)}</td>
+                    <td>{formatPercentage(campaign.open_rate)}</td>
+                    <td>{formatPercentage(campaign.click_rate)}</td>
+                    <td>{formatPercentage(campaign.conversion_rate)}</td>
+                    <td>{formatCurrency(campaign.conversion_value)}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="8" className="text-center text-gray-400 py-4">
+                    No campaign data available
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      );
+    };
+    
+    // Flow Table component
+    const FlowTable = ({ data }) => {
+      const [sortField, setSortField] = useState('conversion_value');
+      const [sortDirection, setSortDirection] = useState('desc');
+      const [sortedData, setSortedData] = useState([]);
+      
+      useEffect(() => {
+        if (!data || data.length === 0) {
+          setSortedData([]);
+          return;
+        }
+        
+        const sorted = sortData(data, sortField, sortDirection);
+        setSortedData(sorted);
+      }, [data, sortField, sortDirection]);
+      
+      const handleSort = (field) => {
+        if (field === sortField) {
+          setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+        } else {
+          setSortField(field);
+          setSortDirection('desc');
+        }
+      };
+      
+      const renderSortArrow = (field) => {
+        if (sortField !== field) return null;
+        return (
+          <span className="ml-1">
+            {sortDirection === 'asc' ? '↑' : '↓'}
+          </span>
+        );
+      };
+      
+      return (
+        <div className="overflow-x-auto">
+          <table className="dashboard-table w-full">
+            <thead>
+              <tr className="text-white">
+                <th onClick={() => handleSort('flow_name')}>
+                  Flow Name {renderSortArrow('flow_name')}
+                </th>
+                <th onClick={() => handleSort('email_name')}>
+                  Email {renderSortArrow('email_name')}
+                </th>
+                <th onClick={() => handleSort('status')}>
+                  Status {renderSortArrow('status')}
+                </th>
+                <th onClick={() => handleSort('recipients')}>
+                  Recipients {renderSortArrow('recipients')}
+                </th>
+                <th onClick={() => handleSort('click_rate')}>
+                  Click Rate {renderSortArrow('click_rate')}
+                </th>
+                <th onClick={() => handleSort('conversion_rate')}>
+                  Conv Rate {renderSortArrow('conversion_rate')}
+                </th>
+                <th onClick={() => handleSort('conversion_value')}>
+                  Revenue {renderSortArrow('conversion_value')}
+                </th>
+                <th onClick={() => handleSort('revenue_per_recipient')}>
+                  Revenue/Recipient {renderSortArrow('revenue_per_recipient')}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedData.length > 0 ? (
+                sortedData.map((flow, index) => (
+                  <tr key={index} className="text-white">
+                    <td className="font-medium">{flow.flow_name}</td>
+                    <td>{flow.email_name}</td>
+                    <td>
+                      <span className="status-badge">
+                        {flow.status}
+                      </span>
+                    </td>
+                    <td>{formatNumber(flow.recipients)}</td>
+                    <td>{formatPercentage(flow.click_rate)}</td>
+                    <td>{formatPercentage(flow.conversion_rate)}</td>
+                    <td>{formatCurrency(flow.conversion_value)}</td>
+                    <td>{formatCurrency(flow.revenue_per_recipient)}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="8" className="text-center text-gray-400 py-4">
+                    No flow data available
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      );
+    };
+    
+    // Revenue Metrics component
+    const RevenueMetrics = ({ data }) => {
+      // Calculate percentages for the donut chart
+      const calculatePercentages = () => {
+        if (!data) return [];
+        
+        const totalRev = parseFloat(data.total_rev) || 0;
+        if (totalRev === 0) return [];
+        
+        return [
+          {
+            label: 'Campaign Email',
+            value: parseFloat(data.campaign_email_rev) || 0
+          },
+          {
+            label: 'Campaign SMS',
+            value: parseFloat(data.campaign_sms_rev) || 0
+          },
+          {
+            label: 'Flow Email',
+            value: parseFloat(data.flow_email_rev) || 0
+          },
+          {
+            label: 'Flow SMS',
+            value: parseFloat(data.flow_sms_rev) || 0
+          }
+        ];
+      };
+      
+      const chartRef = useRef(null);
+      const chartInstance = useRef(null);
+      
+      useEffect(() => {
+        if (!data) return;
+        
+        const ctx = chartRef.current.getContext('2d');
+        const percentageData = calculatePercentages();
+        
+        // Destroy existing chart
+        if (chartInstance.current) {
+          chartInstance.current.destroy();
+        }
+        
+        // Create new chart with purple theme
+        chartInstance.current = new Chart(ctx, {
+          type: 'doughnut',
+          data: {
+            labels: percentageData.map(item => item.label),
+            datasets: [{
+              data: percentageData.map(item => item.value),
+              backgroundColor: [
+                'rgba(136, 84, 208, 0.8)',
+                'rgba(136, 84, 208, 0.6)',
+                'rgba(136, 84, 208, 0.4)',
+                'rgba(136, 84, 208, 0.2)'
+              ],
+              borderColor: 'rgba(36, 35, 49, 0.5)',
+              borderWidth: 1
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '70%',
+            plugins: {
+              legend: {
+                position: 'right',
+                labels: {
+                  color: 'rgba(255, 255, 255, 0.8)',
+                  font: {
+                    size: 11
+                  },
+                  padding: 15
+                }
+              },
+              tooltip: {
+                callbacks: {
+                  label: (context) => {
+                    const label = context.label;
+                    const value = formatCurrency(context.raw);
+                    const percentage = ((context.raw / percentageData.reduce((sum, item) => sum + item.value, 0)) * 100).toFixed(1);
+                    return `${label}: ${value} (${percentage}%)`;
+                  }
+                },
+                backgroundColor: 'rgba(36, 35, 49, 0.9)',
+                titleColor: 'white',
+                bodyColor: 'white',
+                borderColor: 'rgba(255, 255, 255, 0.1)',
+                borderWidth: 1
+              }
+            }
+          }
+        });
+        
+        return () => {
+          if (chartInstance.current) {
+            chartInstance.current.destroy();
+          }
+        };
+      }, [data]);
+      
+      if (!data) return <div className="text-gray-400 p-4">No revenue data available</div>;
+      
+      return (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="p-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="metric-card">
+                <div className="metric-value text-white">{formatCurrency(data.total_rev || 0)}</div>
+                <div className="metric-label">Total Revenue (30d)</div>
+              </div>
+              <div className="metric-card">
+                <div className="metric-value text-white">{formatCurrency(data.email_rev || 0)}</div>
+                <div className="metric-label">Email Revenue</div>
+              </div>
+              <div className="metric-card">
+                <div className="metric-value text-white">{formatCurrency(data.sms_rev || 0)}</div>
+                <div className="metric-label">SMS Revenue</div>
+              </div>
+              <div className="metric-card">
+                <div className="metric-value text-white">{formatPercentage((data.email_rev || 0) / (data.total_rev || 1) * 100)}</div>
+                <div className="metric-label">Email Attribution</div>
+              </div>
+              <div className="metric-card">
+                <div className="metric-value text-white">{formatCurrency(data.flow_email_rev || 0)}</div>
+                <div className="metric-label">Flow Email Revenue</div>
+              </div>
+              <div className="metric-card">
+                <div className="metric-value text-white">{formatCurrency(data.campaign_email_rev || 0)}</div>
+                <div className="metric-label">Campaign Email Revenue</div>
+              </div>
+            </div>
+          </div>
+          <div className="chart-container p-4">
+            <canvas ref={chartRef}></canvas>
+          </div>
+        </div>
+      );
+    };
+    
+    // Main Dashboard Component
+    const MarketingDashboard = () => {
+      const [listGrowthData, setListGrowthData] = useState([]);
+      const [campaignData, setCampaignData] = useState([]);
+      const [flowData, setFlowData] = useState([]);
+      const [revenueData, setRevenueData] = useState(null);
+      const [loading, setLoading] = useState(true);
+      const [error, setError] = useState(null);
+      const [lastUpdated, setLastUpdated] = useState(null);
+      const [activeTab, setActiveTab] = useState('overview');
+      
+      // API endpoint URL - Updated to use your Vercel deployment
+      const apiEndpoint = 'https://vite-react-rho-orcin-25.vercel.app/api';
+      
+      // Function to fetch data from the API
+      const fetchDashboardData = async () => {
+        try {
+          setLoading(true);
+          
+          // Fetch data from serverless function
+          const response = await fetch(apiEndpoint);
+          
+          if (!response.ok) {
+            throw new Error(`API error: ${response.status}`);
+          }
+          
+          // Parse response data
+          const data = await response.json();
+          
+          // Process list growth data
+          if (data.listGrowth && Array.isArray(data.listGrowth)) {
+            const formattedListGrowth = data.listGrowth.map(item => ({
+              ...item,
+              date: new Date(item.date),
+              total_members: Number(item.total_members || 0),
+              net_members_changed: Number(item.net_members_changed || 0),
+              members_added: Number(item.members_added || 0),
+              members_removed: Number(item.members_removed || 0)
+            }));
+            setListGrowthData(formattedListGrowth);
+          }
+          
+          // Process campaign data
+          if (data.campaigns && Array.isArray(data.campaigns)) {
+            const formattedCampaigns = data.campaigns.map(campaign => ({
+              ...campaign,
+              send_time: new Date(campaign.send_time),
+              recipients: Number(campaign.recipients || 0),
+              open_rate: Number(campaign.open_rate || 0),
+              click_rate: Number(campaign.click_rate || 0),
+              conversion_rate: Number(campaign.conversion_rate || 0),
+              conversion_value: Number(campaign.conversion_value || 0),
+              revenue_per_recipient: Number(campaign.revenue_per_recipient || 0)
+            }));
+            setCampaignData(formattedCampaigns);
+          }
+          
+          // Process flow data
+          if (data.flows && Array.isArray(data.flows)) {
+            const formattedFlows = data.flows.map(flow => ({
+              ...flow,
+              recipients: Number(flow.recipients || 0),
+              click_rate: Number(flow.click_rate || 0),
+              conversion_rate: Number(flow.conversion_rate || 0),
+              conversion_value: Number(flow.conversion_value || 0),
+              revenue_per_recipient: Number(flow.revenue_per_recipient || 0)
+            }));
+            setFlowData(formattedFlows);
+          }
+          
+          // Process revenue data
+          if (data.revenue) {
+            setRevenueData(data.revenue);
+          }
+          
+          // Update last updated timestamp
+          setLastUpdated(data.lastUpdated ? new Date(data.lastUpdated) : new Date());
+          setError(null);
+        } catch (error) {
+          console.error('Error fetching dashboard data:', error);
+          setError(error.message);
+          
+          // If this is the first load and no data exists, generate mock data
+          if (listGrowthData.length === 0 && campaignData.length === 0 && 
+              flowData.length === 0 && !revenueData) {
+            generateMockData();
+          }
+        } finally {
+          setLoading(false);
+        }
+      };
+      
+      // Initial data load
+      useEffect(() => {
+        fetchDashboardData();
+        
+        // Schedule daily refresh at 9am EST
+        const scheduleRefresh = () => {
+          const now = new Date();
+          const estOffset = -4 * 60; // EST is UTC-4 (in minutes)
+          const utcMinutes = now.getUTCHours() * 60 + now.getUTCMinutes();
+          const estMinutes = (utcMinutes + estOffset + 24 * 60) % (24 * 60);
+          
+          const targetMinutes = 9 * 60; // 9am = 9 * 60 minutes
+          let minutesUntilTarget = targetMinutes - estMinutes;
+          if (minutesUntilTarget <= 0) {
+            minutesUntilTarget += 24 * 60; // Add a day if target is in the past
+          }
+          
+          const msUntilTarget = minutesUntilTarget * 60 * 1000;
+          
+          setTimeout(() => {
+            fetchDashboardData();
+            scheduleRefresh(); // Schedule the next day's refresh
+          }, msUntilTarget);
+        };
+        
+        scheduleRefresh();
+        
+        // Add hourly refresh for more up-to-date data
+        const hourlyRefresh = setInterval(() => {
+          fetchDashboardData();
+        }, 60 * 60 * 1000); // Every hour
+        
+        return () => clearInterval(hourlyRefresh); // Clean up on unmount
+      }, []);
+      
+      // Fallback to generate mock data if API fails
+      const generateMockData = () => {
+        console.log("Generating mock data as fallback");
+        
+        // Generate mock list growth data
+        const mockListGrowth = Array.from({ length: 30 }, (_, i) => {
+          const date = new Date();
+          date.setDate(date.getDate() - (29 - i));
+          
+          const baseMembers = 10000;
+          const dailyGrowth = Math.floor(Math.random() * 200) - 50; // Between -50 and 150
+          const dailyAdded = Math.max(0, Math.floor(Math.random() * 150) + 50); // Between 50 and 200
+          const dailyRemoved = Math.max(0, dailyAdded - dailyGrowth); // Ensures net change matches
+          
+          return {
+            date: date,
+            total_members: baseMembers + (i * 50) + dailyGrowth,
+            net_members_changed: dailyGrowth,
+            members_added: dailyAdded,
+            members_removed: dailyRemoved
+          };
+        });
+        
+        setListGrowthData(mockListGrowth);
+        
+        // Generate mock campaign data
+        const channels = ['email', 'sms'];
+        const mockCampaigns = Array.from({ length: 10 }, (_, i) => {
+          const date = new Date();
+          date.setDate(date.getDate() - Math.floor(Math.random() * 30));
+          
+          const channel = channels[Math.floor(Math.random() * channels.length)];
+          const recipients = Math.floor(Math.random() * 5000) + 1000;
+          const openRate = Math.random() * 40 + 10; // 10-50%
+          const clickRate = Math.random() * 15 + 5; // 5-20%
+          const convRate = Math.random() * 5 + 1; // 1-6%
+          const avgOrderValue = Math.random() * 70 + 30; // $30-$100
+          
+          return {
+            id: `campaign-${i}`,
+            campaignname: `${channel === 'email' ? 'Email' : 'SMS'} Campaign ${i + 1}`,
+            send_time: date,
+            subject: `Special offer ${i + 1}`,
+            channel: channel,
+            recipients: recipients,
+            open_rate: openRate,
+            click_rate: clickRate,
+            conversion_rate: convRate,
+            average_order_value: avgOrderValue,
+            conversion_value: (recipients * convRate / 100 * avgOrderValue),
+            revenue_per_recipient: ((recipients * convRate / 100 * avgOrderValue) / recipients)
+          };
+        });
+        
+        setCampaignData(mockCampaigns);
+        
+        // Generate mock flow data
+        const flowTypes = ['Welcome', 'Abandoned Cart', 'Browse Abandonment', 'Post-Purchase', 'Winback'];
+        const statuses = ['Active', 'Paused', 'Draft'];
+        
+        const mockFlows = Array.from({ length: 8 }, (_, i) => {
+          const flowType = flowTypes[Math.floor(Math.random() * flowTypes.length)];
+          const recipients = Math.floor(Math.random() * 3000) + 500;
+          const clickRate = Math.random() * 20 + 10; // 10-30%
+          const convRate = Math.random() * 8 + 2; // 2-10%
+          const avgOrderValue = Math.random() * 70 + 30; // $30-$100
+          
+          return {
+            id: `flow-${i}`,
+            flow_name: `${flowType} Flow`,
+            email_name: `${flowType} Email ${i + 1}`,
+            subject: `${flowType} Follow-up`,
+            status: statuses[Math.floor(Math.random() * statuses.length)],
+            recipients: recipients,
+            click_rate: clickRate,
+            conversion_rate: convRate,
+            conversion_value: (recipients * convRate / 100 * avgOrderValue),
+            revenue_per_recipient: ((recipients * convRate / 100 * avgOrderValue) / recipients)
+          };
+        });
+        
+        setFlowData(mockFlows);
+        
+        // Generate mock revenue data
+        const totalRev = Math.random() * 50000 + 30000; // $30k-$80k
+        const emailRev = totalRev * (Math.random() * 0.3 + 0.5); // 50-80% of total
+        const smsRev = totalRev - emailRev;
+        
+        const flowEmailRev = emailRev * (Math.random() * 0.3 + 0.35); // 35-65% of email revenue
+        const campaignEmailRev = emailRev - flowEmailRev;
+        
+        const flowSmsRev = smsRev * (Math.random() * 0.3 + 0.35); // 35-65% of sms revenue
+        const campaignSmsRev = smsRev - flowSmsRev;
+        
+        const mockRevenue = {
+          total_rev: totalRev,
+          email_rev: emailRev,
+          sms_rev: smsRev,
+          flow_email_rev: flowEmailRev,
+          flow_sms_rev: flowSmsRev,
+          campaign_email_rev: campaignEmailRev,
+          campaign_sms_rev: campaignSmsRev
+        };
+        
+        setRevenueData(mockRevenue);
+        setLastUpdated(new Date());
+      };
+      
+      // Manual refresh button handler
+      const handleRefresh = () => {
+        fetchDashboardData();
+      };
+      
+      return (
+        <div className="container mx-auto p-4">
+          <div className="dashboard-container">
+            <div className="p-6 bg-transparent text-white header-container">
+              <div className="flex justify-between items-center">
+                <h1 className="text-2xl font-bold">MARKETING ANALYTICS DASHBOARD</h1>
+                <div className="flex flex-col items-end">
+                  <div className="flex items-center text-sm text-gray-400">
+                    <span>Last Updated: {lastUpdated ? lastUpdated.toLocaleString() : 'N/A'}</span>
+                    <button 
+                      onClick={handleRefresh}
+                      className="ml-3 dashboard-button p-1 rounded"
+                      disabled={loading}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div className="flex space-x-2 mt-2">
+                    <button 
+                      onClick={() => setActiveTab('overview')} 
+                      className={`px-4 py-2 rounded transition-all ${activeTab === 'overview' ? 'border-b-2 border-purple-500 bg-transparent' : 'bg-transparent'}`}
+                    >
+                      Overview
+                    </button>
+                    <button 
+                      onClick={() => setActiveTab('campaigns')} 
+                      className={`px-4 py-2 rounded transition-all ${activeTab === 'campaigns' ? 'border-b-2 border-purple-500 bg-transparent' : 'bg-transparent'}`}
+                    >
+                      Campaigns
+                    </button>
+                    <button 
+                      onClick={() => setActiveTab('flows')} 
+                      className={`px-4 py-2 rounded transition-all ${activeTab === 'flows' ? 'border-b-2 border-purple-500 bg-transparent' : 'bg-transparent'}`}
+                    >
+                      Flows
+                    </button>
+                    <button 
+                      onClick={() => setActiveTab('list')} 
+                      className={`px-4 py-2 rounded transition-all ${activeTab === 'list' ? 'border-b-2 border-purple-500 bg-transparent' : 'bg-transparent'}`}
+                    >
+                      List Growth
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {error && (
+              <div className="error-container mx-6 text-white">
+                <div className="flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <p className="font-bold">Error: {error}</p>
+                </div>
+                <p className="mt-1 ml-8">Using cached or mock data instead. Click refresh to try again.</p>
+              </div>
+            )}
+            
+            <div className="relative">
+              {loading && (
+                <div className="loading-overlay">
+                  <div className="spinner"></div>
+                </div>
+              )}
+              
+              {/* Overview Tab */}
+              {activeTab === 'overview' && (
+                <div className="p-6 bg-transparent">
+                  <div className="grid grid-cols-1 gap-6">
+                    {/* Store Revenue Overview */}
+                    <div className="dashboard-card dashboard-widget">
+                      <div className="p-4">
+                        <h2 className="text-xl font-semibold text-white mb-4">Store Revenue Overview (Last 30 Days)</h2>
+                        <RevenueMetrics data={revenueData} />
+                      </div>
+                    </div>
+                    
+                    {/* List Growth Chart */}
+                    <div className="dashboard-card dashboard-widget">
+                      <div className="p-4">
+                        <h2 className="text-xl font-semibold text-white mb-4">List Growth (Last 30 Days)</h2>
+                        <ListGrowthChart data={listGrowthData} />
+                      </div>
+                    </div>
+                    
+                    {/* Top Campaigns */}
+                    <div className="dashboard-card dashboard-widget">
+                      <div className="p-4">
+                        <h2 className="text-xl font-semibold text-white mb-4">Top Performing Campaigns</h2>
+                        <CampaignTable data={campaignData.slice(0, 5)} />
+                      </div>
+                    </div>
+                    
+                    {/* Top Flows */}
+                    <div className="dashboard-card dashboard-widget">
+                      <div className="p-4">
+                        <h2 className="text-xl font-semibold text-white mb-4">Top Performing Flows</h2>
+                        <FlowTable data={flowData.slice(0, 5)} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Campaigns Tab */}
+              {activeTab === 'campaigns' && (
+                <div className="p-6 bg-transparent">
+                  <h2 className="text-xl font-semibold text-white mb-4">Campaign Performance (Last 30 Days)</h2>
+                  <div className="dashboard-card">
+                    <div className="p-4">
+                      <CampaignTable data={campaignData} />
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Flows Tab */}
+              {activeTab === 'flows' && (
+                <div className="p-6 bg-transparent">
+                  <h2 className="text-xl font-semibold text-white mb-4">Flow Performance (Last 30 Days)</h2>
+                  <div className="dashboard-card">
                     <div className="p-4">
                       <FlowTable data={flowData} />
                     </div>
@@ -432,402 +1117,8 @@
             </div>
           </div>
           
-          <div className="mt-4 p-2 text-center text-white text-opacity-50 text-xs">
-            Data refreshes automatically at 9:00 AM EST daily | Made with ♥ | v2.0
-          </div>
-        </div>
-      );
-    };
-    
-    // Initialize by rendering the dashboard component
-    ReactDOM.render(
-      <MarketingDashboard />,
-      document.getElementById('root')
-    );
-  </script>
-</body>
-</html>="chart-container">
-          <canvas ref={chartRef}></canvas>
-        </div>
-      );
-    };
-    
-    // Campaign Table component - Updated to use revenue per recipient instead of conversion rate
-    const CampaignTable = ({ data }) => {
-      const [sortField, setSortField] = useState('send_time');
-      const [sortDirection, setSortDirection] = useState('desc');
-      const [sortedData, setSortedData] = useState([]);
-      
-      useEffect(() => {
-        if (!data || data.length === 0) {
-          setSortedData([]);
-          return;
-        }
-        
-        const sorted = sortData(data, sortField, sortDirection);
-        setSortedData(sorted);
-      }, [data, sortField, sortDirection]);
-      
-      const handleSort = (field) => {
-        if (field === sortField) {
-          setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-        } else {
-          setSortField(field);
-          setSortDirection('desc');
-        }
-      };
-      
-      const renderSortArrow = (field) => {
-        if (sortField !== field) return null;
-        return (
-          <span className="ml-1">
-            {sortDirection === 'asc' ? '↑' : '↓'}
-          </span>
-        );
-      };
-      
-      return (
-        <div className="overflow-x-auto">
-          <table className="dashboard-table w-full">
-            <thead>
-              <tr className="text-white">
-                <th onClick={() => handleSort('campaignname')}>
-                  Campaign Name {renderSortArrow('campaignname')}
-                </th>
-                <th onClick={() => handleSort('send_time')}>
-                  Send Date {renderSortArrow('send_time')}
-                </th>
-                <th onClick={() => handleSort('channel')}>
-                  Channel {renderSortArrow('channel')}
-                </th>
-                <th onClick={() => handleSort('recipients')}>
-                  Recipients {renderSortArrow('recipients')}
-                </th>
-                <th onClick={() => handleSort('open_rate')}>
-                  Open Rate {renderSortArrow('open_rate')}
-                </th>
-                <th onClick={() => handleSort('click_rate')}>
-                  Click Rate {renderSortArrow('click_rate')}
-                </th>
-                <th onClick={() => handleSort('revenue_per_recipient')}>
-                  Rev/Recipient {renderSortArrow('revenue_per_recipient')}
-                </th>
-                <th onClick={() => handleSort('conversion_value')}>
-                  Revenue {renderSortArrow('conversion_value')}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedData.length > 0 ? (
-                sortedData.map((campaign, index) => (
-                  <tr key={index} className="text-white">
-                    <td className="font-medium">{campaign.campaignname}</td>
-                    <td>{formatDate(campaign.send_time)}</td>
-                    <td>
-                      <span className="status-badge">
-                        {campaign.channel}
-                      </span>
-                    </td>
-                    <td>{formatNumber(campaign.recipients)}</td>
-                    <td>{formatPercentage(campaign.open_rate)}</td>
-                    <td>{formatPercentage(campaign.click_rate)}</td>
-                    <td>{formatCurrency(campaign.revenue_per_recipient)}</td>
-                    <td>{formatCurrency(campaign.conversion_value)}</td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="8" className="text-center text-gray-400 py-4">
-                    No campaign data available
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      );
-    };
-    
-    // Flow Table component - Updated to group by flow name
-    const FlowTable = ({ data }) => {
-      const [sortField, setSortField] = useState('conversion_value');
-      const [sortDirection, setSortDirection] = useState('desc');
-      const [groupedData, setGroupedData] = useState({});
-      
-      useEffect(() => {
-        if (!data || data.length === 0) {
-          setGroupedData({});
-          return;
-        }
-        
-        // Group by flow_name
-        const grouped = _.groupBy(data, 'flow_name');
-        
-        // Sort flow groups by total conversion value
-        const sortedGroups = {};
-        const flowNames = Object.keys(grouped);
-        
-        // Sort flow names by total conversion value in each group
-        const flowNamesSorted = flowNames.sort((a, b) => {
-          const totalValueA = grouped[a].reduce((sum, item) => sum + (Number(item.conversion_value) || 0), 0);
-          const totalValueB = grouped[b].reduce((sum, item) => sum + (Number(item.conversion_value) || 0), 0);
-          return totalValueB - totalValueA;
-        });
-        
-        // For each flow name, sort its emails by the sortField
-        flowNamesSorted.forEach(flowName => {
-          sortedGroups[flowName] = sortData(grouped[flowName], sortField, sortDirection);
-        });
-        
-        setGroupedData(sortedGroups);
-      }, [data, sortField, sortDirection]);
-      
-      const handleSort = (field) => {
-        if (field === sortField) {
-          setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-        } else {
-          setSortField(field);
-          setSortDirection('desc');
-        }
-      };
-      
-      const renderSortArrow = (field) => {
-        if (sortField !== field) return null;
-        return (
-          <span className="ml-1">
-            {sortDirection === 'asc' ? '↑' : '↓'}
-          </span>
-        );
-      };
-      
-      return (
-        <div className="overflow-x-auto">
-          <table className="dashboard-table w-full">
-            <thead>
-              <tr className="text-white">
-                <th onClick={() => handleSort('email_name')}>
-                  Email {renderSortArrow('email_name')}
-                </th>
-                <th onClick={() => handleSort('status')}>
-                  Status {renderSortArrow('status')}
-                </th>
-                <th onClick={() => handleSort('recipients')}>
-                  Recipients {renderSortArrow('recipients')}
-                </th>
-                <th onClick={() => handleSort('open_rate')}>
-                  Open Rate {renderSortArrow('open_rate')}
-                </th>
-                <th onClick={() => handleSort('click_rate')}>
-                  Click Rate {renderSortArrow('click_rate')}
-                </th>
-                <th onClick={() => handleSort('revenue_per_recipient')}>
-                  Rev/Recipient {renderSortArrow('revenue_per_recipient')}
-                </th>
-                <th onClick={() => handleSort('conversion_value')}>
-                  Revenue {renderSortArrow('conversion_value')}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {Object.keys(groupedData).length > 0 ? (
-                Object.entries(groupedData).map(([flowName, flows]) => (
-                  <React.Fragment key={flowName}>
-                    {/* Flow group header */}
-                    <tr>
-                      <td colSpan="7" className="flow-group-header">
-                        {flowName}
-                        <span className="text-sm ml-2 opacity-70">
-                          ({flows.length} {flows.length === 1 ? 'email' : 'emails'})
-                        </span>
-                      </td>
-                    </tr>
-                    
-                    {/* Flow emails in this group */}
-                    {flows.map((flow, index) => (
-                      <tr key={`${flowName}-${index}`} className="text-white">
-                        <td className="pl-6 font-medium">{flow.email_name}</td>
-                        <td>
-                          <span className="status-badge">
-                            {flow.status}
-                          </span>
-                        </td>
-                        <td>{formatNumber(flow.recipients)}</td>
-                        <td>{formatPercentage(flow.open_rate || 0)}</td>
-                        <td>{formatPercentage(flow.click_rate)}</td>
-                        <td>{formatCurrency(flow.revenue_per_recipient)}</td>
-                        <td>{formatCurrency(flow.conversion_value)}</td>
-                      </tr>
-                    ))}
-                  </React.Fragment>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="7" className="text-center text-gray-400 py-4">
-                    No flow data available
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      );
-    };
-    
-    // Revenue Metrics component - Updated to use a bar chart instead of donut for email only
-    const RevenueMetrics = ({ data }) => {
-      // Check if there is SMS data
-      const hasSmsData = () => {
-        if (!data) return false;
-        
-        // Check if SMS revenue exists and is significant
-        const smsRev = parseFloat(data.sms_rev) || 0;
-        return smsRev > 0;
-      };
-      
-      // Calculate percentages for the bar chart
-      const calculateRevenueData = () => {
-        if (!data) return [];
-        
-        const totalRev = parseFloat(data.total_rev) || 0;
-        if (totalRev === 0) return [];
-        
-        const result = [];
-        
-        // Add campaign email revenue
-        const campaignEmailRev = parseFloat(data.campaign_email_rev) || 0;
-        if (campaignEmailRev > 0) {
-          result.push({
-            label: 'Campaign Email',
-            value: campaignEmailRev
-          });
-        }
-        
-        // Add flow email revenue
-        const flowEmailRev = parseFloat(data.flow_email_rev) || 0;
-        if (flowEmailRev > 0) {
-          result.push({
-            label: 'Flow Email',
-            value: flowEmailRev
-          });
-        }
-        
-        return result;
-      };
-      
-      const chartRef = useRef(null);
-      const chartInstance = useRef(null);
-      
-      useEffect(() => {
-        if (!data) return;
-        
-        const ctx = chartRef.current.getContext('2d');
-        const revenueData = calculateRevenueData();
-        
-        // Destroy existing chart
-        if (chartInstance.current) {
-          chartInstance.current.destroy();
-        }
-        
-        // If only email data, use a bar chart instead of donut
-        chartInstance.current = new Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels: revenueData.map(item => item.label),
-            datasets: [{
-              label: 'Revenue',
-              data: revenueData.map(item => item.value),
-              backgroundColor: [
-                'rgba(255, 255, 255, 0.8)',
-                'rgba(255, 255, 255, 0.5)'
-              ],
-              borderColor: 'rgba(36, 35, 49, 0.5)',
-              borderWidth: 1,
-              borderRadius: 4
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            indexAxis: 'y', // Horizontal bar chart
-            plugins: {
-              legend: {
-                display: false
-              },
-              tooltip: {
-                callbacks: {
-                  label: (context) => {
-                    const label = context.label;
-                    const value = formatCurrency(context.raw);
-                    const percentage = ((context.raw / revenueData.reduce((sum, item) => sum + item.value, 0)) * 100).toFixed(1);
-                    return `${label}: ${value} (${percentage}%)`;
-                  }
-                },
-                backgroundColor: 'rgba(36, 35, 49, 0.9)',
-                titleColor: 'white',
-                bodyColor: 'white',
-                borderColor: 'rgba(255, 255, 255, 0.2)',
-                borderWidth: 1
-              }
-            },
-            scales: {
-              y: {
-                grid: {
-                  display: false
-                },
-                ticks: {
-                  color: 'rgba(255, 255, 255, 0.8)'
-                }
-              },
-              x: {
-                grid: {
-                  color: 'rgba(255, 255, 255, 0.05)'
-                },
-                ticks: {
-                  color: 'rgba(255, 255, 255, 0.6)',
-                  callback: function(value) {
-                    return formatCurrency(value);
-                  }
-                }
-              }
-            }
-          }
-        });
-        
-        return () => {
-          if (chartInstance.current) {
-            chartInstance.current.destroy();
-          }
-        };
-      }, [data]);
-      
-      if (!data) return <div className="text-gray-400 p-4">No revenue data available</div>;
-      
-      return (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="p-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="metric-card">
-                <div className="metric-value text-white">{formatCurrency(data.total_rev || 0)}</div>
-                <div className="metric-label">Total Revenue (30d)</div>
-              </div>
-              <div className="metric-card">
-                <div className="metric-value text-white">{formatCurrency(data.email_rev || 0)}</div>
-                <div className="metric-label">Email Revenue</div>
-              </div>
-              <div className="metric-card">
-                <div className="metric-value text-white">{formatCurrency(data.flow_email_rev || 0)}</div>
-                <div className="metric-label">Flow Email Revenue</div>
-              </div>
-              <div className="metric-card">
-                <div className="metric-value text-white">{formatCurrency(data.campaign_email_rev || 0)}</div>
-                <div className="metric-label">Campaign Email Revenue</div>
-              </div>
-              {/*)}
-            </div>
-          </div>
-          
-          <div className="mt-4 p-2 text-center text-white text-opacity-50 text-xs">
-            Data refreshes automatically at 9:00 AM EST daily | Made with ♥ | v2.0
+          <div className="mt-4 p-2 text-center text-gray-500 text-xs">
+            Data refreshes automatically at 9:00 AM EST daily
           </div>
         </div>
       );
