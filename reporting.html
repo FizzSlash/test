@@ -190,7 +190,8 @@
     };
     
     const formatPercentage = (value) => {
-      return value.toFixed(2) + '%';
+      // Multiply by 100 to convert from decimal to percentage, then format with 2 decimal places
+      return (value * 100).toFixed(2) + '%';
     };
     
     const formatNumber = (value) => {
@@ -365,12 +366,18 @@
       const [sortField, setSortField] = useState('send_time');
       const [sortDirection, setSortDirection] = useState('desc');
       const [sortedData, setSortedData] = useState([]);
+      const [maxRevenue, setMaxRevenue] = useState(0);
       
       useEffect(() => {
         if (!data || data.length === 0) {
           setSortedData([]);
+          setMaxRevenue(0);
           return;
         }
+        
+        // Find max revenue for gradient scaling
+        const max = Math.max(...data.map(campaign => Number(campaign.conversion_value || 0)));
+        setMaxRevenue(max);
         
         const sorted = sortData(data, sortField, sortDirection);
         setSortedData(sorted);
@@ -392,6 +399,16 @@
             {sortDirection === 'asc' ? '↑' : '↓'}
           </span>
         );
+      };
+      
+      // Function to get gradient style based on performance
+      const getRevenueStyle = (revenue) => {
+        const percentage = Math.min(100, Math.max(10, (revenue / maxRevenue) * 100));
+        
+        return {
+          backgroundColor: `rgba(255, 255, 255, ${percentage / 200})`,
+          opacity: 0.8 + (percentage / 500)
+        };
       };
       
       return (
@@ -427,30 +444,26 @@
             </thead>
             <tbody>
               {sortedData.length > 0 ? (
-                sortedData.map((campaign, index) => (
-                  <tr key={index} className="text-white">
-                    <td className="font-medium">{campaign.campaignname}</td>
-                    <td>{formatDate(campaign.send_time)}</td>
-                    <td>
-                      <span className="status-badge">
-                        {campaign.channel}
-                      </span>
-                    </td>
-                    <td>{formatNumber(campaign.recipients)}</td>
-                    <td>{formatPercentage(campaign.open_rate)}</td>
-                    <td>{formatPercentage(campaign.click_rate)}</td>
-                    <td>{formatCurrency(campaign.revenue_per_recipient)}</td>
-                    <td>
-                      <div className="flex items-center">
-                        <div className="w-24 h-2 bg-gray-700 bg-opacity-40 rounded-full overflow-hidden mr-2">
-                          <div className="h-full bg-gradient-to-r from-white/90 to-white/40 rounded-full" 
-                               style={{ width: '100%' }}></div>
-                        </div>
-                        {formatCurrency(campaign.conversion_value)}
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                sortedData.map((campaign, index) => {
+                  const rowStyle = getRevenueStyle(campaign.conversion_value);
+                  
+                  return (
+                    <tr key={index} className="text-white" style={rowStyle}>
+                      <td className="font-medium">{campaign.campaignname}</td>
+                      <td>{formatDate(campaign.send_time)}</td>
+                      <td>
+                        <span className="status-badge">
+                          {campaign.channel}
+                        </span>
+                      </td>
+                      <td>{formatNumber(campaign.recipients)}</td>
+                      <td>{formatPercentage(campaign.open_rate)}</td>
+                      <td>{formatPercentage(campaign.click_rate)}</td>
+                      <td>{formatCurrency(campaign.revenue_per_recipient)}</td>
+                      <td>{formatCurrency(campaign.conversion_value)}</td>
+                    </tr>
+                  );
+                })
               ) : (
                 <tr>
                   <td colSpan="8" className="text-center text-gray-400 py-4">
@@ -471,11 +484,13 @@
       const [sortedData, setSortedData] = useState([]);
       const [groupedData, setGroupedData] = useState({});
       const [expandedGroups, setExpandedGroups] = useState({});
+      const [maxRevenue, setMaxRevenue] = useState(0);
       
       useEffect(() => {
         if (!data || data.length === 0) {
           setSortedData([]);
           setGroupedData({});
+          setMaxRevenue(0);
           return;
         }
         
@@ -497,6 +512,14 @@
         });
         setExpandedGroups(newExpandedGroups);
         
+        // Calculate max revenue for gradient scaling
+        let max = 0;
+        Object.keys(grouped).forEach(groupName => {
+          const groupTotal = grouped[groupName].reduce((sum, item) => sum + Number(item.conversion_value || 0), 0);
+          if (groupTotal > max) max = groupTotal;
+        });
+        setMaxRevenue(max);
+        
         // Sort the groups based on their total conversion value or selected field
         const sortedGroupNames = Object.keys(grouped).sort((a, b) => {
           const valueA = grouped[a].reduce((sum, item) => sum + Number(item[sortField] || 0), 0);
@@ -504,9 +527,21 @@
           return sortDirection === 'asc' ? valueA - valueB : valueB - valueA;
         });
         
-        // Sort emails within each group
+        // Sort emails within each group - by email number if available, otherwise by selected field
         sortedGroupNames.forEach(groupName => {
-          grouped[groupName] = sortData(grouped[groupName], sortField, sortDirection);
+          grouped[groupName] = grouped[groupName].sort((a, b) => {
+            // Extract numbers from email names for sorting if they exist
+            const aMatch = a.email_name.match(/(\d+)/);
+            const bMatch = b.email_name.match(/(\d+)/);
+            
+            if (aMatch && bMatch) {
+              // If both have numbers, sort by number
+              return parseInt(aMatch[0]) - parseInt(bMatch[0]);
+            } else {
+              // Otherwise fall back to regular sort
+              return sortData([a, b], sortField, sortDirection)[0] === a ? -1 : 1;
+            }
+          });
         });
         
         setGroupedData(grouped);
@@ -536,6 +571,16 @@
             {sortDirection === 'asc' ? '↑' : '↓'}
           </span>
         );
+      };
+      
+      // Function to get gradient background based on performance
+      const getRevenueStyle = (revenue) => {
+        const percentage = Math.min(100, Math.max(10, (revenue / maxRevenue) * 100));
+        
+        return {
+          backgroundColor: `rgba(255, 255, 255, ${percentage / 200})`,
+          opacity: 0.8 + (percentage / 500)
+        };
       };
       
       return (
@@ -578,11 +623,14 @@
                   const avgClickRate = flowGroup.reduce((sum, flow) => sum + Number(flow.click_rate || 0), 0) / flowGroup.length;
                   const avgRevenuePerRecipient = totalRevenue / totalRecipients;
                   
+                  const rowStyle = getRevenueStyle(totalRevenue);
+                  
                   // Group header row
                   const headerRow = (
                     <tr 
                       key={`group-${groupIndex}`} 
-                      className="text-white bg-opacity-30 bg-white cursor-pointer"
+                      className="text-white cursor-pointer"
+                      style={rowStyle}
                       onClick={() => toggleGroup(flowName)}
                     >
                       <td className="font-bold">
@@ -600,41 +648,32 @@
                       <td className="font-medium">{formatNumber(totalRecipients)}</td>
                       <td className="font-medium">{formatPercentage(avgClickRate)}</td>
                       <td className="font-medium">{formatCurrency(avgRevenuePerRecipient)}</td>
-                      <td className="font-medium">
-                        <div className="flex items-center">
-                          <div className="w-24 h-2 bg-gray-700 bg-opacity-40 rounded-full overflow-hidden mr-2">
-                            <div className="h-full bg-gradient-to-r from-white/90 to-white/40 rounded-full" style={{ width: '100%' }}></div>
-                          </div>
-                          {formatCurrency(totalRevenue)}
-                        </div>
-                      </td>
+                      <td className="font-medium">{formatCurrency(totalRevenue)}</td>
                     </tr>
                   );
                   
                   // Email detail rows (only show if expanded)
-                  const detailRows = isExpanded ? flowGroup.map((flow, flowIndex) => (
-                    <tr key={`flow-${groupIndex}-${flowIndex}`} className="text-white bg-opacity-10 bg-white">
-                      <td className="pl-8"></td>
-                      <td>{flow.email_name}</td>
-                      <td>
-                        <span className="status-badge">
-                          {flow.status}
-                        </span>
-                      </td>
-                      <td>{formatNumber(flow.recipients)}</td>
-                      <td>{formatPercentage(flow.click_rate)}</td>
-                      <td>{formatCurrency(flow.revenue_per_recipient)}</td>
-                      <td>
-                        <div className="flex items-center">
-                          <div className="w-24 h-2 bg-gray-700 bg-opacity-40 rounded-full overflow-hidden mr-2">
-                            <div className="h-full bg-gradient-to-r from-white/70 to-white/20 rounded-full" 
-                                 style={{ width: `${(flow.conversion_value / totalRevenue) * 100}%` }}></div>
-                          </div>
-                          {formatCurrency(flow.conversion_value)}
-                        </div>
-                      </td>
-                    </tr>
-                  )) : [];
+                  const detailRows = isExpanded ? flowGroup.map((flow, flowIndex) => {
+                    const emailStyle = {
+                      backgroundColor: 'rgba(50, 50, 60, 0.4)'
+                    };
+                    
+                    return (
+                      <tr key={`flow-${groupIndex}-${flowIndex}`} className="text-white" style={emailStyle}>
+                        <td className="pl-8"></td>
+                        <td>{flow.email_name}</td>
+                        <td>
+                          <span className="status-badge">
+                            {flow.status}
+                          </span>
+                        </td>
+                        <td>{formatNumber(flow.recipients)}</td>
+                        <td>{formatPercentage(flow.click_rate)}</td>
+                        <td>{formatCurrency(flow.revenue_per_recipient)}</td>
+                        <td>{formatCurrency(flow.conversion_value)}</td>
+                      </tr>
+                    );
+                  }) : [];
                   
                   return [headerRow, ...detailRows];
                 })
