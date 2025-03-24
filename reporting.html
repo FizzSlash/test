@@ -363,7 +363,7 @@
     
     // Campaign Table component
     const CampaignTable = ({ data }) => {
-      const [sortField, setSortField] = useState('send_time');
+      const [sortField, setSortField] = useState('conversion_value');
       const [sortDirection, setSortDirection] = useState('desc');
       const [sortedData, setSortedData] = useState([]);
       const [maxRevenue, setMaxRevenue] = useState(0);
@@ -379,6 +379,7 @@
         const max = Math.max(...data.map(campaign => Number(campaign.conversion_value || 0)));
         setMaxRevenue(max);
         
+        // Default sort by revenue (highest first)
         const sorted = sortData(data, sortField, sortDirection);
         setSortedData(sorted);
       }, [data, sortField, sortDirection]);
@@ -895,7 +896,7 @@
             setListGrowthData(formattedListGrowth);
           }
           
-          // Process campaign data
+      // Process campaign data
           if (data.campaigns && Array.isArray(data.campaigns)) {
             const formattedCampaigns = data.campaigns.map(campaign => ({
               ...campaign,
@@ -907,7 +908,10 @@
               conversion_value: Number(campaign.conversion_value || 0),
               revenue_per_recipient: Number(campaign.revenue_per_recipient || 0)
             }));
-            setCampaignData(formattedCampaigns);
+            
+            // Sort by conversion value (revenue) descending
+            const sortedCampaigns = formattedCampaigns.sort((a, b) => b.conversion_value - a.conversion_value);
+            setCampaignData(sortedCampaigns);
           }
           
           // Process flow data
@@ -920,7 +924,10 @@
               conversion_value: Number(flow.conversion_value || 0),
               revenue_per_recipient: Number(flow.revenue_per_recipient || 0)
             }));
-            setFlowData(formattedFlows);
+            
+            // Sort by conversion value (revenue) descending
+            const sortedFlows = formattedFlows.sort((a, b) => b.conversion_value - a.conversion_value);
+            setFlowData(sortedFlows);
           }
           
           // Process revenue data
@@ -1034,7 +1041,9 @@
           };
         });
         
-        setCampaignData(mockCampaigns);
+        // Sort by conversion value (revenue) descending
+        const sortedMockCampaigns = mockCampaigns.sort((a, b) => b.conversion_value - a.conversion_value);
+        setCampaignData(sortedMockCampaigns);
         
         // Generate mock flow data
         const flowTypes = ['Welcome', 'Abandoned Cart', 'Browse Abandonment', 'Post-Purchase', 'Winback'];
@@ -1061,7 +1070,9 @@
           };
         });
         
-        setFlowData(mockFlows);
+        // Sort by conversion value (revenue) descending
+        const sortedMockFlows = mockFlows.sort((a, b) => b.conversion_value - a.conversion_value);
+        setFlowData(sortedMockFlows);
         
         // Generate mock revenue data
         const totalRev = Math.random() * 50000 + 30000; // $30k-$80k
