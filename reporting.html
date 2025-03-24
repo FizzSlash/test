@@ -190,8 +190,13 @@
     };
     
     const formatPercentage = (value) => {
-      // Multiply by 100 to convert from decimal to percentage, then format with 2 decimal places
-      return (value * 100).toFixed(2) + '%';
+      // Make sure we're working with a number and handle both decimal and whole percentage values
+      const numValue = Number(value);
+      // If value is already in percentage form (e.g. 56 for 56%), don't multiply
+      // If value is in decimal form (e.g. 0.56 for 56%), multiply by 100
+      const percentValue = numValue > 1 ? numValue : numValue * 100;
+      // Format with 2 decimal places and add % sign
+      return percentValue.toFixed(2) + '%';
     };
     
     const formatNumber = (value) => {
