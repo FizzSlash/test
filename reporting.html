@@ -401,14 +401,14 @@
         );
       };
       
-      // Function to get static color based on revenue performance
+      // Function to get gradient for revenue cell only
       const getRevenueStyle = (revenue) => {
         const percentage = Math.min(100, Math.max(10, (revenue / maxRevenue) * 100));
         
         return {
-          backgroundColor: `rgba(136, 84, 208, ${percentage / 200})`,
-          padding: '0.5rem',
-          borderRadius: '4px'
+          background: `linear-gradient(90deg, rgba(255, 255, 255, ${percentage / 150}) 0%, rgba(255, 255, 255, 0.05) 100%)`,
+          borderRadius: '4px',
+          padding: '0.5rem'
         };
       };
       
@@ -572,14 +572,14 @@
         );
       };
       
-      // Function to get static color based on revenue performance
+      // Function to get gradient for revenue column only
       const getRevenueStyle = (revenue) => {
         const percentage = Math.min(100, Math.max(10, (revenue / maxRevenue) * 100));
         
         return {
-          backgroundColor: `rgba(136, 84, 208, ${percentage / 200})`,
-          padding: '0.5rem',
-          borderRadius: '4px'
+          background: `linear-gradient(90deg, rgba(255, 255, 255, ${percentage / 150}) 0%, rgba(255, 255, 255, 0.05) 100%)`,
+          borderRadius: '4px',
+          padding: '0.5rem'
         };
       };
       
@@ -599,6 +599,9 @@
                 </th>
                 <th onClick={() => handleSort('recipients')}>
                   Recipients {renderSortArrow('recipients')}
+                </th>
+                <th onClick={() => handleSort('open_rate')}>
+                  Open Rate {renderSortArrow('open_rate')}
                 </th>
                 <th onClick={() => handleSort('click_rate')}>
                   Click Rate {renderSortArrow('click_rate')}
@@ -620,6 +623,7 @@
                   // Calculate group totals
                   const totalRecipients = flowGroup.reduce((sum, flow) => sum + Number(flow.recipients || 0), 0);
                   const totalRevenue = flowGroup.reduce((sum, flow) => sum + Number(flow.conversion_value || 0), 0);
+                  const avgOpenRate = flowGroup.reduce((sum, flow) => sum + Number(flow.open_rate || 0), 0) / flowGroup.length;
                   const avgClickRate = flowGroup.reduce((sum, flow) => sum + Number(flow.click_rate || 0), 0) / flowGroup.length;
                   const avgRevenuePerRecipient = totalRevenue / totalRecipients;
                   
@@ -643,6 +647,7 @@
                         </span>
                       </td>
                       <td className="font-medium">{formatNumber(totalRecipients)}</td>
+                      <td className="font-medium">{formatPercentage(avgOpenRate)}</td>
                       <td className="font-medium">{formatPercentage(avgClickRate)}</td>
                       <td className="font-medium">{formatCurrency(avgRevenuePerRecipient)}</td>
                       <td className="font-medium" style={getRevenueStyle(totalRevenue)}>
@@ -662,6 +667,7 @@
                         </span>
                       </td>
                       <td>{formatNumber(flow.recipients)}</td>
+                      <td>{formatPercentage(flow.open_rate)}</td>
                       <td>{formatPercentage(flow.click_rate)}</td>
                       <td>{formatCurrency(flow.revenue_per_recipient)}</td>
                       <td style={getRevenueStyle(flow.conversion_value)}>
@@ -674,7 +680,7 @@
                 })
               ) : (
                 <tr>
-                  <td colSpan="7" className="text-center text-gray-400 py-4">
+                  <td colSpan="8" className="text-center text-gray-400 py-4">
                     No flow data available
                   </td>
                 </tr>
@@ -700,24 +706,39 @@
         const totalRev = parseFloat(data.total_rev) || 0;
         if (totalRev === 0) return [];
         
-        return [
+        const result = [
           {
             label: 'Campaign Email',
-            value: parseFloat(data.campaign_email_rev) || 0
+            value: parseFloat(data.campaign_email_rev) || 0,
+            percentage: ((parseFloat(data.campaign_email_rev) || 0) / totalRev * 100).toFixed(1),
+            color: 'rgba(255, 255, 255, 0.95)'
           },
           {
             label: 'Flow Email',
-            value: parseFloat(data.flow_email_rev) || 0
-          },
-          {
-            label: 'Campaign SMS',
-            value: parseFloat(data.campaign_sms_rev) || 0
-          },
-          {
-            label: 'Flow SMS',
-            value: parseFloat(data.flow_sms_rev) || 0
+            value: parseFloat(data.flow_email_rev) || 0,
+            percentage: ((parseFloat(data.flow_email_rev) || 0) / totalRev * 100).toFixed(1),
+            color: 'rgba(255, 255, 255, 0.75)'
           }
-        ].filter(item => item.value > 0); // Only include items with revenue
+        ];
+        
+        if (hasSmsData()) {
+          result.push(
+            {
+              label: 'Campaign SMS',
+              value: parseFloat(data.campaign_sms_rev) || 0,
+              percentage: ((parseFloat(data.campaign_sms_rev) || 0) / totalRev * 100).toFixed(1),
+              color: 'rgba(255, 255, 255, 0.55)'
+            },
+            {
+              label: 'Flow SMS',
+              value: parseFloat(data.flow_sms_rev) || 0,
+              percentage: ((parseFloat(data.flow_sms_rev) || 0) / totalRev * 100).toFixed(1),
+              color: 'rgba(255, 255, 255, 0.35)'
+            }
+          );
+        }
+        
+        return result.sort((a, b) => b.value - a.value);
       };
       
       const chartRef = useRef(null);
@@ -734,7 +755,7 @@
           chartInstance.current.destroy();
         }
         
-        // Create new chart with enhanced purple theme matching badges
+        // Create new chart with enhanced white theme
         chartInstance.current = new Chart(ctx, {
           type: 'doughnut',
           data: {
@@ -747,7 +768,7 @@
                 'rgba(255, 255, 255, 0.75)',
                 'rgba(136, 84, 208, 0.4)'
               ],
-              borderColor: 'rgba(255, 255, 255, 0.9)',
+              borderColor: 'rgba(50, 50, 60, 0.8)',
               borderWidth: 2,
               hoverBorderColor: 'rgba(255, 255, 255, 1)',
               hoverBorderWidth: 3,
@@ -755,14 +776,6 @@
                 'rgba(255, 255, 255, 1)',
                 'rgba(136, 84, 208, 0.7)', 
                 'rgba(255, 255, 255, 0.9)',
-                'rgba(136, 84, 208, 0.5)'
-              ]
-            }]
-          }, 255, 255, 0.9)',
-                'rgba(136, 84, 208, 0.5)'
-              ]
-            }]
-          },255, 255, 0.9)',
                 'rgba(136, 84, 208, 0.5)'
               ]
             }]
