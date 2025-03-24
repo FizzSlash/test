@@ -42,8 +42,8 @@
     
     /* Status badge styling */
     .status-badge {
-      background-color: rgba(255, 255, 255, 0.15) !important;
-      border: 1px solid rgba(255, 255, 255, 0.5) !important;
+      background-color: rgba(136, 84, 208, 0.2) !important;
+      border: 1px solid rgba(136, 84, 208, 0.4) !important;
       color: white !important;
       font-weight: 500;
       padding: 2px 8px;
@@ -440,7 +440,15 @@
                     <td>{formatPercentage(campaign.open_rate)}</td>
                     <td>{formatPercentage(campaign.click_rate)}</td>
                     <td>{formatCurrency(campaign.revenue_per_recipient)}</td>
-                    <td>{formatCurrency(campaign.conversion_value)}</td>
+                    <td>
+                      <div className="flex items-center">
+                        <div className="w-24 h-2 bg-gray-700 bg-opacity-40 rounded-full overflow-hidden mr-2">
+                          <div className="h-full bg-gradient-to-r from-white/90 to-white/40 rounded-full" 
+                               style={{ width: '100%' }}></div>
+                        </div>
+                        {formatCurrency(campaign.conversion_value)}
+                      </div>
+                    </td>
                   </tr>
                 ))
               ) : (
@@ -457,7 +465,7 @@
     };
     
     // Flow Table component with grouping by flow name
-    const FlowTable = ({ data }) => {
+    const FlowTable = ({ data, showTopOnly = false }) => {
       const [sortField, setSortField] = useState('conversion_value');
       const [sortDirection, setSortDirection] = useState('desc');
       const [sortedData, setSortedData] = useState([]);
@@ -484,7 +492,7 @@
         const newExpandedGroups = {...expandedGroups};
         Object.keys(grouped).forEach(groupName => {
           if (newExpandedGroups[groupName] === undefined) {
-            newExpandedGroups[groupName] = true; // Default to expanded
+            newExpandedGroups[groupName] = false; // Default to collapsed for homepage
           }
         });
         setExpandedGroups(newExpandedGroups);
@@ -502,8 +510,8 @@
         });
         
         setGroupedData(grouped);
-        setSortedData(sortedGroupNames);
-      }, [data, sortField, sortDirection]);
+        setSortedData(showTopOnly ? sortedGroupNames.slice(0, 5) : sortedGroupNames);
+      }, [data, sortField, sortDirection, showTopOnly]);
       
       const handleSort = (field) => {
         if (field === sortField) {
@@ -592,7 +600,14 @@
                       <td className="font-medium">{formatNumber(totalRecipients)}</td>
                       <td className="font-medium">{formatPercentage(avgClickRate)}</td>
                       <td className="font-medium">{formatCurrency(avgRevenuePerRecipient)}</td>
-                      <td className="font-medium">{formatCurrency(totalRevenue)}</td>
+                      <td className="font-medium">
+                        <div className="flex items-center">
+                          <div className="w-24 h-2 bg-gray-700 bg-opacity-40 rounded-full overflow-hidden mr-2">
+                            <div className="h-full bg-gradient-to-r from-white/90 to-white/40 rounded-full" style={{ width: '100%' }}></div>
+                          </div>
+                          {formatCurrency(totalRevenue)}
+                        </div>
+                      </td>
                     </tr>
                   );
                   
@@ -609,7 +624,15 @@
                       <td>{formatNumber(flow.recipients)}</td>
                       <td>{formatPercentage(flow.click_rate)}</td>
                       <td>{formatCurrency(flow.revenue_per_recipient)}</td>
-                      <td>{formatCurrency(flow.conversion_value)}</td>
+                      <td>
+                        <div className="flex items-center">
+                          <div className="w-24 h-2 bg-gray-700 bg-opacity-40 rounded-full overflow-hidden mr-2">
+                            <div className="h-full bg-gradient-to-r from-white/70 to-white/20 rounded-full" 
+                                 style={{ width: `${(flow.conversion_value / totalRevenue) * 100}%` }}></div>
+                          </div>
+                          {formatCurrency(flow.conversion_value)}
+                        </div>
+                      </td>
                     </tr>
                   )) : [];
                   
@@ -628,7 +651,7 @@
       );
     };
     
-    // Revenue Metrics component with more creative visualization
+    // Revenue Metrics component with improved pie chart
     const RevenueMetrics = ({ data }) => {
       // Check if SMS data exists
       const hasSmsData = () => {
@@ -637,7 +660,7 @@
       };
       
       // Calculate revenue breakdown
-      const calculateRevenueData = () => {
+      const calculatePercentages = () => {
         if (!data) return [];
         
         const totalRev = parseFloat(data.total_rev) || 0;
@@ -647,12 +670,14 @@
           {
             label: 'Campaign Email',
             value: parseFloat(data.campaign_email_rev) || 0,
-            percentage: ((parseFloat(data.campaign_email_rev) || 0) / totalRev * 100).toFixed(1)
+            percentage: ((parseFloat(data.campaign_email_rev) || 0) / totalRev * 100).toFixed(1),
+            color: 'rgba(255, 255, 255, 0.95)'
           },
           {
             label: 'Flow Email',
             value: parseFloat(data.flow_email_rev) || 0,
-            percentage: ((parseFloat(data.flow_email_rev) || 0) / totalRev * 100).toFixed(1)
+            percentage: ((parseFloat(data.flow_email_rev) || 0) / totalRev * 100).toFixed(1),
+            color: 'rgba(255, 255, 255, 0.75)'
           }
         ];
         
@@ -661,12 +686,14 @@
             {
               label: 'Campaign SMS',
               value: parseFloat(data.campaign_sms_rev) || 0,
-              percentage: ((parseFloat(data.campaign_sms_rev) || 0) / totalRev * 100).toFixed(1)
+              percentage: ((parseFloat(data.campaign_sms_rev) || 0) / totalRev * 100).toFixed(1),
+              color: 'rgba(255, 255, 255, 0.55)'
             },
             {
               label: 'Flow SMS',
               value: parseFloat(data.flow_sms_rev) || 0,
-              percentage: ((parseFloat(data.flow_sms_rev) || 0) / totalRev * 100).toFixed(1)
+              percentage: ((parseFloat(data.flow_sms_rev) || 0) / totalRev * 100).toFixed(1),
+              color: 'rgba(255, 255, 255, 0.35)'
             }
           );
         }
@@ -674,12 +701,82 @@
         return result.sort((a, b) => b.value - a.value);
       };
       
-      const revData = calculateRevenueData();
+      const chartRef = useRef(null);
+      const chartInstance = useRef(null);
+      
+      useEffect(() => {
+        if (!data) return;
+        
+        const ctx = chartRef.current.getContext('2d');
+        const percentageData = calculatePercentages();
+        
+        // Destroy existing chart
+        if (chartInstance.current) {
+          chartInstance.current.destroy();
+        }
+        
+        // Create new chart with enhanced white theme
+        chartInstance.current = new Chart(ctx, {
+          type: 'doughnut',
+          data: {
+            labels: percentageData.map(item => item.label),
+            datasets: [{
+              data: percentageData.map(item => item.value),
+              backgroundColor: percentageData.map(item => item.color),
+              borderColor: 'rgba(50, 50, 60, 0.8)',
+              borderWidth: 2,
+              hoverBorderColor: 'rgba(255, 255, 255, 1)',
+              hoverBorderWidth: 3,
+              hoverBackgroundColor: percentageData.map(item => item.color.replace(')', ', 0.9)').replace('rgba', 'rgba'))
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '65%',
+            plugins: {
+              legend: {
+                position: 'right',
+                labels: {
+                  color: 'rgba(255, 255, 255, 0.9)',
+                  font: {
+                    size: 11,
+                    weight: '400'
+                  },
+                  padding: 15,
+                  usePointStyle: true,
+                  pointStyle: 'circle'
+                }
+              },
+              tooltip: {
+                callbacks: {
+                  label: (context) => {
+                    const label = context.label;
+                    const value = formatCurrency(context.raw);
+                    const percentage = ((context.raw / percentageData.reduce((sum, item) => sum + item.value, 0)) * 100).toFixed(1);
+                    return `${label}: ${value} (${percentage}%)`;
+                  }
+                },
+                backgroundColor: 'rgba(36, 35, 49, 0.9)',
+                titleColor: 'white',
+                bodyColor: 'white',
+                borderColor: 'rgba(255, 255, 255, 0.2)',
+                borderWidth: 1,
+                padding: 12,
+                boxPadding: 6
+              }
+            }
+          }
+        });
+        
+        return () => {
+          if (chartInstance.current) {
+            chartInstance.current.destroy();
+          }
+        };
+      }, [data]);
       
       if (!data) return <div className="text-gray-400 p-4">No revenue data available</div>;
-      
-      // Determine if email attribution should be displayed (only if SMS exists)
-      const showEmailAttribution = hasSmsData();
       
       return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -699,12 +796,10 @@
                   <div className="metric-label">SMS Revenue</div>
                 </div>
               )}
-              {showEmailAttribution && (
-                <div className="metric-card">
-                  <div className="metric-value text-white">{formatPercentage((data.email_rev || 0) / (data.total_rev || 1) * 100)}</div>
-                  <div className="metric-label">Email Attribution</div>
-                </div>
-              )}
+              <div className="metric-card">
+                <div className="metric-value text-white">{formatPercentage((data.email_rev || 0) / (data.total_rev || 1) * 100)}</div>
+                <div className="metric-label">Email Attribution</div>
+              </div>
               <div className="metric-card">
                 <div className="metric-value text-white">{formatCurrency(data.flow_email_rev || 0)}</div>
                 <div className="metric-label">Flow Email Revenue</div>
@@ -715,34 +810,8 @@
               </div>
             </div>
           </div>
-          
-          {/* Waterfall/Tree visualization instead of pie chart */}
-          <div className="p-4 bg-opacity-20 bg-white rounded-lg">
-            <h3 className="text-white text-lg font-medium mb-3">Revenue Distribution</h3>
-            <div className="space-y-3 mt-4">
-              {revData.map((item, index) => (
-                <div key={index} className="relative">
-                  <div className="flex justify-between text-sm text-white mb-1">
-                    <span>{item.label}</span>
-                    <span className="font-semibold">{formatCurrency(item.value)} ({item.percentage}%)</span>
-                  </div>
-                  <div className="w-full h-6 bg-gray-700 bg-opacity-40 rounded overflow-hidden">
-                    <div 
-                      className={`h-full rounded ${
-                        item.label.includes('Campaign Email') ? 'bg-gradient-to-r from-white to-white/70' :
-                        item.label.includes('Campaign SMS') ? 'bg-gradient-to-r from-white/80 to-white/50' :
-                        item.label.includes('Flow Email') ? 'bg-gradient-to-r from-white/60 to-white/40' :
-                        'bg-gradient-to-r from-white/40 to-white/20'
-                      }`}
-                      style={{ width: `${item.percentage}%` }}
-                    ></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="mt-6 text-xs text-white/60 italic text-right">
-              Based on last 30 days of revenue data
-            </div>
+          <div className="chart-container p-4">
+            <canvas ref={chartRef}></canvas>
           </div>
         </div>
       );
@@ -1088,7 +1157,7 @@
                     <div className="dashboard-card dashboard-widget">
                       <div className="p-4">
                         <h2 className="text-xl font-semibold text-white mb-4">Top Performing Flows</h2>
-                        <FlowTable data={flowData.slice(0, 5)} />
+                        <FlowTable data={flowData} showTopOnly={true} />
                       </div>
                     </div>
                   </div>
