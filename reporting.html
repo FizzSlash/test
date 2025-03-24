@@ -1,197 +1,4 @@
-return (
-        <div className="container mx-auto p-4">
-          <div className="dashboard-container">
-            <div className="p-6 bg-transparent text-white header-container">
-              <div className="flex justify-between items-center">
-                <h1 className="text-2xl font-bold">MARKETING ANALYTICS DASHBOARD</h1>
-                <div className="flex flex-col items-end">
-                  <div className="flex items-center text-sm text-gray-400">
-                    <span>Last Updated: {lastUpdated ? lastUpdated.toLocaleString() : 'N/A'}</span>
-                    <button 
-                      onClick={handleRefresh}
-                      className="ml-3 dashboard-button p-1 rounded"
-                      disabled={loading}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-          
-          <div className="mt-4 p-2 text-center text-gray-500 text-xs">
-            Data refreshes automatically at 9:00 AM EST daily
-          </div>
-        </div>
-      );
-    };
-    
-    // Initialize by rendering the dashboard component
-    ReactDOM.render(
-      <MarketingDashboard />,
-      document.getElementById('root')
-    );
-  </script>
-</body>
-</html><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                      </svg>
-                    </button>
-                  </div>
-                  <div className="flex space-x-2 mt-2">
-                    <button 
-                      onClick={() => setActiveTab('overview')} 
-                      className={`px-4 py-2 rounded transition-all ${activeTab === 'overview' ? 'border-b-2 border-white bg-transparent' : 'bg-transparent'}`}
-                    >
-                      Overview
-                    </button>
-                    <button 
-                      onClick={() => setActiveTab('campaigns')} 
-                      className={`px-4 py-2 rounded transition-all ${activeTab === 'campaigns' ? 'border-b-2 border-white bg-transparent' : 'bg-transparent'}`}
-                    >
-                      Campaigns
-                    </button>
-                    <button 
-                      onClick={() => setActiveTab('flows')} 
-                      className={`px-4 py-2 rounded transition-all ${activeTab === 'flows' ? 'border-b-2 border-white bg-transparent' : 'bg-transparent'}`}
-                    >
-                      Flows
-                    </button>
-                    <button 
-                      onClick={() => setActiveTab('list')} 
-                      className={`px-4 py-2 rounded transition-all ${activeTab === 'list' ? 'border-b-2 border-white bg-transparent' : 'bg-transparent'}`}
-                    >
-                      List Growth
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            {error && (
-              <div className="error-container mx-6 text-white">
-                <div className="flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                  <p className="font-bold">Error: {error}</p>
-                </div>
-                <p className="mt-1 ml-8">Using mock data instead. Click refresh to try again.</p>
-              </div>
-            )}
-            
-            <div className="relative">
-              {loading && (
-                <div className="loading-overlay">
-                  <div className="spinner"></div>
-                </div>
-              )}
-              
-              {/* Overview Tab */}
-              {activeTab === 'overview' && (
-                <div className="p-6 bg-transparent">
-                  <div className="grid grid-cols-1 gap-6">
-                    {/* Store Revenue Overview */}
-                    <div className="dashboard-card dashboard-widget">
-                      <div className="p-4">
-                        <h2 className="text-xl font-semibold text-white mb-4">Store Revenue Overview (Last 30 Days)</h2>
-                        <RevenueMetrics data={revenueData} />
-                      </div>
-                    </div>
-                    
-                    {/* List Growth Chart */}
-                    <div className="dashboard-card dashboard-widget">
-                      <div className="p-4">
-                        <h2 className="text-xl font-semibold text-white mb-4">List Growth (Last 30 Days)</h2>
-                        <ListGrowthChart data={listGrowthData} />
-                      </div>
-                    </div>
-                    
-                    {/* Top Campaigns */}
-                    <div className="dashboard-card dashboard-widget">
-                      <div className="p-4">
-                        <h2 className="text-xl font-semibold text-white mb-4">Top Performing Campaigns</h2>
-                        <CampaignTable data={campaignData.slice(0, 5)} />
-                      </div>
-                    </div>
-                    
-                    {/* Flow Summary */}
-                    <FlowSummary data={flowData} />
-                  </div>
-                </div>
-              )}
-              
-              {/* Campaigns Tab */}
-              {activeTab === 'campaigns' && (
-                <div className="p-6 bg-transparent">
-                  <h2 className="text-xl font-semibold text-white mb-4">Campaign Performance (Last 30 Days)</h2>
-                  <div className="dashboard-card">
-                    <div className="p-4">
-                      <CampaignTable data={campaignData} />
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {/* Flows Tab */}
-              {activeTab === 'flows' && (
-                <div className="p-6 bg-transparent">
-                  <h2 className="text-xl font-semibold text-white mb-4">Flow Performance (Last 30 Days)</h2>
-                  <div className="dashboard-card">
-                    <div className="p-4">
-                      <FlowTable data={flowData} />
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {/* List Growth Tab */}
-              {activeTab === 'list' && (
-                <div className="p-6 bg-transparent">
-                  <h2 className="text-xl font-semibold text-white mb-4">List Growth Analytics (Last 30 Days)</h2>
-                  <div className="dashboard-card dashboard-widget">
-                    <div className="p-4">
-                      <ListGrowthChart data={listGrowthData} />
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
-                        <div className="metric-card">
-                          <div className="metric-value text-white">
-                            {formatNumber(listGrowthData.length > 0 ? listGrowthData[listGrowthData.length - 1].total_members : 0)}
-                          </div>
-                          <div className="metric-label">Current Subscribers</div>
-                        </div>
-                        
-                        <div className="metric-card">
-                          <div className="metric-value text-white">
-                            {listGrowthData.length > 0 ? (
-                              formatNumber(listGrowthData.reduce((sum, item) => sum + Number(item.members_added), 0))
-                            ) : 0}
-                          </div>
-                          <div className="metric-label">Total New Subscribers</div>
-                        </div>
-                        
-                        <div className="metric-card">
-                          <div className="metric-value text-white">
-                            {listGrowthData.length > 0 ? (
-                              formatNumber(listGrowthData.reduce((sum, item) => sum + Number(item.members_removed), 0))
-                            ) : 0}
-                          </div>
-                          <div className="metric-label">Total Unsubscribes</div>
-                        </div>
-                        
-                        <div className="metric-card">
-                          <div className="metric-value text-white">
-                            {listGrowthData.length > 0 ? (
-                              (() => {
-                                const netChange = listGrowthData.reduce((sum, item) => sum + Number(item.net_members_changed), 0);
-                                return netChange > 0 ? '+' + formatNumber(netChange) : formatNumber(netChange);
-                              })()
-                            ) : 0}
-                          </div>
-                          <div className="metric-label">Net Growth</div>
-                        <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -214,9 +21,9 @@ return (
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
     }
     
-    /* Container styling with white stroke */
+    /* Container styling with transparent white stroke */
     .dashboard-container {
-      border: 1px solid rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.1);
       box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
       background-color: rgba(20, 19, 28, 0.3);
       backdrop-filter: blur(10px);
@@ -225,19 +32,19 @@ return (
     }
     
     .dashboard-widget {
-      background-color: rgba(36, 35, 49, 0.3);
-      border-left: 2px solid rgba(255, 255, 255, 0.3);
+      background-color: rgba(36, 35, 49, 0.5);
+      border-left: 3px solid rgba(136, 84, 208, 0.8);
     }
     
     .dashboard-widget:hover {
-      background-color: rgba(36, 35, 49, 0.5);
+      background-color: rgba(36, 35, 49, 0.7);
     }
     
     /* Status badge styling */
     .status-badge {
-      background-color: rgba(255, 255, 255, 0.1) !important;
-      border: 1px solid rgba(255, 255, 255, 0.4) !important;
-      color: white !important;
+      background-color: white !important;
+      border: 1px solid rgba(136, 84, 208, 0.4) !important;
+      color: rgb(136, 84, 208) !important;
       font-weight: 500;
       padding: 2px 8px;
       white-space: normal;
@@ -249,21 +56,21 @@ return (
     
     /* Header styling for consistency */
     .header-container {
-      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
       background-color: rgba(0, 0, 0, 0.2);
     }
     
     /* Card styling */
     .dashboard-card {
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      background-color: rgba(36, 35, 49, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background-color: rgba(36, 35, 49, 0.5);
       border-radius: 8px;
       overflow: hidden;
       transition: all 0.2s ease;
     }
     
     .dashboard-card:hover {
-      border-color: rgba(255, 255, 255, 0.4);
+      border-color: rgba(255, 255, 255, 0.3);
       transform: translateY(-2px);
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     }
@@ -304,9 +111,9 @@ return (
     
     /* Metric card styling */
     .metric-card {
-      background-color: rgba(36, 35, 49, 0.3);
+      background-color: rgba(36, 35, 49, 0.7);
       border-radius: 8px;
-      border: 1px solid rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.1);
       padding: 1rem;
     }
     
@@ -344,7 +151,7 @@ return (
     .spinner {
       border: 4px solid rgba(255, 255, 255, 0.1);
       border-radius: 50%;
-      border-top: 4px solid rgba(255, 255, 255, 0.8);
+      border-top: 4px solid rgba(136, 84, 208, 0.8);
       width: 30px;
       height: 30px;
       animation: spin 1s linear infinite;
@@ -363,26 +170,6 @@ return (
       padding: 1rem;
       margin: 1rem 0;
     }
-    
-    /* Flow group header */
-    .flow-group-header {
-      background-color: rgba(0, 0, 0, 0.1);
-      padding: 0.5rem 1rem;
-      font-weight: 600;
-      color: white;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-    
-    .flow-group-header:hover {
-      background-color: rgba(0, 0, 0, 0.2);
-    }
-    
-    /* Flow group content */
-    .flow-group-content {
-      overflow: hidden;
-      transition: all 0.3s ease;
-    }
   </style>
 </head>
 <body class="bg-transparent">
@@ -399,8 +186,374 @@ return (
         currency: 'USD',
         minimumFractionDigits: 2
       }).format(value);
+    };
     
-    // Revenue Metrics component - Remove SMS if no data exists
+    const formatPercentage = (value) => {
+      return new Intl.NumberFormat('en-US', {
+        style: 'percent',
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1
+      }).format(value / 100);
+    };
+    
+    const formatNumber = (value) => {
+      return new Intl.NumberFormat('en-US').format(value);
+    };
+    
+    const formatDate = (dateStr) => {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric'
+      });
+    };
+    
+    // Helper for sorting data
+    const sortData = (data, sortField, sortDirection) => {
+      return [...data].sort((a, b) => {
+        const valueA = a[sortField];
+        const valueB = b[sortField];
+        
+        // Handle numeric values
+        if (!isNaN(valueA) && !isNaN(valueB)) {
+          return sortDirection === 'asc' ? valueA - valueB : valueB - valueA;
+        }
+        
+        // Handle date values
+        if (valueA instanceof Date && valueB instanceof Date) {
+          return sortDirection === 'asc' ? valueA - valueB : valueB - valueA;
+        }
+        
+        // Handle string values
+        const stringA = String(valueA).toLowerCase();
+        const stringB = String(valueB).toLowerCase();
+        return sortDirection === 'asc' 
+          ? stringA.localeCompare(stringB) 
+          : stringB.localeCompare(stringA);
+      });
+    };
+    
+    // List Growth Chart component
+    const ListGrowthChart = ({ data }) => {
+      const chartRef = useRef(null);
+      const chartInstance = useRef(null);
+      
+      useEffect(() => {
+        if (!data || data.length === 0) return;
+        
+        const ctx = chartRef.current.getContext('2d');
+        
+        // Destroy existing chart
+        if (chartInstance.current) {
+          chartInstance.current.destroy();
+        }
+        
+        // Prepare chart data
+        const dates = data.map(item => formatDate(item.date));
+        const totalMembers = data.map(item => Number(item.total_members));
+        const membersAdded = data.map(item => Number(item.members_added));
+        const membersRemoved = data.map(item => -Number(item.members_removed));
+        
+        // Create new chart
+        chartInstance.current = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: dates,
+            datasets: [
+              {
+                label: 'Total Members',
+                data: totalMembers,
+                borderColor: 'rgba(136, 84, 208, 1)',
+                backgroundColor: 'rgba(136, 84, 208, 0.1)',
+                fill: true,
+                tension: 0.3,
+                borderWidth: 2,
+                pointRadius: 3,
+                pointBackgroundColor: 'rgba(136, 84, 208, 1)'
+              },
+              {
+                label: 'Members Added',
+                data: membersAdded,
+                borderColor: 'rgba(136, 84, 208, 0.7)',
+                backgroundColor: 'rgba(136, 84, 208, 0.05)',
+                borderWidth: 2,
+                borderDash: [5, 5],
+                fill: false,
+                tension: 0.3,
+                pointRadius: 2
+              },
+              {
+                label: 'Members Removed',
+                data: membersRemoved,
+                borderColor: 'rgba(255, 255, 255, 0.5)',
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                borderWidth: 2,
+                borderDash: [5, 5],
+                fill: false,
+                tension: 0.3,
+                pointRadius: 2
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'top',
+                labels: {
+                  color: 'rgba(255, 255, 255, 0.8)',
+                  font: {
+                    size: 11
+                  }
+                }
+              },
+              tooltip: {
+                mode: 'index',
+                intersect: false,
+                backgroundColor: 'rgba(36, 35, 49, 0.9)',
+                borderColor: 'rgba(255, 255, 255, 0.1)',
+                borderWidth: 1,
+                padding: 10,
+                titleColor: 'rgba(255, 255, 255, 1)',
+                bodyColor: 'rgba(255, 255, 255, 0.8)',
+                bodyFont: {
+                  size: 12
+                },
+                titleFont: {
+                  size: 14,
+                  weight: 'bold'
+                }
+              }
+            },
+            scales: {
+              x: {
+                grid: {
+                  color: 'rgba(255, 255, 255, 0.05)'
+                },
+                ticks: {
+                  color: 'rgba(255, 255, 255, 0.6)'
+                }
+              },
+              y: {
+                grid: {
+                  color: 'rgba(255, 255, 255, 0.05)'
+                },
+                ticks: {
+                  color: 'rgba(255, 255, 255, 0.6)'
+                }
+              }
+            }
+          }
+        });
+        
+        return () => {
+          if (chartInstance.current) {
+            chartInstance.current.destroy();
+          }
+        };
+      }, [data]);
+      
+      return (
+        <div className="chart-container">
+          <canvas ref={chartRef}></canvas>
+        </div>
+      );
+    };
+    
+    // Campaign Table component
+    const CampaignTable = ({ data }) => {
+      const [sortField, setSortField] = useState('send_time');
+      const [sortDirection, setSortDirection] = useState('desc');
+      const [sortedData, setSortedData] = useState([]);
+      
+      useEffect(() => {
+        if (!data || data.length === 0) {
+          setSortedData([]);
+          return;
+        }
+        
+        const sorted = sortData(data, sortField, sortDirection);
+        setSortedData(sorted);
+      }, [data, sortField, sortDirection]);
+      
+      const handleSort = (field) => {
+        if (field === sortField) {
+          setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+        } else {
+          setSortField(field);
+          setSortDirection('desc');
+        }
+      };
+      
+      const renderSortArrow = (field) => {
+        if (sortField !== field) return null;
+        return (
+          <span className="ml-1">
+            {sortDirection === 'asc' ? '↑' : '↓'}
+          </span>
+        );
+      };
+      
+      return (
+        <div className="overflow-x-auto">
+          <table className="dashboard-table w-full">
+            <thead>
+              <tr className="text-white">
+                <th onClick={() => handleSort('campaignname')}>
+                  Campaign Name {renderSortArrow('campaignname')}
+                </th>
+                <th onClick={() => handleSort('send_time')}>
+                  Send Date {renderSortArrow('send_time')}
+                </th>
+                <th onClick={() => handleSort('channel')}>
+                  Channel {renderSortArrow('channel')}
+                </th>
+                <th onClick={() => handleSort('recipients')}>
+                  Recipients {renderSortArrow('recipients')}
+                </th>
+                <th onClick={() => handleSort('open_rate')}>
+                  Open Rate {renderSortArrow('open_rate')}
+                </th>
+                <th onClick={() => handleSort('click_rate')}>
+                  Click Rate {renderSortArrow('click_rate')}
+                </th>
+                <th onClick={() => handleSort('conversion_rate')}>
+                  Conv Rate {renderSortArrow('conversion_rate')}
+                </th>
+                <th onClick={() => handleSort('conversion_value')}>
+                  Revenue {renderSortArrow('conversion_value')}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedData.length > 0 ? (
+                sortedData.map((campaign, index) => (
+                  <tr key={index} className="text-white">
+                    <td className="font-medium">{campaign.campaignname}</td>
+                    <td>{formatDate(campaign.send_time)}</td>
+                    <td>
+                      <span className="status-badge">
+                        {campaign.channel}
+                      </span>
+                    </td>
+                    <td>{formatNumber(campaign.recipients)}</td>
+                    <td>{formatPercentage(campaign.open_rate)}</td>
+                    <td>{formatPercentage(campaign.click_rate)}</td>
+                    <td>{formatPercentage(campaign.conversion_rate)}</td>
+                    <td>{formatCurrency(campaign.conversion_value)}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="8" className="text-center text-gray-400 py-4">
+                    No campaign data available
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      );
+    };
+    
+    // Flow Table component
+    const FlowTable = ({ data }) => {
+      const [sortField, setSortField] = useState('conversion_value');
+      const [sortDirection, setSortDirection] = useState('desc');
+      const [sortedData, setSortedData] = useState([]);
+      
+      useEffect(() => {
+        if (!data || data.length === 0) {
+          setSortedData([]);
+          return;
+        }
+        
+        const sorted = sortData(data, sortField, sortDirection);
+        setSortedData(sorted);
+      }, [data, sortField, sortDirection]);
+      
+      const handleSort = (field) => {
+        if (field === sortField) {
+          setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+        } else {
+          setSortField(field);
+          setSortDirection('desc');
+        }
+      };
+      
+      const renderSortArrow = (field) => {
+        if (sortField !== field) return null;
+        return (
+          <span className="ml-1">
+            {sortDirection === 'asc' ? '↑' : '↓'}
+          </span>
+        );
+      };
+      
+      return (
+        <div className="overflow-x-auto">
+          <table className="dashboard-table w-full">
+            <thead>
+              <tr className="text-white">
+                <th onClick={() => handleSort('flow_name')}>
+                  Flow Name {renderSortArrow('flow_name')}
+                </th>
+                <th onClick={() => handleSort('email_name')}>
+                  Email {renderSortArrow('email_name')}
+                </th>
+                <th onClick={() => handleSort('status')}>
+                  Status {renderSortArrow('status')}
+                </th>
+                <th onClick={() => handleSort('recipients')}>
+                  Recipients {renderSortArrow('recipients')}
+                </th>
+                <th onClick={() => handleSort('click_rate')}>
+                  Click Rate {renderSortArrow('click_rate')}
+                </th>
+                <th onClick={() => handleSort('conversion_rate')}>
+                  Conv Rate {renderSortArrow('conversion_rate')}
+                </th>
+                <th onClick={() => handleSort('conversion_value')}>
+                  Revenue {renderSortArrow('conversion_value')}
+                </th>
+                <th onClick={() => handleSort('revenue_per_recipient')}>
+                  Revenue/Recipient {renderSortArrow('revenue_per_recipient')}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedData.length > 0 ? (
+                sortedData.map((flow, index) => (
+                  <tr key={index} className="text-white">
+                    <td className="font-medium">{flow.flow_name}</td>
+                    <td>{flow.email_name}</td>
+                    <td>
+                      <span className="status-badge">
+                        {flow.status}
+                      </span>
+                    </td>
+                    <td>{formatNumber(flow.recipients)}</td>
+                    <td>{formatPercentage(flow.click_rate)}</td>
+                    <td>{formatPercentage(flow.conversion_rate)}</td>
+                    <td>{formatCurrency(flow.conversion_value)}</td>
+                    <td>{formatCurrency(flow.revenue_per_recipient)}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="8" className="text-center text-gray-400 py-4">
+                    No flow data available
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      );
+    };
+    
+    // Revenue Metrics component
     const RevenueMetrics = ({ data }) => {
       // Calculate percentages for the donut chart
       const calculatePercentages = () => {
@@ -409,32 +562,24 @@ return (
         const totalRev = parseFloat(data.total_rev) || 0;
         if (totalRev === 0) return [];
         
-        const showSms = hasSmsData(data);
-        
-        const chartData = [
+        return [
           {
             label: 'Campaign Email',
             value: parseFloat(data.campaign_email_rev) || 0
           },
           {
-            label: 'Flow Email',
-            value: parseFloat(data.flow_email_rev) || 0
-          }
-        ];
-        
-        if (showSms) {
-          chartData.push({
             label: 'Campaign SMS',
             value: parseFloat(data.campaign_sms_rev) || 0
-          });
-          
-          chartData.push({
+          },
+          {
+            label: 'Flow Email',
+            value: parseFloat(data.flow_email_rev) || 0
+          },
+          {
             label: 'Flow SMS',
             value: parseFloat(data.flow_sms_rev) || 0
-          });
-        }
-        
-        return chartData;
+          }
+        ];
       };
       
       const chartRef = useRef(null);
@@ -451,25 +596,21 @@ return (
           chartInstance.current.destroy();
         }
         
-        // Updated color scheme - white strokes with transparent fills
-        const backgroundColor = percentageData.map((_, index) => {
-          const opacity = 0.9 - (index * 0.15);
-          return `rgba(255, 255, 255, ${opacity})`;
-        });
-        
-        const borderColor = 'rgba(255, 255, 255, 0.9)';
-        
-        // Create new chart with updated theme
+        // Create new chart with purple theme
         chartInstance.current = new Chart(ctx, {
           type: 'doughnut',
           data: {
             labels: percentageData.map(item => item.label),
             datasets: [{
               data: percentageData.map(item => item.value),
-              backgroundColor: backgroundColor,
-              borderColor: borderColor,
-              borderWidth: 2,
-              hoverOffset: 10
+              backgroundColor: [
+                'rgba(136, 84, 208, 0.8)',
+                'rgba(136, 84, 208, 0.6)',
+                'rgba(136, 84, 208, 0.4)',
+                'rgba(136, 84, 208, 0.2)'
+              ],
+              borderColor: 'rgba(36, 35, 49, 0.5)',
+              borderWidth: 1
             }]
           },
           options: {
@@ -484,9 +625,7 @@ return (
                   font: {
                     size: 11
                   },
-                  padding: 15,
-                  usePointStyle: true,
-                  pointStyle: 'circle'
+                  padding: 15
                 }
               },
               tooltip: {
@@ -501,7 +640,7 @@ return (
                 backgroundColor: 'rgba(36, 35, 49, 0.9)',
                 titleColor: 'white',
                 bodyColor: 'white',
-                borderColor: 'rgba(255, 255, 255, 0.2)',
+                borderColor: 'rgba(255, 255, 255, 0.1)',
                 borderWidth: 1
               }
             }
@@ -517,8 +656,6 @@ return (
       
       if (!data) return <div className="text-gray-400 p-4">No revenue data available</div>;
       
-      const showSms = hasSmsData(data);
-      
       return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="p-4">
@@ -531,14 +668,10 @@ return (
                 <div className="metric-value text-white">{formatCurrency(data.email_rev || 0)}</div>
                 <div className="metric-label">Email Revenue</div>
               </div>
-              
-              {showSms && (
-                <div className="metric-card">
-                  <div className="metric-value text-white">{formatCurrency(data.sms_rev || 0)}</div>
-                  <div className="metric-label">SMS Revenue</div>
-                </div>
-              )}
-              
+              <div className="metric-card">
+                <div className="metric-value text-white">{formatCurrency(data.sms_rev || 0)}</div>
+                <div className="metric-label">SMS Revenue</div>
+              </div>
               <div className="metric-card">
                 <div className="metric-value text-white">{formatPercentage((data.email_rev || 0) / (data.total_rev || 1) * 100)}</div>
                 <div className="metric-label">Email Attribution</div>
@@ -551,19 +684,6 @@ return (
                 <div className="metric-value text-white">{formatCurrency(data.campaign_email_rev || 0)}</div>
                 <div className="metric-label">Campaign Email Revenue</div>
               </div>
-              
-              {showSms && (
-                <>
-                  <div className="metric-card">
-                    <div className="metric-value text-white">{formatCurrency(data.flow_sms_rev || 0)}</div>
-                    <div className="metric-label">Flow SMS Revenue</div>
-                  </div>
-                  <div className="metric-card">
-                    <div className="metric-value text-white">{formatCurrency(data.campaign_sms_rev || 0)}</div>
-                    <div className="metric-label">Campaign SMS Revenue</div>
-                  </div>
-                </>
-              )}
             </div>
           </div>
           <div className="chart-container p-4">
@@ -573,6 +693,7 @@ return (
       );
     };
     
+    // Main Dashboard Component
     const MarketingDashboard = () => {
       const [listGrowthData, setListGrowthData] = useState([]);
       const [campaignData, setCampaignData] = useState([]);
@@ -654,8 +775,11 @@ return (
           console.error('Error fetching dashboard data:', error);
           setError(error.message);
           
-          // Always generate mock data for demo purposes
-          generateMockData();
+          // If this is the first load and no data exists, generate mock data
+          if (listGrowthData.length === 0 && campaignData.length === 0 && 
+              flowData.length === 0 && !revenueData) {
+            generateMockData();
+          }
         } finally {
           setLoading(false);
         }
@@ -722,7 +846,7 @@ return (
         setListGrowthData(mockListGrowth);
         
         // Generate mock campaign data
-        const channels = ['email'];
+        const channels = ['email', 'sms'];
         const mockCampaigns = Array.from({ length: 10 }, (_, i) => {
           const date = new Date();
           date.setDate(date.getDate() - Math.floor(Math.random() * 30));
@@ -733,11 +857,10 @@ return (
           const clickRate = Math.random() * 15 + 5; // 5-20%
           const convRate = Math.random() * 5 + 1; // 1-6%
           const avgOrderValue = Math.random() * 70 + 30; // $30-$100
-          const convValue = (recipients * convRate / 100 * avgOrderValue);
           
           return {
             id: `campaign-${i}`,
-            campaignname: `Email Campaign ${i + 1}`,
+            campaignname: `${channel === 'email' ? 'Email' : 'SMS'} Campaign ${i + 1}`,
             send_time: date,
             subject: `Special offer ${i + 1}`,
             channel: channel,
@@ -746,71 +869,59 @@ return (
             click_rate: clickRate,
             conversion_rate: convRate,
             average_order_value: avgOrderValue,
-            conversion_value: convValue,
-            revenue_per_recipient: (convValue / recipients)
+            conversion_value: (recipients * convRate / 100 * avgOrderValue),
+            revenue_per_recipient: ((recipients * convRate / 100 * avgOrderValue) / recipients)
           };
         });
         
         setCampaignData(mockCampaigns);
         
-        // Generate mock flow data - Group emails by flow types
+        // Generate mock flow data
         const flowTypes = ['Welcome', 'Abandoned Cart', 'Browse Abandonment', 'Post-Purchase', 'Winback'];
         const statuses = ['Active', 'Paused', 'Draft'];
-        const emailNames = {
-          'Welcome': ['Welcome Series #1', 'Welcome Series #2', 'Welcome Series #3'],
-          'Abandoned Cart': ['Cart Reminder', '24 Hour Follow-up', 'Final Reminder'],
-          'Browse Abandonment': ['Product Interest', 'Category Follow-up'],
-          'Post-Purchase': ['Thank You', 'Review Request', 'Cross-sell'],
-          'Winback': ['We Miss You', 'Special Offer', 'Last Chance']
-        };
         
-        let mockFlows = [];
-        
-        // Create more structured flow data
-        flowTypes.forEach((flowType, typeIndex) => {
-          const flowEmails = emailNames[flowType] || [`${flowType} Email`];
-          const status = statuses[Math.floor(Math.random() * statuses.length)];
+        const mockFlows = Array.from({ length: 8 }, (_, i) => {
+          const flowType = flowTypes[Math.floor(Math.random() * flowTypes.length)];
+          const recipients = Math.floor(Math.random() * 3000) + 500;
+          const clickRate = Math.random() * 20 + 10; // 10-30%
+          const convRate = Math.random() * 8 + 2; // 2-10%
+          const avgOrderValue = Math.random() * 70 + 30; // $30-$100
           
-          flowEmails.forEach((emailName, emailIndex) => {
-            const recipients = Math.floor(Math.random() * 3000) + 500;
-            const clickRate = Math.random() * 20 + 10; // 10-30%
-            const convRate = Math.random() * 8 + 2; // 2-10%
-            const avgOrderValue = Math.random() * 70 + 30; // $30-$100
-            const convValue = (recipients * convRate / 100 * avgOrderValue);
-            
-            mockFlows.push({
-              id: `flow-${typeIndex}-${emailIndex}`,
-              flow_name: `${flowType} Flow`,
-              email_name: emailName,
-              subject: `${emailName} Follow-up`,
-              status: status,
-              recipients: recipients,
-              click_rate: clickRate,
-              conversion_rate: convRate,
-              conversion_value: convValue,
-              revenue_per_recipient: (convValue / recipients)
-            });
-          });
+          return {
+            id: `flow-${i}`,
+            flow_name: `${flowType} Flow`,
+            email_name: `${flowType} Email ${i + 1}`,
+            subject: `${flowType} Follow-up`,
+            status: statuses[Math.floor(Math.random() * statuses.length)],
+            recipients: recipients,
+            click_rate: clickRate,
+            conversion_rate: convRate,
+            conversion_value: (recipients * convRate / 100 * avgOrderValue),
+            revenue_per_recipient: ((recipients * convRate / 100 * avgOrderValue) / recipients)
+          };
         });
         
         setFlowData(mockFlows);
         
         // Generate mock revenue data
         const totalRev = Math.random() * 50000 + 30000; // $30k-$80k
-        const emailRev = totalRev * (Math.random() * 0.3 + 0.7); // 70-100% of total
-        const smsRev = 0; // No SMS revenue in this version
+        const emailRev = totalRev * (Math.random() * 0.3 + 0.5); // 50-80% of total
+        const smsRev = totalRev - emailRev;
         
         const flowEmailRev = emailRev * (Math.random() * 0.3 + 0.35); // 35-65% of email revenue
         const campaignEmailRev = emailRev - flowEmailRev;
+        
+        const flowSmsRev = smsRev * (Math.random() * 0.3 + 0.35); // 35-65% of sms revenue
+        const campaignSmsRev = smsRev - flowSmsRev;
         
         const mockRevenue = {
           total_rev: totalRev,
           email_rev: emailRev,
           sms_rev: smsRev,
           flow_email_rev: flowEmailRev,
-          flow_sms_rev: 0,
+          flow_sms_rev: flowSmsRev,
           campaign_email_rev: campaignEmailRev,
-          campaign_sms_rev: 0
+          campaign_sms_rev: campaignSmsRev
         };
         
         setRevenueData(mockRevenue);
@@ -821,597 +932,203 @@ return (
       const handleRefresh = () => {
         fetchDashboardData();
       };
-    
-    const formatPercentage = (value) => {
-      return new Intl.NumberFormat('en-US', {
-        style: 'percent',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      }).format(value / 100);
-    };
-    
-    const formatNumber = (value) => {
-      return new Intl.NumberFormat('en-US').format(value);
-    };
-    
-    const formatDate = (dateStr) => {
-      const date = new Date(dateStr);
-      return date.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric'
-      });
-    };
-    
-    // Helper for sorting data
-    const sortData = (data, sortField, sortDirection) => {
-      return [...data].sort((a, b) => {
-        const valueA = a[sortField];
-        const valueB = b[sortField];
-        
-        // Handle numeric values
-        if (!isNaN(valueA) && !isNaN(valueB)) {
-          return sortDirection === 'asc' ? valueA - valueB : valueB - valueA;
-        }
-        
-        // Handle date values
-        if (valueA instanceof Date && valueB instanceof Date) {
-          return sortDirection === 'asc' ? valueA - valueB : valueB - valueA;
-        }
-        
-        // Handle string values
-        const stringA = String(valueA).toLowerCase();
-        const stringB = String(valueB).toLowerCase();
-        return sortDirection === 'asc' 
-          ? stringA.localeCompare(stringB) 
-          : stringB.localeCompare(stringA);
-      });
-    };
-    
-    // Check if SMS data exists
-    const hasSmsData = (revenueData) => {
-      if (!revenueData) return false;
-      return (revenueData.sms_rev > 0) || 
-             (revenueData.campaign_sms_rev > 0) || 
-             (revenueData.flow_sms_rev > 0);
-    };
-    
-    // List Growth Chart component
-    const ListGrowthChart = ({ data }) => {
-      const chartRef = useRef(null);
-      const chartInstance = useRef(null);
-      
-      useEffect(() => {
-        if (!data || data.length === 0) return;
-        
-        const ctx = chartRef.current.getContext('2d');
-        
-        // Destroy existing chart
-        if (chartInstance.current) {
-          chartInstance.current.destroy();
-        }
-        
-        // Prepare chart data
-        const dates = data.map(item => formatDate(item.date));
-        const totalMembers = data.map(item => Number(item.total_members));
-        const membersAdded = data.map(item => Number(item.members_added));
-        const membersRemoved = data.map(item => -Number(item.members_removed));
-        
-        // Create new chart
-        chartInstance.current = new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels: dates,
-            datasets: [
-              {
-                label: 'Total Members',
-                data: totalMembers,
-                borderColor: 'rgba(255, 255, 255, 0.9)',
-                backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                fill: true,
-                tension: 0.3,
-                borderWidth: 2,
-                pointRadius: 3,
-                pointBackgroundColor: 'rgba(255, 255, 255, 1)'
-              },
-              {
-                label: 'New Subscribers',
-                data: membersAdded,
-                borderColor: 'rgba(132, 204, 22, 0.8)',
-                backgroundColor: 'rgba(132, 204, 22, 0.1)',
-                borderWidth: 2,
-                fill: false,
-                tension: 0.3,
-                pointRadius: 2
-              },
-              {
-                label: 'Unsubscribes',
-                data: membersRemoved,
-                borderColor: 'rgba(220, 38, 38, 0.8)',
-                backgroundColor: 'rgba(220, 38, 38, 0.1)',
-                borderWidth: 2,
-                fill: false,
-                tension: 0.3,
-                pointRadius: 2
-              }
-            ]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            interaction: {
-              mode: 'index',
-              intersect: false,
-            },
-            plugins: {
-              legend: {
-                position: 'top',
-                labels: {
-                  color: 'rgba(255, 255, 255, 0.8)',
-                  font: {
-                    size: 11
-                  },
-                  padding: 15,
-                  usePointStyle: true,
-                  pointStyle: 'circle'
-                }
-              },
-              tooltip: {
-                mode: 'index',
-                intersect: false,
-                backgroundColor: 'rgba(36, 35, 49, 0.9)',
-                borderColor: 'rgba(255, 255, 255, 0.2)',
-                borderWidth: 1,
-                padding: 10,
-                titleColor: 'rgba(255, 255, 255, 1)',
-                bodyColor: 'rgba(255, 255, 255, 0.8)',
-                bodyFont: {
-                  size: 12
-                },
-                titleFont: {
-                  size: 14,
-                  weight: 'bold'
-                },
-                callbacks: {
-                  label: function(context) {
-                    let label = context.dataset.label || '';
-                    if (label) {
-                      label += ': ';
-                    }
-                    if (context.parsed.y !== null) {
-                      label += formatNumber(Math.abs(context.parsed.y));
-                    }
-                    return label;
-                  }
-                }
-              }
-            },
-            scales: {
-              x: {
-                grid: {
-                  color: 'rgba(255, 255, 255, 0.05)'
-                },
-                ticks: {
-                  color: 'rgba(255, 255, 255, 0.6)',
-                  maxRotation: 45,
-                  minRotation: 45
-                }
-              },
-              y: {
-                grid: {
-                  color: 'rgba(255, 255, 255, 0.05)'
-                },
-                ticks: {
-                  color: 'rgba(255, 255, 255, 0.6)',
-                  callback: function(value) {
-                    return formatNumber(value);
-                  }
-                }
-              }
-            }
-          }
-        });
-        
-        return () => {
-          if (chartInstance.current) {
-            chartInstance.current.destroy();
-          }
-        };
-      }, [data]);
       
       return (
-        <div className="chart-container">
-          <canvas ref={chartRef}></canvas>
-        </div>
-      );
-    };
-    
-    // Campaign Table component
-    const CampaignTable = ({ data }) => {
-      const [sortField, setSortField] = useState('send_time');
-      const [sortDirection, setSortDirection] = useState('desc');
-      const [sortedData, setSortedData] = useState([]);
-      
-      useEffect(() => {
-        if (!data || data.length === 0) {
-          setSortedData([]);
-          return;
-        }
-        
-        const sorted = sortData(data, sortField, sortDirection);
-        setSortedData(sorted);
-      }, [data, sortField, sortDirection]);
-      
-      const handleSort = (field) => {
-        if (field === sortField) {
-          setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-        } else {
-          setSortField(field);
-          setSortDirection('desc');
-        }
-      };
-      
-      const renderSortArrow = (field) => {
-        if (sortField !== field) return null;
-        return (
-          <span className="ml-1">
-            {sortDirection === 'asc' ? '↑' : '↓'}
-          </span>
-        );
-      };
-      
-      return (
-        <div className="overflow-x-auto">
-          <table className="dashboard-table w-full">
-            <thead>
-              <tr className="text-white">
-                <th onClick={() => handleSort('campaignname')}>
-                  Campaign Name {renderSortArrow('campaignname')}
-                </th>
-                <th onClick={() => handleSort('send_time')}>
-                  Send Date {renderSortArrow('send_time')}
-                </th>
-                <th onClick={() => handleSort('channel')}>
-                  Channel {renderSortArrow('channel')}
-                </th>
-                <th onClick={() => handleSort('recipients')}>
-                  Recipients {renderSortArrow('recipients')}
-                </th>
-                <th onClick={() => handleSort('open_rate')}>
-                  Open Rate {renderSortArrow('open_rate')}
-                </th>
-                <th onClick={() => handleSort('click_rate')}>
-                  Click Rate {renderSortArrow('click_rate')}
-                </th>
-                <th onClick={() => handleSort('revenue_per_recipient')}>
-                  Revenue/Recipient {renderSortArrow('revenue_per_recipient')}
-                </th>
-                <th onClick={() => handleSort('conversion_value')}>
-                  Revenue {renderSortArrow('conversion_value')}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedData.length > 0 ? (
-                sortedData.map((campaign, index) => (
-                  <tr key={index} className="text-white">
-                    <td className="font-medium">{campaign.campaignname}</td>
-                    <td>{formatDate(campaign.send_time)}</td>
-                    <td>
-                      <span className="status-badge">
-                        {campaign.channel}
-                      </span>
-                    </td>
-                    <td>{formatNumber(campaign.recipients)}</td>
-                    <td>{formatPercentage(campaign.open_rate)}</td>
-                    <td>{formatPercentage(campaign.click_rate)}</td>
-                    <td>{formatCurrency(campaign.revenue_per_recipient)}</td>
-                    <td>{formatCurrency(campaign.conversion_value)}</td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="8" className="text-center text-gray-400 py-4">
-                    No campaign data available
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      );
-    };
-    
-    // Flow Table component - Grouped by flow_name
-    const FlowTable = ({ data }) => {
-      const [sortField, setSortField] = useState('conversion_value');
-      const [sortDirection, setSortDirection] = useState('desc');
-      const [sortedData, setSortedData] = useState([]);
-      const [groupedFlows, setGroupedFlows] = useState({});
-      const [expandedGroups, setExpandedGroups] = useState({});
-      
-      useEffect(() => {
-        if (!data || data.length === 0) {
-          setSortedData([]);
-          setGroupedFlows({});
-          return;
-        }
-        
-        // Group flows by flow_name
-        const grouped = _.groupBy(data, 'flow_name');
-        setGroupedFlows(grouped);
-        
-        // Initialize all groups as expanded if less than 6 flows, otherwise collapse all
-        const initialExpandedState = {};
-        Object.keys(grouped).forEach(flowName => {
-          initialExpandedState[flowName] = Object.keys(grouped).length < 6;
-        });
-        setExpandedGroups(initialExpandedState);
-        
-        // Sort the data
-        const sorted = sortData(data, sortField, sortDirection);
-        setSortedData(sorted);
-      }, [data, sortField, sortDirection]);
-      
-      const handleSort = (field) => {
-        if (field === sortField) {
-          setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-        } else {
-          setSortField(field);
-          setSortDirection('desc');
-        }
-      };
-      
-      const renderSortArrow = (field) => {
-        if (sortField !== field) return null;
-        return (
-          <span className="ml-1">
-            {sortDirection === 'asc' ? '↑' : '↓'}
-          </span>
-        );
-      };
-      
-      const toggleGroup = (flowName) => {
-        setExpandedGroups(prev => ({
-          ...prev,
-          [flowName]: !prev[flowName]
-        }));
-      };
-      
-      // Calculate flow group metrics
-      const calculateFlowGroupMetrics = (flows) => {
-        const totalRecipients = _.sumBy(flows, 'recipients');
-        const totalConversionValue = _.sumBy(flows, 'conversion_value');
-        const avgClickRate = _.meanBy(flows, 'click_rate');
-        const avgConversionRate = _.meanBy(flows, 'conversion_rate');
-        const revenuePerRecipient = totalRecipients > 0 ? totalConversionValue / totalRecipients : 0;
-        
-        return {
-          totalRecipients,
-          totalConversionValue,
-          avgClickRate,
-          avgConversionRate,
-          revenuePerRecipient
-        };
-      };
-      
-      return (
-        <div className="overflow-x-auto">
-          <table className="dashboard-table w-full">
-            <thead>
-              <tr className="text-white">
-                <th onClick={() => handleSort('flow_name')}>
-                  Flow Name {renderSortArrow('flow_name')}
-                </th>
-                <th onClick={() => handleSort('email_name')}>
-                  Email {renderSortArrow('email_name')}
-                </th>
-                <th onClick={() => handleSort('status')}>
-                  Status {renderSortArrow('status')}
-                </th>
-                <th onClick={() => handleSort('recipients')}>
-                  Recipients {renderSortArrow('recipients')}
-                </th>
-                <th onClick={() => handleSort('click_rate')}>
-                  Click Rate {renderSortArrow('click_rate')}
-                </th>
-                <th onClick={() => handleSort('revenue_per_recipient')}>
-                  Revenue/Recipient {renderSortArrow('revenue_per_recipient')}
-                </th>
-                <th onClick={() => handleSort('conversion_value')}>
-                  Revenue {renderSortArrow('conversion_value')}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {Object.keys(groupedFlows).length > 0 ? (
-                Object.keys(groupedFlows).map((flowName) => {
-                  const flows = groupedFlows[flowName];
-                  const metrics = calculateFlowGroupMetrics(flows);
-                  const isExpanded = expandedGroups[flowName];
-                  
-                  return (
-                    <React.Fragment key={flowName}>
-                      <tr className="flow-group-header" onClick={() => toggleGroup(flowName)}>
-                        <td colSpan="7" className="cursor-pointer">
-                          <div className="flex justify-between items-center">
-                            <span>{flowName} ({flows.length} emails)</span>
-                            <span>{isExpanded ? '▼' : '►'}</span>
-                          </div>
-                        </td>
-                      </tr>
-                      
-                      {isExpanded && (
-                        <tr className="text-white bg-opacity-30 bg-black">
-                          <td className="font-medium pl-8">Flow Summary</td>
-                          <td>All Emails</td>
-                          <td>
-                            <span className="status-badge">
-                              {flows[0].status}
-                            </span>
-                          </td>
-                          <td>{formatNumber(metrics.totalRecipients)}</td>
-                          <td>{formatPercentage(metrics.avgClickRate)}</td>
-                          <td>{formatCurrency(metrics.revenuePerRecipient)}</td>
-                          <td>{formatCurrency(metrics.totalConversionValue)}</td>
-                        </tr>
-                      )}
-                      
-                      {isExpanded && flows.map((flow, index) => (
-                        <tr key={`${flowName}-${index}`} className="text-white bg-opacity-10 bg-white">
-                          <td className="font-medium pl-8">↳</td>
-                          <td>{flow.email_name}</td>
-                          <td>
-                            <span className="status-badge">
-                              {flow.status}
-                            </span>
-                          </td>
-                          <td>{formatNumber(flow.recipients)}</td>
-                          <td>{formatPercentage(flow.click_rate)}</td>
-                          <td>{formatCurrency(flow.revenue_per_recipient)}</td>
-                          <td>{formatCurrency(flow.conversion_value)}</td>
-                        </tr>
-                      ))}
-                    </React.Fragment>
-                  );
-                })
-              ) : (
-                <tr>
-                  <td colSpan="7" className="text-center text-gray-400 py-4">
-                    No flow data available
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      );
-    };
-    
-    // Collapsible Flow Summary component for home page
-    const FlowSummary = ({ data }) => {
-      const [expandedFlows, setExpandedFlows] = useState({});
-      const [groupedFlows, setGroupedFlows] = useState({});
-      
-      useEffect(() => {
-        if (!data || data.length === 0) {
-          setGroupedFlows({});
-          return;
-        }
-        
-        // Group flows by flow_name
-        const grouped = _.groupBy(data, 'flow_name');
-        setGroupedFlows(grouped);
-        
-        // Set top-performing flow as expanded by default
-        const topFlow = Object.keys(grouped)[0];
-        setExpandedFlows({ [topFlow]: true });
-      }, [data]);
-      
-      const toggleFlow = (flowName) => {
-        setExpandedFlows(prev => ({
-          ...prev,
-          [flowName]: !prev[flowName]
-        }));
-      };
-      
-      // Calculate flow group metrics
-      const calculateFlowGroupMetrics = (flows) => {
-        const totalRecipients = _.sumBy(flows, 'recipients');
-        const totalConversionValue = _.sumBy(flows, 'conversion_value');
-        const avgClickRate = _.meanBy(flows, 'click_rate');
-        const revenuePerRecipient = totalRecipients > 0 ? totalConversionValue / totalRecipients : 0;
-        
-        return {
-          totalRecipients,
-          totalConversionValue,
-          avgClickRate,
-          revenuePerRecipient
-        };
-      };
-      
-      // Sort flow groups by total revenue
-      const sortedFlowGroups = Object.entries(groupedFlows)
-        .map(([name, flows]) => ({
-          name,
-          flows,
-          metrics: calculateFlowGroupMetrics(flows)
-        }))
-        .sort((a, b) => b.metrics.totalConversionValue - a.metrics.totalConversionValue);
-      
-      return (
-        <div className="dashboard-card dashboard-widget">
-          <div className="p-4">
-            <h2 className="text-xl font-semibold text-white mb-4">Top Performing Flows</h2>
-            
-            {sortedFlowGroups.length > 0 ? (
-              <div className="space-y-4">
-                {sortedFlowGroups.map(({ name, flows, metrics }) => (
-                  <div key={name} className="border border-white border-opacity-10 rounded overflow-hidden">
-                    <div 
-                      className="flex justify-between items-center p-3 bg-black bg-opacity-20 cursor-pointer"
-                      onClick={() => toggleFlow(name)}
+        <div className="container mx-auto p-4">
+          <div className="dashboard-container">
+            <div className="p-6 bg-transparent text-white header-container">
+              <div className="flex justify-between items-center">
+                <h1 className="text-2xl font-bold">MARKETING ANALYTICS DASHBOARD</h1>
+                <div className="flex flex-col items-end">
+                  <div className="flex items-center text-sm text-gray-400">
+                    <span>Last Updated: {lastUpdated ? lastUpdated.toLocaleString() : 'N/A'}</span>
+                    <button 
+                      onClick={handleRefresh}
+                      className="ml-3 dashboard-button p-1 rounded"
+                      disabled={loading}
                     >
-                      <div className="flex items-center space-x-3">
-                        <span className="text-white font-medium">{name}</span>
-                        <span className="status-badge text-xs">{flows[0].status}</span>
-                      </div>
-                      <div className="flex items-center space-x-4">
-                        <div className="text-right">
-                          <div className="text-sm text-white">{formatCurrency(metrics.totalConversionValue)}</div>
-                          <div className="text-xs text-gray-400">Revenue</div>
-                        </div>
-                        <span>{expandedFlows[name] ? '▼' : '►'}</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div className="flex space-x-2 mt-2">
+                    <button 
+                      onClick={() => setActiveTab('overview')} 
+                      className={`px-4 py-2 rounded transition-all ${activeTab === 'overview' ? 'border-b-2 border-purple-500 bg-transparent' : 'bg-transparent'}`}
+                    >
+                      Overview
+                    </button>
+                    <button 
+                      onClick={() => setActiveTab('campaigns')} 
+                      className={`px-4 py-2 rounded transition-all ${activeTab === 'campaigns' ? 'border-b-2 border-purple-500 bg-transparent' : 'bg-transparent'}`}
+                    >
+                      Campaigns
+                    </button>
+                    <button 
+                      onClick={() => setActiveTab('flows')} 
+                      className={`px-4 py-2 rounded transition-all ${activeTab === 'flows' ? 'border-b-2 border-purple-500 bg-transparent' : 'bg-transparent'}`}
+                    >
+                      Flows
+                    </button>
+                    <button 
+                      onClick={() => setActiveTab('list')} 
+                      className={`px-4 py-2 rounded transition-all ${activeTab === 'list' ? 'border-b-2 border-purple-500 bg-transparent' : 'bg-transparent'}`}
+                    >
+                      List Growth
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {error && (
+              <div className="error-container mx-6 text-white">
+                <div className="flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <p className="font-bold">Error: {error}</p>
+                </div>
+                <p className="mt-1 ml-8">Using cached or mock data instead. Click refresh to try again.</p>
+              </div>
+            )}
+            
+            <div className="relative">
+              {loading && (
+                <div className="loading-overlay">
+                  <div className="spinner"></div>
+                </div>
+              )}
+              
+              {/* Overview Tab */}
+              {activeTab === 'overview' && (
+                <div className="p-6 bg-transparent">
+                  <div className="grid grid-cols-1 gap-6">
+                    {/* Store Revenue Overview */}
+                    <div className="dashboard-card dashboard-widget">
+                      <div className="p-4">
+                        <h2 className="text-xl font-semibold text-white mb-4">Store Revenue Overview (Last 30 Days)</h2>
+                        <RevenueMetrics data={revenueData} />
                       </div>
                     </div>
                     
-                    {expandedFlows[name] && (
-                      <div className="bg-black bg-opacity-10 p-3">
-                        <div className="grid grid-cols-3 gap-3 mb-3">
-                          <div className="bg-black bg-opacity-20 p-2 rounded">
-                            <div className="text-sm text-white">{formatNumber(metrics.totalRecipients)}</div>
-                            <div className="text-xs text-gray-400">Recipients</div>
+                    {/* List Growth Chart */}
+                    <div className="dashboard-card dashboard-widget">
+                      <div className="p-4">
+                        <h2 className="text-xl font-semibold text-white mb-4">List Growth (Last 30 Days)</h2>
+                        <ListGrowthChart data={listGrowthData} />
+                      </div>
+                    </div>
+                    
+                    {/* Top Campaigns */}
+                    <div className="dashboard-card dashboard-widget">
+                      <div className="p-4">
+                        <h2 className="text-xl font-semibold text-white mb-4">Top Performing Campaigns</h2>
+                        <CampaignTable data={campaignData.slice(0, 5)} />
+                      </div>
+                    </div>
+                    
+                    {/* Top Flows */}
+                    <div className="dashboard-card dashboard-widget">
+                      <div className="p-4">
+                        <h2 className="text-xl font-semibold text-white mb-4">Top Performing Flows</h2>
+                        <FlowTable data={flowData.slice(0, 5)} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Campaigns Tab */}
+              {activeTab === 'campaigns' && (
+                <div className="p-6 bg-transparent">
+                  <h2 className="text-xl font-semibold text-white mb-4">Campaign Performance (Last 30 Days)</h2>
+                  <div className="dashboard-card">
+                    <div className="p-4">
+                      <CampaignTable data={campaignData} />
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Flows Tab */}
+              {activeTab === 'flows' && (
+                <div className="p-6 bg-transparent">
+                  <h2 className="text-xl font-semibold text-white mb-4">Flow Performance (Last 30 Days)</h2>
+                  <div className="dashboard-card">
+                    <div className="p-4">
+                      <FlowTable data={flowData} />
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* List Growth Tab */}
+              {activeTab === 'list' && (
+                <div className="p-6 bg-transparent">
+                  <h2 className="text-xl font-semibold text-white mb-4">List Growth Analytics (Last 30 Days)</h2>
+                  <div className="dashboard-card dashboard-widget">
+                    <div className="p-4">
+                      <ListGrowthChart data={listGrowthData} />
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
+                        <div className="metric-card">
+                          <div className="metric-value text-white">
+                            {formatNumber(listGrowthData.length > 0 ? listGrowthData[listGrowthData.length - 1].total_members : 0)}
                           </div>
-                          <div className="bg-black bg-opacity-20 p-2 rounded">
-                            <div className="text-sm text-white">{formatPercentage(metrics.avgClickRate)}</div>
-                            <div className="text-xs text-gray-400">Click Rate</div>
-                          </div>
-                          <div className="bg-black bg-opacity-20 p-2 rounded">
-                            <div className="text-sm text-white">{formatCurrency(metrics.revenuePerRecipient)}</div>
-                            <div className="text-xs text-gray-400">Revenue/Recipient</div>
-                          </div>
+                          <div className="metric-label">Current Subscribers</div>
                         </div>
                         
-                        <table className="dashboard-table w-full text-sm">
-                          <thead>
-                            <tr className="text-white">
-                              <th>Email</th>
-                              <th>Recipients</th>
-                              <th>Click Rate</th>
-                              <th>Revenue/Recipient</th>
-                              <th>Revenue</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {flows.map((flow, index) => (
-                              <tr key={index} className="text-white">
-                                <td>{flow.email_name}</td>
-                                <td>{formatNumber(flow.recipients)}</td>
-                                <td>{formatPercentage(flow.click_rate)}</td>
-                                <td>{formatCurrency(flow.revenue_per_recipient)}</td>
-                                <td>{formatCurrency(flow.conversion_value)}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                        <div className="metric-card">
+                          <div className="metric-value text-white">
+                            {listGrowthData.length > 0 ? (
+                              formatNumber(listGrowthData.reduce((sum, item) => sum + Number(item.members_added), 0))
+                            ) : 0}
+                          </div>
+                          <div className="metric-label">Total New Subscribers</div>
+                        </div>
+                        
+                        <div className="metric-card">
+                          <div className="metric-value text-white">
+                            {listGrowthData.length > 0 ? (
+                              formatNumber(listGrowthData.reduce((sum, item) => sum + Number(item.members_removed), 0))
+                            ) : 0}
+                          </div>
+                          <div className="metric-label">Total Unsubscribes</div>
+                        </div>
+                        
+                        <div className="metric-card">
+                          <div className="metric-value text-white">
+                            {listGrowthData.length > 0 ? (
+                              (() => {
+                                const netChange = listGrowthData.reduce((sum, item) => sum + Number(item.net_members_changed), 0);
+                                return netChange > 0 ? '+' + formatNumber(netChange) : formatNumber(netChange);
+                              })()
+                            ) : 0}
+                          </div>
+                          <div className="metric-label">Net Growth</div>
+                        </div>
                       </div>
-                    )}
+                    </div>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-400 text-center py-6">No flow data available</p>
-            )}
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <div className="mt-4 p-2 text-center text-gray-500 text-xs">
+            Data refreshes automatically at 9:00 AM EST daily
           </div>
         </div>
       );
     };
+    
+    // Initialize by rendering the dashboard component
+    ReactDOM.render(
+      <MarketingDashboard />,
+      document.getElementById('root')
+    );
+  </script>
+</body>
+</html>
