@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Figma Link Button</title>
-  <!-- Include React and ReactDOM -->
-  <script src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
+  <!-- Updated to React 18 -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <!-- Include Babel for JSX -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <!-- Include Tailwind CSS -->
@@ -109,10 +109,9 @@
       );
     };
     
-    ReactDOM.render(
-      <FigmaLinkButton />,
-      document.getElementById('figma-button-root')
-    );
+    // Updated for React 18
+    const root = ReactDOM.createRoot(document.getElementById('figma-button-root'));
+    root.render(<FigmaLinkButton />);
   </script>
 </body>
 </html>
