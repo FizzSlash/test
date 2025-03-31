@@ -3,14 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Figma Link Button</title>
-  <!-- Updated to React 18 -->
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <!-- Include Babel for JSX -->
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <!-- Include Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>Simple Figma Button</title>
   <style>
     body {
       background-color: rgba(20, 19, 28, 0.7);
@@ -20,15 +13,22 @@
       align-items: center;
       min-height: 100vh;
       margin: 0;
-      padding: 0;
     }
     
     .figma-button {
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 16px 24px;
       background-color: rgba(36, 35, 49, 0.5);
-      backdrop-filter: blur(5px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      color: white;
+      text-decoration: none;
+      font-size: 18px;
+      font-weight: 500;
       transition: all 0.2s ease;
+      box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
     }
     
     .figma-button:hover {
@@ -39,105 +39,21 @@
   </style>
 </head>
 <body>
-  <div id="figma-button-root"></div>
+  <!-- Static button that doesn't require React or fetch -->
+  <a href="https://www.figma.com" target="_blank" rel="noopener noreferrer" class="figma-button">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M5 5.5A3.5 3.5 0 0 1 8.5 2H12v7H8.5A3.5 3.5 0 0 1 5 5.5z"></path>
+      <path d="M12 2h3.5a3.5 3.5 0 1 1 0 7H12V2z"></path>
+      <path d="M12 12.5a3.5 3.5 0 1 1 7 0 3.5 3.5 0 1 1-7 0z"></path>
+      <path d="M5 19.5A3.5 3.5 0 0 1 8.5 16H12v3.5a3.5 3.5 0 1 1-7 0z"></path>
+      <path d="M5 12.5A3.5 3.5 0 0 1 8.5 9H12v7H8.5A3.5 3.5 0 0 1 5 12.5z"></path>
+    </svg>
+    <span>View Figma File</span>
+  </a>
 
-  <script type="text/babel">
-    // Import React hooks
-    const { useState, useEffect } = React;
-    
-    const FigmaLinkButton = () => {
-      // Default to a fallback link in case the fetch fails
-      const [figmaLink, setFigmaLink] = useState('https://www.figma.com');
-      const [loading, setLoading] = useState(true);
-      const [error, setError] = useState(null);
-      
-      // Figma link webhook URL - you may need to update this URL
-      const figmaLinkWebhook = 'https://hook.us2.make.com/dli1k9eq8vpedlaq247doxews2dv7u6o';
-      
-      useEffect(() => {
-        const fetchFigmaLink = async () => {
-          try {
-            setLoading(true);
-            
-            // Add timeout to the fetch request
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 5000);
-            
-            const response = await fetch(figmaLinkWebhook, {
-              method: 'GET',
-              headers: {
-                'Accept': 'text/plain',
-                'Cache-Control': 'no-cache'
-              },
-              signal: controller.signal
-            });
-            
-            clearTimeout(timeoutId);
-            
-            if (!response.ok) {
-              throw new Error(`Failed to fetch Figma link: ${response.status}`);
-            }
-            
-            const data = await response.text();
-            const trimmedData = data.trim();
-            
-            if (trimmedData && trimmedData.startsWith('http')) {
-              setFigmaLink(trimmedData);
-            } else {
-              // If the response isn't a valid URL, use the fallback
-              console.warn('Received invalid URL from webhook');
-            }
-            
-          } catch (error) {
-            console.error('Error fetching Figma link:', error);
-            setError(error.message);
-            // Keep using the fallback link
-          } finally {
-            setLoading(false);
-          }
-        };
-
-        fetchFigmaLink();
-      }, []);
-      
-      return (
-        <div className="flex justify-center items-center p-4">
-          {loading ? (
-            <div className="text-white opacity-70 flex items-center gap-2">
-              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              Loading...
-            </div>
-          ) : (
-            <a 
-              href={figmaLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="figma-button flex items-center justify-center gap-3 px-6 py-4 rounded-lg text-white hover:bg-opacity-70 transition-all duration-300 text-lg"
-              onClick={() => console.log('Figma button clicked, navigating to:', figmaLink)}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
-                <path d="M5 5.5A3.5 3.5 0 0 1 8.5 2H12v7H8.5A3.5 3.5 0 0 1 5 5.5z"></path>
-                <path d="M12 2h3.5a3.5 3.5 0 1 1 0 7H12V2z"></path>
-                <path d="M12 12.5a3.5 3.5 0 1 1 7 0 3.5 3.5 0 1 1-7 0z"></path>
-                <path d="M5 19.5A3.5 3.5 0 0 1 8.5 16H12v3.5a3.5 3.5 0 1 1-7 0z"></path>
-                <path d="M5 12.5A3.5 3.5 0 0 1 8.5 9H12v7H8.5A3.5 3.5 0 0 1 5 12.5z"></path>
-              </svg>
-              <span className="font-medium">
-                {error ? "Open Figma" : "View Figma File"}
-                {error && <span className="text-xs ml-2 opacity-60">(Webhook error)</span>}
-              </span>
-            </a>
-          )}
-        </div>
-      );
-    };
-    
-    // Updated for React 18
-    const root = ReactDOM.createRoot(document.getElementById('figma-button-root'));
-    root.render(<FigmaLinkButton />);
-  </script>
+  <!-- Add a text message to verify the page is loading -->
+  <div style="position: fixed; bottom: 10px; color: white; opacity: 0.5;">
+    If you can see this text, the page is loading correctly.
+  </div>
 </body>
 </html>
