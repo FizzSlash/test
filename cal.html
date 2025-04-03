@@ -150,7 +150,27 @@
     // Import React hooks
     const { useState, useEffect } = React;
     
+    // Function to extract client name from URL path
+    const getClientNameFromUrl = () => {
+      // Get the current path (e.g., "/tririg/campaign-calender")
+      const path = window.location.pathname;
+      
+      // Split the path into segments
+      const segments = path.split('/').filter(segment => segment !== '');
+      
+      // If there's at least one segment, the first one is the client name
+      if (segments.length > 0) {
+        return segments[0]; // This should be "tririg" from your URL
+      }
+      
+      return 'unknown-client'; // Default fallback if no client name found
+    };
+    
     const CampaignCalendar = () => {
+      // Extract client name from URL
+      const [clientName, setClientName] = useState(() => getClientNameFromUrl());
+      
+      // Regular state variables
       const [campaigns, setCampaigns] = useState([]);
       const [selectedCampaign, setSelectedCampaign] = useState(null);
       const [clientRevisions, setClientRevisions] = useState('');
@@ -174,7 +194,9 @@
         try {
           setLoading(true);
           
-          const response = await fetch(fetchCampaignsUrl);
+          // Add client name as a query parameter
+          const url = `${fetchCampaignsUrl}?clientName=${encodeURIComponent(clientName)}`;
+          const response = await fetch(url);
           
           if (!response.ok) {
             throw new Error(`Failed to fetch campaigns: ${response.status}`);
@@ -381,7 +403,9 @@
             campaignId: selectedCampaign.id,
             recordId: selectedCampaign.recordId, // Include the record ID in the payload
             approved: approved ? "YES" : "NO",
-            clientRevisions: clientRevisions
+            clientRevisions: clientRevisions,
+            // Add client name from URL path
+            clientName: clientName
           };
           
           const response = await fetch(updateCampaignUrl, {
