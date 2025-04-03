@@ -150,24 +150,31 @@
     // Import React hooks
     const { useState, useEffect } = React;
     
-    // Function to extract client name from URL path
+    // Function to extract client name from URL parameters
     const getClientNameFromUrl = () => {
-      // Get the current path (e.g., "/tririg/campaign-calender")
-      const path = window.location.pathname;
+      // Try to get the client name from URL parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const clientParam = urlParams.get('client');
       
-      // Split the path into segments
-      const segments = path.split('/').filter(segment => segment !== '');
-      
-      // If there's at least one segment, the first one is the client name
-      if (segments.length > 0) {
-        return segments[0]; // This should be "tririg" from your URL
+      if (clientParam) {
+        return clientParam;
       }
       
-      return 'unknown-client'; // Default fallback if no client name found
+      // Fallback: Try to extract from path (for direct URL access)
+      const path = window.location.pathname;
+      const segments = path.split('/').filter(segment => segment !== '');
+      
+      // If we have at least one path segment, use it
+      if (segments.length > 0 && segments[0] !== 'test' && segments[0] !== 'cal.html') {
+        return segments[0];
+      }
+      
+      // Final fallback
+      return 'unknown-client';
     };
     
     const CampaignCalendar = () => {
-      // Extract client name from URL
+      // Extract client name from URL parameters
       const [clientName, setClientName] = useState(() => getClientNameFromUrl());
       
       // Regular state variables
@@ -195,7 +202,7 @@
           setLoading(true);
           
           // Add client name as a query parameter
-          const url = `${fetchCampaignsUrl}?clientName=${encodeURIComponent(clientName)}`;
+          const url = `${fetchCampaignsUrl}?client=${encodeURIComponent(clientName)}`;
           const response = await fetch(url);
           
           if (!response.ok) {
@@ -404,8 +411,8 @@
             recordId: selectedCampaign.recordId, // Include the record ID in the payload
             approved: approved ? "YES" : "NO",
             clientRevisions: clientRevisions,
-            // Add client name from URL path
-            clientName: clientName
+            // Add client name from URL parameter
+            client: clientName
           };
           
           const response = await fetch(updateCampaignUrl, {
