@@ -59,13 +59,14 @@
           const urlParams = new URLSearchParams(window.location.search);
           const clientParam = urlParams.get('client');
           
-          // Build the webhook URL with the client appended to the path
+          // Build the webhook URL with the client as a query parameter (not path parameter)
           let url = figmaLinkWebhook;
           
           if (clientParam) {
-            // Simply append the client name to the webhook URL path
-            url = `${figmaLinkWebhook}/${clientParam}`;
+            // Add client as query parameter with ?client=
+            url = `${figmaLinkWebhook}?client=${encodeURIComponent(clientParam)}`;
             console.log("Using client parameter:", clientParam);
+            console.log("Full webhook URL:", url);
           }
           
           // Make the request
