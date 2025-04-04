@@ -49,31 +49,29 @@
       const figmaLinkWebhook = 'https://hook.us2.make.com/dli1k9eq8vpedlaq247doxews2dv7u6o';
       
       useEffect(() => {
-        // Extract client name from URL
-        extractClientName();
+        // Extract client name from URL query parameter
+        extractClientFromQuery();
         
         // Fetch the Figma link
         fetchFigmaLink();
       }, []);
       
-      const extractClientName = () => {
+      const extractClientFromQuery = () => {
         try {
-          // Get the current URL path
-          const path = window.location.pathname;
+          // Get the URL search params
+          const urlParams = new URLSearchParams(window.location.search);
           
-          // Extract client name from path pattern like "/clientname/campaign-calender"
-          const pathParts = path.split('/').filter(part => part);
+          // Check if there's a client parameter
+          const client = urlParams.get('client');
           
-          if (pathParts.length >= 1) {
-            // The first part should be the client name
-            const extractedClientName = pathParts[0];
-            console.log("Extracted client name:", extractedClientName);
-            setClientName(extractedClientName);
+          if (client) {
+            console.log("Extracted client from query parameter:", client);
+            setClientName(client);
           } else {
-            console.warn("Could not extract client name from URL path:", path);
+            console.log("No client parameter found in URL");
           }
         } catch (error) {
-          console.error("Error extracting client name from URL:", error);
+          console.error("Error extracting client from URL query:", error);
         }
       };
       
@@ -84,21 +82,9 @@
           // Build the URL with the client name if available
           let url = figmaLinkWebhook;
           
-          // Add client name from URL path if available
+          // Add client name from query parameter if available
           if (clientName) {
             url = `${figmaLinkWebhook}?client=${encodeURIComponent(clientName)}`;
-          }
-          
-          // If the client name isn't available from the path, try to extract it from the hostname
-          if (!clientName) {
-            const hostname = window.location.hostname;
-            const subdomainMatch = hostname.match(/^(?:www\.)?([^.]+)\./);
-            
-            if (subdomainMatch && subdomainMatch[1] && subdomainMatch[1].toLowerCase() !== 'retentionharbor') {
-              const subdomain = subdomainMatch[1];
-              console.log("Extracted client from subdomain:", subdomain);
-              url = `${figmaLinkWebhook}?client=${encodeURIComponent(subdomain)}`;
-            }
           }
           
           // Make the API request
@@ -141,7 +127,7 @@
       }
       
       return (
-        <div className="flex flex-col items-center">
+        <div className="flex justify-center">
           <a 
             href={figmaLink}
             target="_blank"
@@ -157,12 +143,6 @@
             </svg>
             <span className="font-medium">View Figma File</span>
           </a>
-          
-          {clientName && (
-            <div className="mt-2 text-white text-xs opacity-50">
-              Client: {clientName}
-            </div>
-          )}
         </div>
       );
     };
