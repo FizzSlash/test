@@ -55,7 +55,19 @@
         try {
           setLoading(true);
           
-          const response = await fetch(figmaLinkWebhook);
+          // Extract client from URL query parameter
+          const urlParams = new URLSearchParams(window.location.search);
+          const clientParam = urlParams.get('client');
+          
+          // Build webhook URL with client appended to the path if available
+          let url = figmaLinkWebhook;
+          if (clientParam) {
+            url = `${figmaLinkWebhook}/${clientParam}`;
+            console.log("Using client from URL:", clientParam);
+            console.log("Full webhook URL:", url);
+          }
+          
+          const response = await fetch(url);
           
           if (!response.ok) {
             throw new Error(`Failed to fetch Figma link: ${response.status}`);
