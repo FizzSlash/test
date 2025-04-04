@@ -88,29 +88,22 @@
           const urlParams = new URLSearchParams(window.location.search);
           const clientParam = urlParams.get('client');
           
-          // Build the URL with the client parameter
-          let url = figmaLinkWebhook;
+          // Instead of using URL parameters, we'll send the client name in the request body
+          const clientToSend = clientParam || clientName || '';
+          console.log("Client to send:", clientToSend);
           
-          if (clientParam) {
-            // Use the directly extracted client parameter
-            url = `${figmaLinkWebhook}?client=${encodeURIComponent(clientParam)}`;
-            console.log("Sending request with client parameter:", clientParam);
-            console.log("Full webhook URL:", url);
-          } else if (clientName) {
-            // Fallback to state variable if it was set
-            url = `${figmaLinkWebhook}?client=${encodeURIComponent(clientName)}`;
-            console.log("Sending request with client name from state:", clientName);
-            console.log("Full webhook URL:", url);
-          } else {
-            console.log("No client parameter available, using default webhook URL");
-          }
-          
-          // Make the API request
-          const response = await fetch(url, {
-            method: 'GET',
+          // Make the API request with a POST method to include client in the body
+          const response = await fetch(figmaLinkWebhook, {
+            method: 'POST',
             headers: {
+              'Content-Type': 'application/json',
               'Accept': 'application/json'
-            }
+            },
+            body: JSON.stringify({
+              client: clientToSend,
+              source: 'figma-button',
+              timestamp: new Date().toISOString()
+            })
           });
           
           if (!response.ok) {
