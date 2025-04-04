@@ -59,22 +59,17 @@
           const urlParams = new URLSearchParams(window.location.search);
           const clientParam = urlParams.get('client');
           
-          // Create request with client data
-          const options = {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            }
-          };
+          // Create the webhook URL with client as a query parameter
+          let webhookUrl = figmaLinkWebhook;
           
-          // Only add the body if a client parameter exists
           if (clientParam) {
-            options.body = JSON.stringify({ client: clientParam });
-            console.log("Including client in request:", clientParam);
+            webhookUrl = `${figmaLinkWebhook}?client=${encodeURIComponent(clientParam)}`;
+            console.log("Using client parameter:", clientParam);
+            console.log("Full webhook URL:", webhookUrl);
           }
           
-          // Make the request to the original webhook URL
-          const response = await fetch(figmaLinkWebhook, options);
+          // Use a simple GET request to the webhook with the query parameter
+          const response = await fetch(webhookUrl);
           
           if (!response.ok) {
             throw new Error(`Failed to fetch Figma link: ${response.status}`);
