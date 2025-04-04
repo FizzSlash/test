@@ -52,8 +52,9 @@
         // Extract client name from URL query parameter
         extractClientFromQuery();
         
-        // Fetch the Figma link
-        fetchFigmaLink();
+        // Fetch the Figma link - with a small delay to ensure client name is set
+        // This helps ensure the state has been updated
+        setTimeout(fetchFigmaLink, 100);
       }, []);
       
       const extractClientFromQuery = () => {
@@ -69,6 +70,10 @@
             setClientName(client);
           } else {
             console.log("No client parameter found in URL");
+            
+            // Debug log full URL
+            console.log("Current URL:", window.location.href);
+            console.log("Search params:", window.location.search);
           }
         } catch (error) {
           console.error("Error extracting client from URL query:", error);
@@ -79,12 +84,25 @@
         try {
           setLoading(true);
           
-          // Build the URL with the client name if available
+          // Extract client directly from URL to ensure it's available immediately
+          const urlParams = new URLSearchParams(window.location.search);
+          const clientParam = urlParams.get('client');
+          
+          // Build the URL with the client parameter
           let url = figmaLinkWebhook;
           
-          // Add client name from query parameter if available
-          if (clientName) {
+          if (clientParam) {
+            // Use the directly extracted client parameter
+            url = `${figmaLinkWebhook}?client=${encodeURIComponent(clientParam)}`;
+            console.log("Sending request with client parameter:", clientParam);
+            console.log("Full webhook URL:", url);
+          } else if (clientName) {
+            // Fallback to state variable if it was set
             url = `${figmaLinkWebhook}?client=${encodeURIComponent(clientName)}`;
+            console.log("Sending request with client name from state:", clientName);
+            console.log("Full webhook URL:", url);
+          } else {
+            console.log("No client parameter available, using default webhook URL");
           }
           
           // Make the API request
@@ -101,6 +119,7 @@
           
           const data = await response.text();
           setFigmaLink(data.trim());
+          console.log("Webhook response received:", data.substring(0, 50) + (data.length > 50 ? "..." : ""));
           
         } catch (error) {
           console.error('Error fetching Figma link:', error);
