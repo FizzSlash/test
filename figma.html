@@ -41,6 +41,7 @@
     
     const FigmaLinkButton = () => {
       const [figmaLink, setFigmaLink] = useState('');
+      const [clientName, setClientName] = useState('');
       const [loading, setLoading] = useState(true);
       const [error, setError] = useState(null);
       
@@ -48,14 +49,65 @@
       const figmaLinkWebhook = 'https://hook.us2.make.com/dli1k9eq8vpedlaq247doxews2dv7u6o';
       
       useEffect(() => {
+        // Extract client name from URL
+        extractClientName();
+        
+        // Fetch the Figma link
         fetchFigmaLink();
       }, []);
+      
+      const extractClientName = () => {
+        try {
+          // Get the current URL path
+          const path = window.location.pathname;
+          
+          // Extract client name from path pattern like "/clientname/campaign-calender"
+          const pathParts = path.split('/').filter(part => part);
+          
+          if (pathParts.length >= 1) {
+            // The first part should be the client name
+            const extractedClientName = pathParts[0];
+            console.log("Extracted client name:", extractedClientName);
+            setClientName(extractedClientName);
+          } else {
+            console.warn("Could not extract client name from URL path:", path);
+          }
+        } catch (error) {
+          console.error("Error extracting client name from URL:", error);
+        }
+      };
       
       const fetchFigmaLink = async () => {
         try {
           setLoading(true);
           
-          const response = await fetch(figmaLinkWebhook);
+          // Build the URL with the client name if available
+          let url = figmaLinkWebhook;
+          
+          // Add client name from URL path if available
+          if (clientName) {
+            url = `${figmaLinkWebhook}?client=${encodeURIComponent(clientName)}`;
+          }
+          
+          // If the client name isn't available from the path, try to extract it from the hostname
+          if (!clientName) {
+            const hostname = window.location.hostname;
+            const subdomainMatch = hostname.match(/^(?:www\.)?([^.]+)\./);
+            
+            if (subdomainMatch && subdomainMatch[1] && subdomainMatch[1].toLowerCase() !== 'retentionharbor') {
+              const subdomain = subdomainMatch[1];
+              console.log("Extracted client from subdomain:", subdomain);
+              url = `${figmaLinkWebhook}?client=${encodeURIComponent(subdomain)}`;
+            }
+          }
+          
+          // Make the API request
+          const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json'
+            }
+          });
           
           if (!response.ok) {
             throw new Error(`Failed to fetch Figma link: ${response.status}`);
@@ -89,7 +141,7 @@
       }
       
       return (
-        <div className="flex justify-center">
+        <div className="flex flex-col items-center">
           <a 
             href={figmaLink}
             target="_blank"
@@ -105,6 +157,12 @@
             </svg>
             <span className="font-medium">View Figma File</span>
           </a>
+          
+          {clientName && (
+            <div className="mt-2 text-white text-xs opacity-50">
+              Client: {clientName}
+            </div>
+          )}
         </div>
       );
     };
