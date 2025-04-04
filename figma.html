@@ -41,70 +41,35 @@
     
     const FigmaLinkButton = () => {
       const [figmaLink, setFigmaLink] = useState('');
-      const [clientName, setClientName] = useState('');
       const [loading, setLoading] = useState(true);
       const [error, setError] = useState(null);
       
-      // Figma link webhook URL
+      // Figma link webhook base URL
       const figmaLinkWebhook = 'https://hook.us2.make.com/dli1k9eq8vpedlaq247doxews2dv7u6o';
       
       useEffect(() => {
-        // Extract client name from URL query parameter
-        extractClientFromQuery();
-        
-        // Fetch the Figma link - with a small delay to ensure client name is set
-        // This helps ensure the state has been updated
-        setTimeout(fetchFigmaLink, 100);
+        fetchFigmaLink();
       }, []);
-      
-      const extractClientFromQuery = () => {
-        try {
-          // Get the URL search params
-          const urlParams = new URLSearchParams(window.location.search);
-          
-          // Check if there's a client parameter
-          const client = urlParams.get('client');
-          
-          if (client) {
-            console.log("Extracted client from query parameter:", client);
-            setClientName(client);
-          } else {
-            console.log("No client parameter found in URL");
-            
-            // Debug log full URL
-            console.log("Current URL:", window.location.href);
-            console.log("Search params:", window.location.search);
-          }
-        } catch (error) {
-          console.error("Error extracting client from URL query:", error);
-        }
-      };
       
       const fetchFigmaLink = async () => {
         try {
           setLoading(true);
           
-          // Extract client directly from URL to ensure it's available immediately
+          // Extract client from URL query parameter
           const urlParams = new URLSearchParams(window.location.search);
           const clientParam = urlParams.get('client');
           
-          // Instead of using URL parameters, we'll send the client name in the request body
-          const clientToSend = clientParam || clientName || '';
-          console.log("Client to send:", clientToSend);
+          // Build the webhook URL with the client name as path parameter if available
+          let url = figmaLinkWebhook;
           
-          // Make the API request with a POST method to include client in the body
-          const response = await fetch(figmaLinkWebhook, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json'
-            },
-            body: JSON.stringify({
-              client: clientToSend,
-              source: 'figma-button',
-              timestamp: new Date().toISOString()
-            })
-          });
+          if (clientParam) {
+            // Simply APPEND the client name to the webhook URL as a path segment
+            url = `${figmaLinkWebhook}/${encodeURIComponent(clientParam)}`;
+            console.log("Requesting from URL:", url);
+          }
+          
+          // Make the API request - simple GET, no body or query params
+          const response = await fetch(url);
           
           if (!response.ok) {
             throw new Error(`Failed to fetch Figma link: ${response.status}`);
@@ -112,7 +77,6 @@
           
           const data = await response.text();
           setFigmaLink(data.trim());
-          console.log("Webhook response received:", data.substring(0, 50) + (data.length > 50 ? "..." : ""));
           
         } catch (error) {
           console.error('Error fetching Figma link:', error);
