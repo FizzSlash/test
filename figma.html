@@ -44,7 +44,7 @@
       const [loading, setLoading] = useState(true);
       const [error, setError] = useState(null);
       
-      // Figma link webhook URL - keep the original
+      // Figma link webhook URL
       const figmaLinkWebhook = 'https://hook.us2.make.com/dli1k9eq8vpedlaq247doxews2dv7u6o';
       
       useEffect(() => {
@@ -59,17 +59,17 @@
           const urlParams = new URLSearchParams(window.location.search);
           const clientParam = urlParams.get('client');
           
-          // Create the webhook URL with client as a query parameter
-          let webhookUrl = figmaLinkWebhook;
+          // Build the webhook URL with the client appended to the path
+          let url = figmaLinkWebhook;
           
           if (clientParam) {
-            webhookUrl = `${figmaLinkWebhook}?client=${encodeURIComponent(clientParam)}`;
+            // Simply append the client name to the webhook URL path
+            url = `${figmaLinkWebhook}/${clientParam}`;
             console.log("Using client parameter:", clientParam);
-            console.log("Full webhook URL:", webhookUrl);
           }
           
-          // Use a simple GET request to the webhook with the query parameter
-          const response = await fetch(webhookUrl);
+          // Make the request
+          const response = await fetch(url);
           
           if (!response.ok) {
             throw new Error(`Failed to fetch Figma link: ${response.status}`);
