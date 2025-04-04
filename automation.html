@@ -140,20 +140,48 @@
       const [updateStatus, setUpdateStatus] = useState(null);
       const [showModal, setShowModal] = useState(false);
       const [activeTab, setActiveTab] = useState('queue');
+      const [clientName, setClientName] = useState('');
 
       // Updated webhook URLs
       const fetchFlowsUrl = 'https://hook.us2.make.com/fea9nqybtes8svegp5grgd1wedgyo7a0';
       const updateFlowUrl = 'https://hook.us2.make.com/6q5113g65xtrwkcorpwx43krfeaqi6f6';
 
+      // Extract client name from URL
+      useEffect(() => {
+        const extractClientFromUrl = () => {
+          try {
+            const urlParams = new URLSearchParams(window.location.search);
+            const clientParam = urlParams.get('client');
+            if (clientParam) {
+              setClientName(clientParam);
+              console.log("Client name extracted from URL:", clientParam);
+            } else {
+              console.log("No client parameter found in URL");
+            }
+          } catch (error) {
+            console.error("Error extracting client from URL:", error);
+          }
+        };
+        
+        extractClientFromUrl();
+      }, []);
+
       useEffect(() => {
         fetchFlows();
-      }, []);
+      }, [clientName]); // Refetch when client name changes
 
       const fetchFlows = async () => {
         try {
           setLoading(true);
           
-          const response = await fetch(fetchFlowsUrl);
+          // Append client name to request if available
+          let url = fetchFlowsUrl;
+          if (clientName) {
+            // Adding client as query parameter
+            url = `${fetchFlowsUrl}?client=${encodeURIComponent(clientName)}`;
+          }
+          
+          const response = await fetch(url);
           
           if (!response.ok) {
             throw new Error(`Failed to fetch flows: ${response.status}`);
@@ -332,16 +360,23 @@
         try {
           setUpdateStatus({ loading: true, error: null });
           
-          // Create payload with all flow data plus approval status and revisions
+          // Create payload with all flow data plus approval status, revisions, and client name from URL
           const payload = {
             ...selectedFlow.rawData, // Include all original data
             flowId: selectedFlow.id,
             recordId: selectedFlow.recordId, // Include the record ID in the payload
             approved: approved ? "YES" : "NO",
-            clientRevisions: clientRevisions
+            clientRevisions: clientRevisions,
+            clientName: clientName || "" // Include the client name from URL
           };
           
-          const response = await fetch(updateFlowUrl, {
+          // Add the client name as a query parameter to the URL
+          let url = updateFlowUrl;
+          if (clientName) {
+            url = `${updateFlowUrl}?client=${encodeURIComponent(clientName)}`;
+          }
+          
+          const response = await fetch(url, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
@@ -439,6 +474,11 @@
                   </button>
                 </div>
               </div>
+              {clientName && (
+                <div className="mt-2 text-sm text-gray-300">
+                  Client: <span className="font-semibold text-white">{clientName}</span>
+                </div>
+              )}
             </div>
             
             {error && (
@@ -702,6 +742,13 @@
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+          
+          {/* Display client name from URL for debugging - can be removed in production */}
+          {clientName && (
+            <div className="mt-4 p-3 bg-gray-800 bg-opacity-50 text-white text-sm rounded">
+              Using client parameter from URL: <span className="font-semibold">{clientName}</span>
             </div>
           )}
         </div>
